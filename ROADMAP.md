@@ -1,8 +1,8 @@
 # Project N.O.M.A.D. — Roadmap
 
 > **Baseline:** v7.44.0 (~310 tables, 2,000+ routes, 77 blueprints)
-> **Current:** v7.60.0 (~326 tables, 2,100+ routes, 78 blueprints, `seeds/` package — 13 content modules shipped)
-> **Updated:** 2026-04-23
+> **Current:** v7.61.0 (~326 tables, 2,100+ routes, 78 blueprints, `seeds/` package — 13 content modules shipped; V8 roadmap 15/24 Done)
+> **Updated:** 2026-04-24
 > **Prior feature backlog:** 134/187 items complete (72%), 8 deferred (4%), 45 internal refactoring remaining (24%)
 
 ---
@@ -34,7 +34,7 @@ Product-quality improvements identified from a deep architecture, security, perf
 |---|-------|-------------|--------|
 | V8-08 | **Split db.py into package** | 6,255-line monolith → `db/` package: `db/__init__.py` (exports), `db/core.py` (get_db, pool, session), `db/schema_core.py`, `db/schema_comms.py`, `db/schema_medical.py`, etc. Keep `init_db()` as orchestrator. | Open |
 | V8-09 | **Split create_app()** | 1,655-line god function → extract: `web/middleware.py` (CSRF, rate limit, host validation), `web/blueprint_registry.py` (72 imports + registrations), `web/error_handlers.py`. `create_app()` becomes a thin orchestrator. | Open |
-| V8-10 | **Cache rendered template** | `index.html` renders 61 partials + 13 JS files (58,000 lines) on every page load. Cache the rendered output in memory — it's largely static (only version, language, bundle hashes vary). Invalidate on language/version change. | Open |
+| V8-10 | ~~**Cache rendered template**~~ | **Done** (v7.61.0) — `_page_render_cache` (`web/app.py:342-372`) keys by `(tab_id, lang, bundle_js, media_sub, launch_restore, first_run_complete)` with TTL + 200-key prune. | Done v7.61.0 |
 | V8-11 | **Lazy blueprint registration** | 72 blueprints imported eagerly in `create_app()`. Use Flask's deferred import pattern or group into domain packages. Import on first request to the URL prefix, not at startup. | Open |
 
 ### Tier 4: Medium — Developer Experience & Quality
@@ -43,9 +43,9 @@ Product-quality improvements identified from a deep architecture, security, perf
 |---|-------|-------------|--------|
 | V8-12 | **Frontend unit tests** | 32,779 lines of JS, 850+ functions, zero unit tests. Add a test framework (vitest or jest via jsdom) for critical functions: `escapeHtml`, `safeFetch`, `timeAgo`, `parseInventoryCommand`, `_parseSearchBang`. Start with the functions that have had bugs. | Open |
 | V8-13 | ~~**Publish coverage to Codecov**~~ | **Done** (v7.55.0) — `codecov-action@v4` in build.yml | Open |
-| V8-14 | **Module-level column allowlists** | Several blueprints define `allowed = [...]` inside route handler functions. Move to module-level `ALLOWED_FIELDS = frozenset({...})` constants for auditability and consistency. | Open |
+| V8-14 | ~~**Module-level column allowlists**~~ | **Done** (v7.61.0) — hoisted to `ALLOWED_EVAC_PLAN_FIELDS` / `ALLOWED_EVAC_RALLY_FIELDS` / `ALLOWED_EVAC_ASSIGNMENT_FIELDS` (emergency.py), `ALLOWED_WAYPOINT_FIELDS` (maps.py), `ALLOWED_MEDIA_META_FIELDS` + per-type extras (media.py). Regression-pinned in `tests/test_allowlists.py`. | Done v7.61.0 |
 | V8-15 | ~~**Persist secret key for LAN**~~ | **Done** (v7.55.0) — auto-persist to config.json when auth required | Open |
-| V8-16 | **File-based DB integration test** | Add a test that exercises `create_app()` + `init_db()` against a real file-based SQLite database. Verifies WAL mode, pooling, and startup lifecycle. | Open |
+| V8-16 | ~~**File-based DB integration test**~~ | **Done** (v7.61.0) — `tests/test_db_integration_file.py` (6 tests) exercises `init_db()` + `create_app()` against an on-disk SQLite file; pins WAL mode, core table presence, schema-version gate, connection-pool reuse across requests. | Done v7.61.0 |
 
 ### Tier 5: Nice-to-Have — Polish & Edge Cases
 
@@ -56,8 +56,8 @@ Product-quality improvements identified from a deep architecture, security, perf
 | V8-19 | **Mobile prep tab navigation** | 25 prep sub-tabs in 5 categories overflow on small screens. Add a mobile-specific accordion or sheet-based navigation for the two-tier category → sub-tab pattern. | Done v7.59.0 |
 | V8-20 | **Standalone docs site** | The 41-section in-app guide exists but no searchable external documentation. Generate a static site (MkDocs or Docusaurus) from markdown for the non-technical preparedness audience. | Done v7.59.0 |
 | V8-21 | **macOS code signing** | macOS build produces unsigned binary. Gatekeeper warns "unidentified developer." Add Apple Developer certificate signing to CI or document the notarization process. | Open |
-| V8-22 | **Auto-update checksum parity** | SHA256 verification exists for Windows self-update downloads but not Linux/macOS. Apply the same pattern cross-platform. | Open |
-| V8-23 | **Seeded test data isolation** | `init_db()` seeds UPC database and RAG scope defaults that tests implicitly depend on. Add explicit test fixtures that don't rely on seeded state. | Open |
+| V8-22 | ~~**Auto-update checksum parity**~~ | **Done** (v7.61.0) — `SHA256SUMS.txt` is generated in `build.yml:220` (`sha256sum *`) for Windows/Linux/macOS artifacts. `services.py::api_update_download` fetches the manifest, matches by filename, and hard-fails on mismatch for all three platforms. | Done v7.61.0 |
+| V8-23 | ~~**Seeded test data isolation**~~ | **Done** (v7.61.0) — explicit fixtures landed in `tests/conftest.py`: `seed_upc_entry`, `seed_rag_scope_row`, `assert_upc_seeded`, `assert_rag_scope_seeded`. Tests opt in by listing the fixture instead of assuming `init_db()` side-effects. | Done v7.61.0 |
 | V8-24 | ~~**CSS cascade documentation**~~ | **Done** (v7.55.0) — `web/static/css/README.md` with full architecture | Open |
 
 ### Summary

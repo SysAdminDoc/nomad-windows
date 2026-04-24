@@ -24,6 +24,7 @@ Background fetch workers with per-source cooldowns and thread safety.
 
 import json
 import logging
+import sqlite3
 import threading
 import hashlib
 import re
@@ -59,7 +60,13 @@ _http_session.headers.update(_REQ_HEADERS)
 
 
 def _fetch_with_retry(url, timeout=10, retries=2, **kwargs):
-    """Fetch URL with exponential backoff retry (uses pooled session)."""
+    """Fetch URL with exponential backoff retry (uses pooled session).
+
+    Narrowed to the real network failure surface — ``requests.RequestException``
+    covers ConnectionError / Timeout / HTTPError / ChunkedEncodingError /
+    ContentDecodingError / TooManyRedirects. A bug elsewhere (NameError,
+    TypeError) should propagate, not be masked by a retry loop.
+    """
     import time
     kwargs.setdefault('headers', _REQ_HEADERS)
     for attempt in range(retries + 1):
@@ -67,7 +74,7 @@ def _fetch_with_retry(url, timeout=10, retries=2, **kwargs):
             r = _http_session.get(url, timeout=timeout, **kwargs)
             r.raise_for_status()
             return r
-        except (requests.RequestException, Exception) as e:
+        except requests.RequestException:
             if attempt == retries:
                 raise
             time.sleep(0.5 * (2 ** attempt))
@@ -75,11 +82,22 @@ def _fetch_with_retry(url, timeout=10, retries=2, **kwargs):
 
 
 def _safe_response_json(response, fallback=None):
+    """Parse a Response body as JSON with a caller-supplied fallback.
+
+    ``response.json()`` raises ``ValueError`` (incl. ``json.JSONDecodeError``
+    and ``requests.exceptions.JSONDecodeError`` subclasses) on parse failures,
+    ``AttributeError`` if the caller passes something that isn't a Response,
+    and ``TypeError`` when the body decoder chokes on the content-type. Those
+    are the only failures we want to swallow; a programming error should
+    still surface.
+    """
     if fallback is None:
         fallback = {}
+    if response is None:
+        return _clone_json_fallback(fallback)
     try:
         parsed = response.json()
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         return _clone_json_fallback(fallback)
     if isinstance(parsed, (dict, list)):
         return parsed
@@ -633,20 +651,31 @@ def _parse_feed(xml_text, feed_name, feed_category):
 
 
 def _fetch_single_feed(feed):
-    """Fetch a single RSS feed. Returns list of articles."""
+    """Fetch a single RSS feed. Returns list of articles.
+
+    Narrowed from bare ``Exception`` to the real fetch+parse surface:
+    ``requests.RequestException`` for network/HTTP issues, ``ET.ParseError``
+    bubbles up from ``_parse_feed`` on malformed XML, ``ValueError`` for text
+    decode errors, and ``KeyError``/``AttributeError`` cover feeds with
+    missing/unexpected fields. A bug elsewhere (e.g. a NameError in our own
+    parser) will surface loudly instead of being swallowed per-feed.
+    """
     resp = None
     try:
         resp = _http_session.get(feed['url'], timeout=_REQ_TIMEOUT, headers={
             **_REQ_HEADERS, 'Accept': 'application/rss+xml, application/xml, text/xml'})
         if resp.ok:
             return _parse_feed(resp.text, feed['name'], feed['category'])
-    except Exception as e:
+    except (requests.RequestException, ET.ParseError, ValueError,
+            KeyError, AttributeError) as e:
         log.debug(f"RSS fetch failed for {feed['name']}: {e}")
     finally:
         # Explicit close — the pooled ``requests.Session`` normally returns
         # the connection to the pool on GC, but on an import-day storm of
         # 50+ feeds per refresh that can leak sockets for seconds before
-        # GC runs.
+        # GC runs. close() itself should never raise meaningfully, but we
+        # keep the broad except here because a socket-shutdown error must
+        # not mask a real fetch error from the caller above.
         if resp is not None:
             try:
                 resp.close()
@@ -708,7 +737,7 @@ def _fetch_earthquakes():
         resp = _fetch_with_retry('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson',
                                  timeout=15, headers=_REQ_HEADERS)
         data = _safe_response_json(resp, {})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"Earthquake fetch failed: {e}")
         return
 
@@ -746,7 +775,7 @@ def _fetch_weather_alerts():
         resp = _fetch_with_retry('https://api.weather.gov/alerts/active?status=actual&severity=Extreme,Severe',
                                  timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/geo+json'})
         data = _safe_response_json(resp, {})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"Weather alerts fetch failed: {e}")
         return
 
@@ -822,7 +851,7 @@ def _fetch_market_data():
                 change = ((price - prev) / prev * 100) if prev else 0
                 mtype = 'forex' if '/' in name or 'DXY' in name else 'index'
                 markets.append({'symbol': name, 'price': price, 'change_24h': round(change, 2), 'market_type': mtype})
-        except Exception as e:
+        except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as e:
             log.debug(f"Yahoo Finance {sym} failed: {e}")
 
     # Sector ETFs via Yahoo Finance
@@ -844,7 +873,7 @@ def _fetch_market_data():
                 prev = meta.get('previousClose', 0)
                 change = ((price - prev) / prev * 100) if prev else 0
                 markets.append({'symbol': name, 'price': price, 'change_24h': round(change, 2), 'market_type': 'sector', 'label': sym})
-        except Exception as e:
+        except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as e:
             log.debug('Yahoo Finance sector ETF %s failed: %s', sym, e)
     try:
         resp = _fetch_with_retry('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true',
@@ -859,7 +888,7 @@ def _fetch_market_data():
                 continue
             markets.append({'symbol': names.get(coin, coin.upper()), 'price': vals.get('usd', 0),
                             'change_24h': round(vals.get('usd_24h_change') or 0, 2), 'market_type': 'crypto'})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
         log.debug(f"CoinGecko failed: {e}")
 
     # Gold/Silver (metals.dev) — with change tracking from previous cached price
@@ -875,7 +904,8 @@ def _fetch_market_data():
                 with db_session() as db:
                     for row in db.execute("SELECT symbol, price FROM sitroom_markets WHERE symbol IN ('GOLD', 'SILVER')").fetchall():
                         prev_prices[row[0]] = row[1]
-            except Exception:
+            except sqlite3.Error:
+                # Fresh schemas may not have the table populated yet; treat as no baseline.
                 pass
             for metal_key, symbol in [('gold', 'GOLD'), ('silver', 'SILVER')]:
                 if metal_key in metals:
@@ -883,7 +913,7 @@ def _fetch_market_data():
                     old_price = prev_prices.get(symbol)
                     change = ((new_price - old_price) / old_price * 100) if old_price else 0
                     markets.append({'symbol': symbol, 'price': new_price, 'change_24h': round(change, 2), 'market_type': 'commodity'})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
         log.debug(f"Metals failed: {e}")
 
     # Brent oil (EIA)

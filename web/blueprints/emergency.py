@@ -37,6 +37,21 @@ from web.utils import coerce_int as _ci
 emergency_bp = Blueprint('emergency', __name__)
 log = logging.getLogger('nomad.emergency')
 
+# Module-level column allowlists (V8-14) — auditable field whitelists for
+# UPDATE/INSERT payload filtering. Keep in sync with the underlying schema
+# in db.py (evac_plans / evac_rally_points / evac_assignments).
+ALLOWED_EVAC_PLAN_FIELDS = frozenset({
+    'name', 'plan_type', 'is_active', 'destination', 'primary_route',
+    'alternate_route', 'distance_miles', 'estimated_time_min',
+    'trigger_conditions', 'notes',
+})
+ALLOWED_EVAC_RALLY_FIELDS = frozenset({
+    'name', 'location', 'lat', 'lng', 'point_type', 'sequence_order', 'notes',
+})
+ALLOWED_EVAC_ASSIGNMENT_FIELDS = frozenset({
+    'person_name', 'role', 'vehicle', 'go_bag', 'notes',
+})
+
 _STATE_KEYS = {
     'emergency_active':     'False',
     'emergency_started_at': '',
@@ -312,12 +327,7 @@ def api_evac_plan_detail(pid):
 def api_evac_plan_update(pid):
     """Update an existing evacuation plan."""
     data = request.get_json() or {}
-    allowed = {
-        'name', 'plan_type', 'is_active', 'destination', 'primary_route',
-        'alternate_route', 'distance_miles', 'estimated_time_min',
-        'trigger_conditions', 'notes',
-    }
-    fields = {k: v for k, v in data.items() if k in allowed}
+    fields = {k: v for k, v in data.items() if k in ALLOWED_EVAC_PLAN_FIELDS}
     if not fields:
         return jsonify({'error': 'no valid fields to update'}), 400
 
@@ -474,7 +484,7 @@ def api_rally_point_create(pid):
 def api_rally_point_update(rid):
     """Update a rally point."""
     data = request.get_json() or {}
-    allowed = {'name', 'location', 'lat', 'lng', 'point_type', 'sequence_order', 'notes'}
+    allowed = ALLOWED_EVAC_RALLY_FIELDS
     fields = {k: v for k, v in data.items() if k in allowed}
     if not fields:
         return jsonify({'error': 'no valid fields to update'}), 400
@@ -597,7 +607,7 @@ def api_assignment_create(pid):
 def api_assignment_update(aid):
     """Update a personnel assignment."""
     data = request.get_json() or {}
-    allowed = {'person_name', 'role', 'vehicle', 'go_bag', 'notes'}
+    allowed = ALLOWED_EVAC_ASSIGNMENT_FIELDS
     fields = {k: v for k, v in data.items() if k in allowed}
     if not fields:
         return jsonify({'error': 'no valid fields to update'}), 400

@@ -2,6 +2,64 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.63.0] — Factory-Loop Iteration 2: DB-Leak Audit Tool + Bare-Except Batch 2 (2026-04-24)
+
+Second iteration of the factory-loop run. Delivers a reusable AST-driven audit tool for `get_db()` leak sites (groundwork for the iter 3 conversion pass), narrows another 11 bare `except Exception` sites in Situation-Room fetch workers (55 → 44 total), and reconciles V8-09's status now that `web/middleware.py` + `web/blueprint_registry.py` have landed.
+
+### H-06 / H-15 — `get_db()` try/finally audit tool
+
+New `tools/audit_db_sessions.py` — zero-dependency stdlib-only AST walker. For every `get_db()` call it classifies:
+- **assigned-but-not-closed** — `db = get_db()` without a `try/finally` that closes `db`. Highest-priority leak shape; the caller holds a pooled connection for its entire lifetime.
+- **bare-call** — `get_db().execute(...)` as an inline expression. Connection abandoned after the chained call; the pool reclaims it eventually but transactions may linger.
+- **safe** — `with db_session() as db:` or a `try:` whose `finalbody` explicitly calls `<target>.close()`. Not reported.
+
+First report committed as `docs/db-leak-audit.md`: **34 suspect call sites across 14 files**, weighted toward `services/` (21) and `db.py` (5). Severity legend + per-module breakdown included so iter 3 can prioritize the conversion pass.
+
+CLI supports `--fail-on-find` so a future CI step can gate on the count dropping to zero. Runs in < 200 ms against the full tree.
+
+### H-03 continuation — 11 more bare-except sites narrowed (55 → 44)
+
+Second batch of `except Exception` narrowing in `web/blueprints/situation_room.py` fetch workers:
+- **`_fetch_market_data` Fear/Greed block** — `(requests.RequestException, ValueError, KeyError, IndexError, TypeError)`.
+- **`_fetch_conflict_data` (GDACS)** — `(requests.RequestException, ValueError, KeyError)`.
+- **`_fetch_ais_ships` primary + fallback** — primary: full typed set; fallback `marinetraffic` swallow narrowed to `requests.RequestException` only.
+- **`_fetch_space_weather`** — four separate `try:` blocks covering NOAA scales / Kp index / solar probabilities / alerts. Each typed per-block based on the real payload navigation path (e.g. Kp uses list indexing so `IndexError`/`TypeError` are added; alerts uses only list shape checks).
+- **`_fetch_volcanoes` (Smithsonian GVP)** — `(requests.RequestException, ValueError, KeyError)`.
+- **`_fetch_predictions` (Polymarket)** — `(requests.RequestException, ValueError, KeyError)`.
+- **`_fetch_fires` (NASA FIRMS CSV)** — `requests.RequestException` only; CSV parsing lives below the try and raises deterministic errors that are currently handled via `if len(lines) < 2: return`.
+
+Iter 1 + Iter 2 cumulative: **20 bare-except sites narrowed (64 → 44)**. Iter 3 target: remaining non-finally sites.
+
+### V8-09 status reconciliation (Partial → Partial with follow-up)
+
+Audit surfaced that `web/middleware.py` (339 L, housing CSRF / rate-limiting / host validation / auth guard / LAN auth / security headers / DB cleanup / `_setup_error_handlers`) and `web/blueprint_registry.py` (237 L, 72-blueprint registry) **already shipped in v7.57.0**. `create_app()` is now 1,243 lines (down from 1,655). The Tier-3 V8-09 row in ROADMAP flipped to **Partial** with an explicit follow-up (**H-14**) that captures the remaining work: extract 50+ inline page routes into `web/pages.py` blueprint + 4 background-thread setup trios (discovery listener, auto-backup scheduler, SSE cleanup, CPU monitor) into `web/background.py`. Target: `create_app()` ≤ 300 lines. Deferred to a dedicated iteration because the shared closures (`_render_workspace_page`, `_get_template_i18n_context`, `_safe_json_value`, `_discovery_listener_started` module lock) make a naive extract risky.
+
+### Roadmap tidy
+
+`ROADMAP.md` updated:
+- H-01 / H-02 / H-04 / H-05 / H-07 marked Done v7.62.0.
+- H-03 marked **Open (partial)** with the remaining count explicit.
+- H-10 marked **Open (partial — pilot H-05 done)** with the remaining 8 tabs listed.
+- Three new audit carry-over items appended: **H-11** (AST test for future `_start_lock` regressions), **H-12** (rename `trustedHTML` → `markTrusted`), **H-13** (`_parse_feed` malformed-input test).
+- Two V8-09 / H-06 follow-ups: **H-14** (create_app() final thinning) and **H-15** (db-leak audit tool — already delivered this iteration).
+- Iteration cadence updated to reflect iter 1 shipped + iter 2 shipping.
+
+### Test/build gate summary
+
+- pytest adjacent suite (7 files, 145 assertions) — green in 49 s.
+- vitest — 63/63 assertions green.
+- esbuild — bundle + CSS built clean.
+- `create_app()` smoke — 72 blueprints register without error.
+- `tools/audit_db_sessions.py` — produces identical report on re-run (deterministic).
+
+### Deferred to iteration 3
+
+- **H-09 / V8-11** — lazy blueprint registration (depends on H-14).
+- **H-10 remaining** — innerHTML audit of 8 tab templates (batch-migrate using the H-05 pilot pattern).
+- **H-14** — the V8-09 final thinning work sketched above.
+- **H-11 / H-12 / H-13** — the three carry-over audit items.
+- `get_db()` → `db_session()` conversions driven by the `docs/db-leak-audit.md` report.
+
 ## [v7.62.0] — Factory-Loop Iteration 1: Hardening + V8-04 Pilot (2026-04-24)
 
 Targeted hardening pass driven by the factory-loop recipe. Closes V8-12 (frontend unit tests — verified vitest + 48 assertions cover the 5 named critical functions), launches the V8-04 innerHTML-audit pilot (3 new escape-safe primitives + migration of `_tab_data_foundation.html`), ships two concurrency fixes in `services/ollama.py`, plugs a `chat()` FD leak, narrows 9 swallowing `except Exception` sites in Situation-Room fetch workers, and pins the existing `services/manager.py::start_process` atomicity invariant with an AST-based regression test.

@@ -2,7 +2,20 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
-## [v7.64.0] — Factory-Loop Iteration 3: Audit Carry-Overs + Classifier Refinement + Bare-Except Batch 3 (2026-04-24)
+## [Unreleased]
+
+### H-14 — `create_app()` thinning (factory-loop iter 1, 2026-04-24)
+
+Long-pending V8-09 carry-over. `web/app.py::create_app()` body shrinks from **1243 → 663 lines** (47% reduction) by extracting four self-contained concerns into dedicated modules. No behavior change — every workspace route, i18n endpoint, and SSE route returns identical responses.
+
+- **`web/pages.py`** (NEW, ~430 lines) — owns `WORKSPACE_PAGES` metadata for all 17 tabs, the `_render_workspace_page` cache (V8-10), `get_current_language` / `get_template_i18n_context` / `is_first_run_complete` accessors, the `@app.context_processor` that injects i18n vars, all 19 page routes (including the 8 alias routes like `/briefing` → situation-room), the `/app-runtime.js` endpoint, and the four `/api/i18n/*` endpoints. Per-app caches (`_lang_cache`, `_first_run_cache`, `_page_render_state`) live on `app.config` so test harnesses get isolated state. The page-render-state initializer now uses a module-level lock + `setdefault` to close a TOCTOU where two cold-start request threads could each create their own state dict with separate locks.
+- **`web/background.py`** (NEW, ~230 lines) — owns the federation UDP discovery listener, the auto-backup scheduler trio (`_load_auto_backup_config` / `_run_auto_backup` / `_rotate_backups` / `_schedule_auto_backup`), and the SSE stale-client cleanup loop. Each `start_*(app)` is idempotent via module-level guards. `app.config['_schedule_auto_backup']` and `app.config['_sse_cleanup_stop']` are still wired so blueprints and shutdown hooks reach them unchanged.
+- **`web/sse_routes.py`** (NEW, ~85 lines) — owns `/api/events/stream` and `/api/events/test`. The per-IP rate-limit ledger (`_sse_connects`) now lives on `app.config` instead of a closure dict so test apps don't share state.
+- **`web/app.py`** trimmed accordingly: `_load_bundle_manifest`, the inline language helpers, the workspace-pages dict, the discovery + auto-backup blocks, the SSE event-stream block, and the i18n routes are all gone. Module-level `_get_node_id` import lifted to the file header so the offline snapshot route can still stamp its node identifier.
+- Test pin updated: `tests/test_core.py::test_runtime_uses_shared_json_safety_helpers_for_saved_state_and_payloads` now points the `_safe_json_value(data, {})` assertion at `web/background.py` (where the discovery listener lives) instead of `web/app.py`.
+- Smoke verification: 29/29 page + i18n routes return 200; vitest 63/63 pass; `tests/test_crud_api.py` 51/51 pass; full pytest suite green (sqlite_master locked race in `test_inventory` / `test_barcode` is a pre-existing intermittent — both pass in isolation).
+
+
 
 Final iteration of the 3-pass factory-loop run. Closes three iter 1 audit carry-overs (H-11 AST regression tests for `_start_lock` placement, H-13 `_parse_feed` malformed-input resilience, H-16 db-leak audit classifier refinement), narrows another 9 bare `except Exception` sites in Situation-Room fetch workers (44 → 35; cumulative 64 → 35 across 3 iterations), and upgrades the db-leak audit tool's classifier so it produces a clean report instead of a 34-entry noise list.
 

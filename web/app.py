@@ -1,35 +1,29 @@
 """Flask web application — dashboard and API routes."""
 
-import json
 import os
 import sys
 import time
 import threading
 import logging
-import queue
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request, Response
+from flask import Flask, jsonify, request
 import web.state as _state
-from web.state import (
-    _auto_backup_timer,
-    MAX_SSE_CLIENTS, _sse_clients, _sse_lock,
-    broadcast_event,
-    sse_register_client, sse_unregister_client, sse_touch_client,
-    sse_cleanup_stale_clients,
-)
 
 from config import Config
-from db import get_db_path, db_session, init_db
+from db import db_session, init_db
 from web.sql_safety import safe_table
 from web.utils import (
-    is_loopback_addr as _is_loopback,
     require_json_body as _require_json_body,
     safe_json_value as _safe_json_value,
     safe_json_list as _safe_json_list,
     read_household_size as _read_household_size_setting,
+    get_node_id as _get_node_id,
 )
 from web.middleware import setup_middleware
 from web.blueprint_registry import register_blueprints
+from web.pages import register_pages
+from web.background import start_discovery_listener, start_auto_backup, start_sse_cleanup
+from web.sse_routes import register_sse_routes
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
 
 log = logging.getLogger('nomad.web')
@@ -38,10 +32,6 @@ log = logging.getLogger('nomad.web')
 
 _db_bootstrap_lock = threading.Lock()
 _db_bootstrap_done = False
-_discovery_listener_lock = threading.Lock()
-_discovery_listener_started = False
-_sse_cleanup_lock = threading.Lock()
-_sse_cleanup_started = False
 
 SERVICE_MODULES = {
     'ollama': ollama,
@@ -92,35 +82,9 @@ def _cpu_monitor():
 
 _cpu_monitor_started = False
 
-# ─── Build Bundle Manifest Helper ──────────────────────────────────────
-_bundle_manifest = None
-_bundle_manifest_mtime = None
-
-def _load_bundle_manifest():
-    """Read the esbuild build manifest (web/static/dist/manifest.json).
-
-    Returns a dict mapping logical names to hashed filenames, e.g.
-    {"nomad.bundle.js": "nomad.bundle.a1b2c3d4.js"}.
-    Refreshes automatically when the manifest changes so rebuilt assets are
-    served without requiring a process restart.
-    """
-    manifest_path = os.path.join(os.path.dirname(__file__), 'static', 'dist', 'manifest.json')
-    global _bundle_manifest, _bundle_manifest_mtime
-    try:
-        manifest_mtime = os.path.getmtime(manifest_path)
-        if _bundle_manifest is not None and _bundle_manifest_mtime == manifest_mtime:
-            return _bundle_manifest
-        with open(manifest_path, 'r') as f:
-            _bundle_manifest = json.load(f)
-        _bundle_manifest_mtime = manifest_mtime
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        _bundle_manifest = {}
-        _bundle_manifest_mtime = None
-    return _bundle_manifest
 
 def create_app():
     global _cpu_monitor_started, _db_bootstrap_done
-    global _discovery_listener_started, _sse_cleanup_started
     if not _db_bootstrap_done:
         with _db_bootstrap_lock:
             if not _db_bootstrap_done:
@@ -141,328 +105,17 @@ def create_app():
     app.secret_key = Config.secret_key()
 
     setup_middleware(app)
+    register_pages(app)
 
     # TTL cache moved to web.state (shared across blueprints)
     _cached = _state.cached_get
     _set_cache = _state.cached_set
 
-    try:
-        from web.translations import SUPPORTED_LANGUAGES, TRANSLATIONS
-    except ImportError:
-        from translations import SUPPORTED_LANGUAGES, TRANSLATIONS
-
-    _lang_cache: dict = {'value': 'en', 'expires': 0.0}
-
-    def _get_current_language():
-        now = time.monotonic()
-        if now < _lang_cache['expires']:
-            return _lang_cache['value']
-        lang = 'en'
-        try:
-            with db_session() as db:
-                row = db.execute("SELECT value FROM settings WHERE key = 'language'").fetchone()
-                lang = (row['value'] if row else 'en') or 'en'
-        except Exception:
-            lang = 'en'
-        lang = lang if lang in SUPPORTED_LANGUAGES else 'en'
-        _lang_cache['value'] = lang
-        _lang_cache['expires'] = now + 5.0
-        return lang
-
-    def _get_template_i18n_context():
-        current_lang = _get_current_language()
-        fallback_translations = TRANSLATIONS.get('en', {})
-        current_translations = TRANSLATIONS.get(current_lang, fallback_translations)
-
-        def _tr(key, default=''):
-            return current_translations.get(key) or fallback_translations.get(key) or default or key
-
-        return {
-            'current_lang': current_lang,
-            'is_rtl': current_lang == 'ar',
-            'current_translations': current_translations,
-            'fallback_translations': fallback_translations,
-            'i18n_bootstrap': {
-                'lang': current_lang,
-                'translations': current_translations,
-                'fallback': fallback_translations,
-            },
-            'tr': _tr,
-        }
-
-    @app.context_processor
-    def _inject_i18n_context():
-        return _get_template_i18n_context()
-
     # ─── Pages ─────────────────────────────────────────────────────────
+    # Page routes, language detection, render-cache, and the i18n context
+    # processor have moved to web/pages.py (registered via register_pages above).
 
-    workspace_pages = {
-        'services': {
-            'route': '/',
-            'aliases': ['/home'],
-            'title': 'Home',
-            'partial': 'index_partials/_tab_services.html',
-        },
-        'situation-room': {
-            'route': '/situation-room',
-            'aliases': ['/briefing'],
-            'title': 'Situation Room',
-            'partial': 'index_partials/_tab_situation_room.html',
-        },
-        'readiness': {
-            'route': '/readiness',
-            'aliases': [],
-            'title': 'Readiness',
-            'partial': 'index_partials/_tab_readiness.html',
-        },
-        'preparedness': {
-            'route': '/preparedness',
-            'aliases': ['/operations'],
-            'title': 'Preparedness',
-            'partial': 'index_partials/_tab_preparedness.html',
-        },
-        'maps': {
-            'route': '/maps',
-            'aliases': [],
-            'title': 'Maps',
-            'partial': 'index_partials/_tab_maps.html',
-        },
-        'tools': {
-            'route': '/tools',
-            'aliases': [],
-            'title': 'Tools',
-            'partial': 'index_partials/_tab_tools.html',
-        },
-        'loadout': {
-            'route': '/loadout',
-            'aliases': [],
-            'title': 'Loadout',
-            'partial': 'index_partials/_tab_loadout.html',
-        },
-        'kiwix-library': {
-            'route': '/library',
-            'aliases': ['/knowledge'],
-            'title': 'Library',
-            'partial': 'index_partials/_tab_library.html',
-        },
-        'notes': {
-            'route': '/notes',
-            'aliases': [],
-            'title': 'Notes',
-            'partial': 'index_partials/_tab_notes.html',
-        },
-        'media': {
-            'route': '/media',
-            'aliases': [],
-            'title': 'Media',
-            'partial': 'index_partials/_tab_media.html',
-        },
-        'ai-chat': {
-            'route': '/copilot',
-            'aliases': ['/assistant'],
-            'title': 'Copilot',
-            'partial': 'index_partials/_tab_ai_chat.html',
-        },
-        'benchmark': {
-            'route': '/diagnostics',
-            'aliases': [],
-            'title': 'Diagnostics',
-            'partial': 'index_partials/_tab_benchmark.html',
-        },
-        'settings': {
-            'route': '/settings',
-            'aliases': ['/system'],
-            'title': 'Settings',
-            'partial': 'index_partials/_tab_settings.html',
-        },
-        'nukemap': {
-            'route': '/nukemap-tab',
-            'aliases': [],
-            'title': 'NukeMap',
-            'partial': 'index_partials/_tab_nukemap.html',
-        },
-        'viptrack': {
-            'route': '/viptrack-tab',
-            'aliases': [],
-            'title': 'VIPTrack',
-            'partial': 'index_partials/_tab_viptrack.html',
-        },
-        'training-knowledge': {
-            'route': '/training-knowledge',
-            'aliases': ['/training'],
-            'title': 'Training & Knowledge',
-            'partial': 'index_partials/_tab_training_knowledge.html',
-        },
-        'interoperability': {
-            'route': '/interoperability',
-            'aliases': ['/data-exchange'],
-            'title': 'Interoperability',
-            'partial': 'index_partials/_tab_interoperability.html',
-        },
-    }
 
-    workspace_routes = {tab: meta['route'] for tab, meta in workspace_pages.items()}
-
-    _first_run_cache: dict = {'value': False, 'expires': 0.0}
-
-    # V8-10: Short-lived cache for rendered workspace page HTML.
-    # Key: (tab_id, lang, bundle_js, active_media_sub, allow_launch_restore, first_run_complete)
-    # TTL: 5 s — picks up language or first-run state changes quickly while
-    # avoiding redundant Jinja2 renders on rapid tab switches.
-    _page_render_cache: dict = {}
-    _page_render_lock = threading.Lock()
-    _PAGE_CACHE_TTL = 5.0
-
-    def _is_first_run_complete():
-        now = time.monotonic()
-        if now < _first_run_cache['expires']:
-            return _first_run_cache['value']
-        try:
-            with db_session() as db:
-                row = db.execute("SELECT value FROM settings WHERE key = 'first_run_complete'").fetchone()
-        except Exception:
-            row = None
-        value = (row['value'] if row else '') or ''
-        result = str(value).strip().lower() in ('1', 'true', 'yes', 'on')
-        _first_run_cache['value'] = result
-        _first_run_cache['expires'] = now + 10.0
-        return result
-
-    def _render_workspace_page(tab_id, allow_launch_restore=False):
-        meta = workspace_pages[tab_id]
-        manifest = _load_bundle_manifest()
-        first_run_complete = _is_first_run_complete()
-        active_media_sub = None
-        if tab_id == 'media':
-            requested_media_sub = (request.args.get('media') or '').strip().lower()
-            active_media_sub = requested_media_sub if requested_media_sub in {'channels', 'videos', 'audio', 'books', 'torrents'} else 'channels'
-
-        bundle_js = manifest.get('nomad.bundle.js', '')
-        lang = _get_current_language()
-        cache_key = (tab_id, lang, bundle_js, active_media_sub, allow_launch_restore, first_run_complete)
-
-        now = time.monotonic()
-        with _page_render_lock:
-            cached = _page_render_cache.get(cache_key)
-            if cached and now < cached[0]:
-                return cached[1]
-
-        html = render_template(
-            'workspace_page.html',
-            version=VERSION,
-            bundle_js=bundle_js,
-            runtime_js=manifest.get('nomad.runtime.js', ''),
-            bundle_css=manifest.get('nomad.bundle.css', ''),
-            active_tab=tab_id,
-            page_title=meta['title'],
-            workspace_partial=meta['partial'],
-            workspace_routes=workspace_routes,
-            allow_launch_restore=allow_launch_restore,
-            first_run_complete=first_run_complete,
-            wizard_should_launch=(tab_id == 'services' and not first_run_complete),
-            active_media_sub=active_media_sub,
-        )
-
-        with _page_render_lock:
-            # Prune stale entries when cache grows large (>200 keys is abnormal)
-            if len(_page_render_cache) > 200:
-                stale = [k for k, (exp, _) in _page_render_cache.items() if now >= exp]
-                for k in stale:
-                    del _page_render_cache[k]
-            _page_render_cache[cache_key] = (now + _PAGE_CACHE_TTL, html)
-
-        return html
-
-    @app.route('/app-runtime.js')
-    def app_runtime_js():
-        response = Response(
-            render_template('index_partials/_app_inline.js', version=VERSION),
-            mimetype='application/javascript',
-        )
-        response.headers['Cache-Control'] = (
-            'no-cache' if app.config.get('DEBUG') else 'public, max-age=86400'
-        )
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        return response
-
-    @app.route('/')
-    def dashboard():
-        return _render_workspace_page('services', allow_launch_restore=True)
-
-    @app.route('/home')
-    def home_page():
-        return _render_workspace_page('services')
-
-    @app.route('/situation-room')
-    @app.route('/briefing')
-    def situation_room_page():
-        return _render_workspace_page('situation-room')
-
-    @app.route('/readiness')
-    def readiness_page():
-        return _render_workspace_page('readiness')
-
-    @app.route('/preparedness')
-    @app.route('/operations')
-    def preparedness_page():
-        return _render_workspace_page('preparedness')
-
-    @app.route('/maps')
-    def maps_page():
-        return _render_workspace_page('maps')
-
-    @app.route('/tools')
-    def tools_page():
-        return _render_workspace_page('tools')
-
-    @app.route('/loadout')
-    def loadout_page():
-        return _render_workspace_page('loadout')
-
-    @app.route('/library')
-    @app.route('/knowledge')
-    def library_page():
-        return _render_workspace_page('kiwix-library')
-
-    @app.route('/notes')
-    def notes_page():
-        return _render_workspace_page('notes')
-
-    @app.route('/media')
-    def media_page():
-        return _render_workspace_page('media')
-
-    @app.route('/copilot')
-    @app.route('/assistant')
-    def copilot_page():
-        return _render_workspace_page('ai-chat')
-
-    @app.route('/diagnostics')
-    def diagnostics_page():
-        return _render_workspace_page('benchmark')
-
-    @app.route('/settings')
-    @app.route('/system')
-    def settings_page():
-        return _render_workspace_page('settings')
-
-    @app.route('/nukemap-tab')
-    def nukemap_tab_page():
-        return _render_workspace_page('nukemap')
-
-    @app.route('/viptrack-tab')
-    def viptrack_tab_page():
-        return _render_workspace_page('viptrack')
-
-    @app.route('/training-knowledge')
-    @app.route('/training')
-    def training_knowledge_page():
-        return _render_workspace_page('training-knowledge')
-
-    @app.route('/interoperability')
-    @app.route('/data-exchange')
-    def interoperability_page():
-        return _render_workspace_page('interoperability')
 
     # ─── Cross-Module Intelligence (Needs System) ─────────────────────
 
@@ -686,183 +339,9 @@ def create_app():
     from web.blueprints.scheduled_reports import _ensure_scheduler
     _ensure_scheduler()
 
-    # ─── Multi-Node Federation ─────────────────────────────────────────
-
-    import uuid as _uuid
-
-    from web.utils import get_node_id as _get_node_id, get_node_name as _get_node_name
-
-    # Start UDP discovery listener in background
-    def _discovery_listener():
-        import socket
-        discovery_port = Config.DISCOVERY_PORT
-        sock = None
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # Bind to loopback by default — set NOMAD_DISCOVERY_BIND=0.0.0.0
-            # to expose on the LAN for multi-node discovery. Binding to
-            # '0.0.0.0' (all interfaces) without opt-in was surprising for a
-            # desktop app and exposed the discovery listener to the LAN even
-            # when federation was unused.
-            bind_addr = os.environ.get('NOMAD_DISCOVERY_BIND', '127.0.0.1').strip() or '127.0.0.1'
-            sock.bind((bind_addr, discovery_port))
-            sock.settimeout(1)
-            while True:
-                try:
-                    data, addr = sock.recvfrom(1024)
-                except socket.timeout:
-                    continue
-                except OSError:
-                    # Socket closed by shutdown or OS-level error — exit loop
-                    break
-                except Exception as loop_err:
-                    log.debug('Discovery listener recv error: %s', loop_err)
-                    continue
-                try:
-                    msg = _safe_json_value(data, {})
-                    if not isinstance(msg, dict):
-                        continue
-                    if msg.get('type') == 'nomad_discover' and msg.get('node_id') != _get_node_id():
-                        # Respond with our identity
-                        response = json.dumps({
-                            'type': 'nomad_announce', 'node_id': _get_node_id(),
-                            'node_name': _get_node_name(), 'port': Config.APP_PORT, 'version': VERSION,
-                        }).encode()
-                        sock.sendto(response, addr)
-                except Exception as loop_err:
-                    log.debug('Discovery listener handle error: %s', loop_err)
-                    continue
-        except OSError as e:
-            # Port in use or permission denied — log once, don't retry
-            log.warning('Discovery listener not available (port %s in use?): %s', discovery_port, e)
-        except Exception as e:
-            log.warning('Discovery listener failed to start: %s', e)
-        finally:
-            if sock is not None:
-                try:
-                    sock.close()
-                except Exception:
-                    pass
-
-    if not _discovery_listener_started:
-        with _discovery_listener_lock:
-            if not _discovery_listener_started:
-                threading.Thread(target=_discovery_listener, daemon=True).start()
-                _discovery_listener_started = True
-
-    # ─── Scheduled Automatic Backups ──────────────────────────────────
-
-    def _load_auto_backup_config():
-        """Load backup settings, skipping quietly if the configured DB is unavailable."""
-        try:
-            with db_session() as db:
-                row = db.execute("SELECT value FROM settings WHERE key = 'auto_backup_config'").fetchone()
-        except Exception as e:
-            log.debug(f'Auto-backup config unavailable: {e}')
-            return None
-
-        if not row or not row['value']:
-            return None
-
-        try:
-            return _safe_json_value(row['value'], None)
-        except (TypeError, ValueError) as e:
-            log.warning(f'Invalid auto-backup config — skipping schedule: {e}')
-            return None
-
-    def _run_auto_backup():
-        """Execute scheduled auto-backup and reschedule."""
-        import sqlite3 as _sqlite3
-        try:
-            cfg = _load_auto_backup_config()
-            if not cfg or not cfg.get('enabled'):
-                return
-
-            db_path = get_db_path()
-            data_dir = os.path.dirname(db_path)
-            backup_dir = os.path.join(data_dir, 'backups')
-            os.makedirs(backup_dir, exist_ok=True)
-
-            ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-            backup_path = os.path.join(backup_dir, f'nomad_backup_{ts}.db')
-
-            src = _sqlite3.connect(db_path, timeout=30)
-            try:
-                dst = _sqlite3.connect(backup_path)
-                try:
-                    src.backup(dst)
-                finally:
-                    dst.close()
-            finally:
-                src.close()
-
-            if cfg.get('encrypt') and cfg.get('_derived_key'):
-                try:
-                    from cryptography.fernet import Fernet
-                    key = cfg['_derived_key'].encode()
-                    f = Fernet(key)
-                    with open(backup_path, 'rb') as fp:
-                        data = fp.read()
-                    encrypted = f.encrypt(data)
-                    enc_path = backup_path + '.enc'
-                    with open(enc_path, 'wb') as fp:
-                        fp.write(encrypted)
-                    os.remove(backup_path)
-                except ImportError:
-                    log.warning('cryptography package not installed — backup saved unencrypted')
-                except Exception as e:
-                    log.warning(f'Encryption failed — backup saved unencrypted: {e}')
-
-            keep_count = cfg.get('keep_count', 7)
-            _rotate_backups(backup_dir, keep_count)
-            log.info(f'Auto-backup created: {os.path.basename(backup_path)}')
-        except Exception as e:
-            log.error(f'Auto-backup failed: {e}')
-        finally:
-            _schedule_auto_backup()
-
-    def _rotate_backups(backup_dir, keep_count):
-        """Delete oldest backups exceeding keep_count."""
-        try:
-            files = sorted(
-                [f for f in os.listdir(backup_dir) if f.startswith('nomad_backup_')],
-                key=lambda f: os.path.getmtime(os.path.join(backup_dir, f)),
-                reverse=True,
-            )
-            for old_file in files[keep_count:]:
-                try:
-                    os.remove(os.path.join(backup_dir, old_file))
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-    def _schedule_auto_backup():
-        """Schedule the next auto-backup based on settings."""
-        if _auto_backup_timer.get('timer'):
-            _auto_backup_timer['timer'].cancel()
-            _auto_backup_timer['timer'] = None
-        try:
-            cfg = _load_auto_backup_config()
-            if not cfg:
-                return
-            if not cfg.get('enabled'):
-                return
-            interval = cfg.get('interval', 'daily')
-            seconds = 86400 if interval == 'daily' else 604800
-            timer = threading.Timer(seconds, _run_auto_backup)
-            timer.daemon = True
-            timer.start()
-            _auto_backup_timer['timer'] = timer
-        except Exception as e:
-            log.debug(f'Failed to schedule auto-backup: {e}')
-
-    app.config['_schedule_auto_backup'] = _schedule_auto_backup
-    try:
-        _schedule_auto_backup()
-    except Exception:
-        pass
+    # ─── Federation discovery + auto-backup ───────────────────────────
+    start_discovery_listener(app)
+    start_auto_backup(app)
 
     @app.route('/api/planner/calculate', methods=['POST'])
     def api_planner_calculate():
@@ -1260,104 +739,10 @@ def create_app():
 
     register_blueprints(app)
 
+    # ─── Real-time event bus + cleanup loop ───────────────────────────
+    register_sse_routes(app)
+    start_sse_cleanup(app)
 
-    # ─── SSE Real-Time Event Bus ─────────────────────────────────────
-    _sse_connects = {}  # ip -> list of timestamps
-
-    @app.route('/api/events/stream')
-    def event_stream():
-        """SSE endpoint — pushes real-time events to connected clients."""
-        ip = request.remote_addr or 'unknown'
-        now = time.time()
-        if not _is_loopback(ip):
-            with _sse_lock:
-                connects = _sse_connects.get(ip, [])
-                connects = [t for t in connects if now - t < 60]
-                if len(connects) >= 10:
-                    return jsonify({'error': 'rate limited'}), 429
-                connects.append(now)
-                _sse_connects[ip] = connects
-                # Prune IPs with no recent connections to prevent unbounded growth
-                stale_ips = [k for k, v in _sse_connects.items()
-                             if all(now - t > 60 for t in v)]
-                for k in stale_ips:
-                    del _sse_connects[k]
-        q = queue.Queue(maxsize=50)
-        if not sse_register_client(q):
-            return jsonify({'error': 'Too many SSE connections'}), 429
-        def generate():
-            try:
-                # Yield an initial keepalive so clients (and test harnesses)
-                # receive the response headers + first chunk immediately
-                # rather than waiting for the first event/keepalive tick.
-                yield ": connected\n\n"
-                while True:
-                    try:
-                        msg = q.get(timeout=30)
-                        sse_touch_client(q)
-                        yield msg
-                    except queue.Empty:
-                        sse_touch_client(q)
-                        yield ": keepalive\n\n"
-            finally:
-                sse_unregister_client(q)
-        return Response(generate(), mimetype='text/event-stream',
-                        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
-
-    # Background thread: periodically clean up stale SSE clients.
-    # Use Event.wait so the loop can be interrupted during shutdown rather
-    # than sleeping the full interval.
-    _sse_cleanup_stop = threading.Event()
-    app.config['_sse_cleanup_stop'] = _sse_cleanup_stop
-
-    def _sse_stale_cleanup_loop():
-        while not _sse_cleanup_stop.is_set():
-            if _sse_cleanup_stop.wait(timeout=30):
-                return
-            try:
-                sse_cleanup_stale_clients()
-            except Exception as e:
-                log.debug('SSE cleanup error: %s', e)
-    if not _sse_cleanup_started:
-        with _sse_cleanup_lock:
-            if not _sse_cleanup_started:
-                threading.Thread(target=_sse_stale_cleanup_loop, daemon=True).start()
-                _sse_cleanup_started = True
-
-    @app.route('/api/events/test')
-    def event_test():
-        """Broadcast a test event (useful for debugging SSE)."""
-        broadcast_event('alert', {'level': 'info', 'message': 'SSE test event'})
-        return jsonify({'status': 'sent', 'clients': len(_sse_clients)})
-
-    @app.route('/api/i18n/languages')
-    def api_i18n_languages():
-        return jsonify({'languages': SUPPORTED_LANGUAGES})
-
-    @app.route('/api/i18n/translations/<lang>')
-    def api_i18n_translations(lang):
-        if lang not in TRANSLATIONS:
-            return jsonify({'error': f'Language not found: {lang}'}), 404
-        return jsonify({'language': lang, 'translations': TRANSLATIONS[lang]})
-
-    @app.route('/api/i18n/language', methods=['GET'])
-    def api_i18n_get_language():
-        return jsonify({'language': _get_current_language()})
-
-    @app.route('/api/i18n/language', methods=['POST'])
-    def api_i18n_set_language():
-        data, error = _require_json_body(request)
-        if error:
-            return error
-        lang = data.get('language', '').strip()
-        if lang not in SUPPORTED_LANGUAGES:
-            return jsonify({'error': f'Unsupported language: {lang}'}), 400
-        with db_session() as db:
-            db.execute(
-                "INSERT OR REPLACE INTO settings (key, value) VALUES ('language', ?)",
-                (lang,)
-            )
-            db.commit()
-        return jsonify({'status': 'ok', 'language': lang})
+    # i18n routes (/api/i18n/*) live in web/pages.py alongside language state.
 
     return app

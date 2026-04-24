@@ -1212,6 +1212,7 @@ class TestErrorHandler:
         sitroom_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_situation_room.js').read_text(encoding='utf-8')
         ai_text = (REPO_ROOT / 'web' / 'blueprints' / 'ai.py').read_text(encoding='utf-8')
         app_text = (REPO_ROOT / 'web' / 'app.py').read_text(encoding='utf-8')
+        background_text = (REPO_ROOT / 'web' / 'background.py').read_text(encoding='utf-8')
         medical_text = (REPO_ROOT / 'web' / 'blueprints' / 'medical.py').read_text(encoding='utf-8')
         maps_text = (REPO_ROOT / 'web' / 'blueprints' / 'maps.py').read_text(encoding='utf-8')
         security_text = (REPO_ROOT / 'web' / 'blueprints' / 'security.py').read_text(encoding='utf-8')
@@ -1426,7 +1427,9 @@ class TestErrorHandler:
         assert "items = json.dumps(_safe_json_list(data.get('items', []), []))" in checklists_text
         assert "update_data['items'] = json.dumps(_safe_json_list(data['items'], []))" in checklists_text
         assert "items = _safe_json_list(data.get('items', []), [])" in checklists_text
-        assert "msg = _safe_json_value(data, {})" in app_text
+        # Discovery listener (and its _safe_json_value usage) was extracted to
+        # web/background.py in v7.65.0 (H-14). Pin the new location.
+        assert "msg = _safe_json_value(data, {})" in background_text
         assert "data, error = _require_json_body(request)" in app_text
         assert "items = _safe_json_list(cl['items'], [])" in app_text
 

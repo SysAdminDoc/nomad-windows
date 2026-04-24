@@ -4,6 +4,22 @@ All notable changes to project-nomad-desktop will be documented in this file.
 
 ## [Unreleased]
 
+### `_broadcast` SSE silent-failure fix + regression suite (factory-loop iter 3, 2026-04-24)
+
+Fixes a long-standing latent bug in `web/blueprints/emergency.py::_broadcast` and `web/blueprints/family.py::_broadcast`. Both modules previously did:
+
+```python
+from web.app import _broadcast_event
+_broadcast_event(event_type, payload)
+```
+
+`_broadcast_event` was never exported from `web.app` — the canonical SSE publisher is `web.state.broadcast_event` (no leading underscore). A broad `except Exception` in each helper silently swallowed the `ImportError` on every call, so **Emergency-mode state changes and Family check-in updates never reached any connected client**. The fix imports the real symbol directly. Behavior surface this unblocks: live sync of emergency activation/deactivation, bug-out decisions, casualty updates, family-member status changes, and contact-attempt logs across every open tab without the user refreshing.
+
+- `web/blueprints/emergency.py`, `web/blueprints/family.py` — import switched to `from web.state import broadcast_event`; in-source comment documents the prior silent break so the next reviewer doesn't revert it.
+- `tests/test_broadcast_regressions.py` (NEW, 4 tests) — registers an SSE queue via `_sse_clients`, triggers `emergency._broadcast` and `family._broadcast`, and asserts the message actually lands on the queue. Also pins: event-type control-char injection is sanitized (no `\nX-Smuggle:` header-split), and neither module's source reintroduces the dead `from web.app import _broadcast_event` line.
+
+H-17 (V8-04 remaining 8 tab templates to `safeSetHTML(el, html\`\`)`) remains open and tracked for a dedicated future iteration — these are consistency/discoverability wins, not security fixes (each tab's existing `esc()` helper already blocks the XSS surface), and the migration is large enough to merit its own focused pass.
+
 ### H-09 / V8-11 — Lazy blueprint registration for cold blueprints (factory-loop iter 2, 2026-04-24)
 
 Long-open architecture item. Two blueprints (`platform_security` at ~21 ms and `hunting_foraging` at ~14 ms per `python -X importtime`) dominate boot but neither is on the dashboard landing path. They are now lazy-loaded on the first request to their URL prefix, shaving a measured **~40 ms (8%)** off `create_app()` — median boot drops from ~514 ms to ~474 ms across three subprocess samples.

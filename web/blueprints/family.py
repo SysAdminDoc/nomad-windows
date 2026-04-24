@@ -31,8 +31,13 @@ _VALID_STATUS = ('ok', 'needs_help', 'en_route', 'unaccounted')
 
 def _broadcast(event_type, payload):
     try:
-        from web.app import _broadcast_event
-        _broadcast_event(event_type, payload)
+        # web.state.broadcast_event is the canonical SSE publisher. The prior
+        # import (`from web.app import _broadcast_event`) referenced a name
+        # that was never exported; the except Exception below was silently
+        # hiding the ImportError, so Family check-in broadcasts never reached
+        # any client. Fixed by importing the real symbol directly.
+        from web.state import broadcast_event
+        broadcast_event(event_type, payload)
     except Exception as e:
         log.debug('SSE broadcast failed (%s): %s', event_type, e)
 

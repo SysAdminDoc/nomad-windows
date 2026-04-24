@@ -112,8 +112,14 @@ def _duration_hours(started_iso):
 def _broadcast(event_type, payload):
     """Fire an SSE event so every open tab syncs without polling."""
     try:
-        from web.app import _broadcast_event  # circular-safe: only imported at call-time
-        _broadcast_event(event_type, payload)
+        # web.state.broadcast_event is the canonical SSE publisher. An earlier
+        # import path (`from web.app import _broadcast_event`) referenced a
+        # name that was never exported — the try/except below was silently
+        # swallowing the ImportError on every call, so Emergency-mode
+        # broadcasts never reached any client. Fixed by importing the real
+        # symbol directly.
+        from web.state import broadcast_event
+        broadcast_event(event_type, payload)
     except Exception:
         # SSE is a nice-to-have; never let a broadcast error block state change
         pass

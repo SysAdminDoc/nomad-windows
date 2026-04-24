@@ -316,37 +316,38 @@
     ['la-assess-prop','la-feat-prop','la-dp-prop'].forEach(id=>{
       const el=$(id);if(!el)return;
       const cur=String(el.value||'');
-      el.innerHTML='<option value="">-- Select Property --</option>'+
-        _props.map(p=>`<option value="${Number(p.id)||0}"${String(p.id)===cur?' selected':''}>${esc(p.name||`Property ${p.id}`)}</option>`).join('');
+      const opts = _props.map(p => html`<option value="${Number(p.id)||0}"${trustedHTML(String(p.id)===cur?' selected':'')}>${p.name||`Property ${p.id}`}</option>`);
+      safeSetHTML(el, '<option value="">-- Select Property --</option>' + opts.join(''));
     });
   }
 
   /* ── Properties ── */
   window.laLoadProperties=function(){
     const el=$('la-prop-list');
-    el.innerHTML=laEmpty('Loading properties…', 'Gathering saved sites, status, acreage, and current score signals.');
+    safeSetHTML(el, laEmpty('Loading properties…', 'Gathering saved sites, status, acreage, and current score signals.'));
     api('/api/properties').then(items=>{
       _props=Array.isArray(items)?items:[];fillPropSelects();
-      if(!_props.length){el.innerHTML=laEmpty('No properties saved', 'Add the first candidate site above to compare acreage, distance, and readiness.');return;}
-      el.innerHTML=_props.map(p=>{
+      if(!_props.length){safeSetHTML(el, laEmpty('No properties saved', 'Add the first candidate site above to compare acreage, distance, and readiness.'));return;}
+      const rows=_props.map(p=>{
         const status=laLabel(p.status);
         const propertyType=laLabel(p.property_type);
         const acreage=`${laNumber(p.acreage)} ac`;
         const distance=Number(p.distance_from_home);
         const distanceText=Number.isFinite(distance)&&distance>0?`${laNumber(distance)} mi from home`:'Distance not set';
-        const stateText=p.state?esc(p.state):'State not set';
-        const scoreMarkup=p.total_score!=null?`<span class="la-score la-tone-driven" style="--la-tone:${scoreColor(Number(p.total_score)||0)}">Score ${laNumber(p.total_score)}</span>`:'';
-        return `<div class="la-list-item">
+        const stateText=p.state||'State not set';
+        const scoreMarkup=p.total_score!=null?html`<span class="la-score la-tone-driven" style="--la-tone:${scoreColor(Number(p.total_score)||0)}">Score ${laNumber(p.total_score)}</span>`:'';
+        return html`<div class="la-list-item">
           <div class="la-list-copy">
-            <div><strong>${esc(p.name||`Property ${p.id}`)}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${statusColor[p.status]||'#aaa'}">${esc(status)}</span></div>
-            <small class="tone-muted">${esc(propertyType)} · ${acreage} · ${stateText} · ${distanceText}</small>
-            ${scoreMarkup}
+            <div><strong>${p.name||`Property ${p.id}`}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${statusColor[p.status]||'#aaa'}">${status}</span></div>
+            <small class="tone-muted">${propertyType} · ${acreage} · ${stateText} · ${distanceText}</small>
+            ${trustedHTML(scoreMarkup)}
           </div>
-          <div class="la-row-actions">${laDeleteButton(`laDeleteProperty(${Number(p.id)||0})`, 'Delete property')}</div>
+          <div class="la-row-actions">${trustedHTML(laDeleteButton(`laDeleteProperty(${Number(p.id)||0})`, 'Delete property'))}</div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(el, rows.join(''));
     }).catch(()=>{
-      el.innerHTML=laEmpty('Properties unavailable', 'The property list could not be refreshed right now. Try again in a moment.');
+      safeSetHTML(el, laEmpty('Properties unavailable', 'The property list could not be refreshed right now. Try again in a moment.'));
     });
   };
   window.laCreateProperty=function(){
@@ -368,19 +369,20 @@
   window.laLoadAssessments=function(){
     const pid=val('la-assess-prop');
     const el=$('la-assess-list');
-    if(!pid){el.innerHTML=laEmpty('Select a property', 'Pick a saved site to review scoring criteria and weight the tradeoffs.');$('la-score-display').style.display='none';return;}
-    el.innerHTML=laEmpty('Loading assessments…', 'Bringing in the criteria that shape this property score.');
+    if(!pid){safeSetHTML(el, laEmpty('Select a property', 'Pick a saved site to review scoring criteria and weight the tradeoffs.'));$('la-score-display').style.display='none';return;}
+    safeSetHTML(el, laEmpty('Loading assessments…', 'Bringing in the criteria that shape this property score.'));
     api('/api/properties/'+pid+'/assessments').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=laEmpty('No criteria yet', 'Seed the core criteria to start scoring access, water, terrain, and resilience tradeoffs.');return;}
-      el.innerHTML=rows.map(a=>`<div class="la-slider-row" data-assess-id="${Number(a.id)||0}">
-        <span class="crit-name">${esc(a.criterion_name||'Criterion')}</span>
+      if(!rows.length){safeSetHTML(el, laEmpty('No criteria yet', 'Seed the core criteria to start scoring access, water, terrain, and resilience tradeoffs.'));return;}
+      const built=rows.map(a=>html`<div class="la-slider-row" data-assess-id="${Number(a.id)||0}">
+        <span class="crit-name">${a.criterion_name||'Criterion'}</span>
         <span class="crit-weight">wt: ${laNumber(a.weight)}</span>
-        <input type="range" min="1" max="10" value="${Number(a.score)||1}" name="la-criterion-score" aria-label="${esc((a.criterion_name||'Criterion') + ' score')}" oninput="this.nextElementSibling.textContent=this.value" onchange="laUpdateScore(${Number(a.id)||0},this.value)">
+        <input type="range" min="1" max="10" value="${Number(a.score)||1}" name="la-criterion-score" aria-label="${(a.criterion_name||'Criterion') + ' score'}" oninput="this.nextElementSibling.textContent=this.value" onchange="laUpdateScore(${Number(a.id)||0},this.value)">
         <span class="crit-val">${laNumber(a.score)}</span>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(el, built.join(''));
     }).catch(()=>{
-      el.innerHTML=laEmpty('Assessments unavailable', 'Criteria could not be loaded right now. Refresh the workspace and try again.');
+      safeSetHTML(el, laEmpty('Assessments unavailable', 'Criteria could not be loaded right now. Refresh the workspace and try again.'));
     });
   };
   window.laUpdateScore=function(assessId,score){
@@ -395,8 +397,13 @@
     const pid=val('la-assess-prop');if(!pid)return;
     api('/api/properties/'+pid+'/score',{method:'POST'}).then(r=>{
       const el=$('la-score-display');el.style.display='block';
-      el.innerHTML=`<span class="val">${laNumber(r.total_score)}</span> overall score` +
-        (r.category_scores?'<br><small>'+Object.entries(r.category_scores).map(([k,v])=>`${esc(laLabel(k))}: ${laNumber(v)}`).join(' · ')+'</small>':'');
+      const headLine = html`<span class="val">${laNumber(r.total_score)}</span> overall score`;
+      let detail = '';
+      if(r.category_scores){
+        const catParts = Object.entries(r.category_scores).map(([k,v])=>html`${laLabel(k)}: ${laNumber(v)}`);
+        detail = '<br><small>' + catParts.join(' · ') + '</small>';
+      }
+      safeSetHTML(el, headLine + detail);
       laLoadProperties();
     });
   };
@@ -407,21 +414,22 @@
   window.laLoadFeatures=function(){
     const pid=val('la-feat-prop');
     const el=$('la-feat-list');
-    if(!pid){el.innerHTML=laEmpty('Select a property', 'Choose a site to review water, access, structures, and other logged assets.');return;}
-    el.innerHTML=laEmpty('Loading features…', 'Pulling the on-site assets and infrastructure notes for this property.');
+    if(!pid){safeSetHTML(el, laEmpty('Select a property', 'Choose a site to review water, access, structures, and other logged assets.'));return;}
+    safeSetHTML(el, laEmpty('Loading features…', 'Pulling the on-site assets and infrastructure notes for this property.'));
     api('/api/properties/'+pid+'/features').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=laEmpty('No features logged', 'Track wells, structures, roads, gardens, and power assets to understand what is already in place.');return;}
+      if(!rows.length){safeSetHTML(el, laEmpty('No features logged', 'Track wells, structures, roads, gardens, and power assets to understand what is already in place.'));return;}
       const condColor={good:'#22c55e',fair:'#f59e0b',poor:'#f97316',needs_repair:'#ef4444',non_functional:'#ef4444'};
-      el.innerHTML=rows.map(f=>`<div class="la-list-item">
+      const built=rows.map(f=>html`<div class="la-list-item">
         <div class="la-list-copy">
-          <div><strong>${esc(f.name||'Feature')}</strong> <span class="la-badge" style="color:${condColor[f.condition]||'#aaa'};margin-left:6px">${esc(laLabel(f.condition))}</span></div>
-          <small class="tone-muted">${esc(laLabel(f.feature_type))}${Number(f.value_estimate)>0?' · '+laMoney(f.value_estimate):''}</small>
+          <div><strong>${f.name||'Feature'}</strong> <span class="la-badge" style="color:${condColor[f.condition]||'#aaa'};margin-left:6px">${laLabel(f.condition)}</span></div>
+          <small class="tone-muted">${laLabel(f.feature_type)}${Number(f.value_estimate)>0?' · '+laMoney(f.value_estimate):''}</small>
         </div>
-        <div class="la-row-actions">${laDeleteButton(`laDeleteFeature(${Number(f.id)||0})`, 'Delete feature')}</div>
-      </div>`).join('');
+        <div class="la-row-actions">${trustedHTML(laDeleteButton(`laDeleteFeature(${Number(f.id)||0})`, 'Delete feature'))}</div>
+      </div>`);
+      safeSetHTML(el, built.join(''));
     }).catch(()=>{
-      el.innerHTML=laEmpty('Features unavailable', 'Feature inventory could not be loaded right now. Try again in a moment.');
+      safeSetHTML(el, laEmpty('Features unavailable', 'Feature inventory could not be loaded right now. Try again in a moment.'));
     });
   };
   window.laCreateFeature=function(){
@@ -442,20 +450,21 @@
   window.laLoadDevPlans=function(){
     const pid=val('la-dp-prop');
     const el=$('la-dp-list');
-    if(!pid){el.innerHTML=laEmpty('Select a property', 'Use development plans to track what the site still needs before it is ready.');return;}
-    el.innerHTML=laEmpty('Loading plans…', 'Bringing in infrastructure, water, power, and security work still on the board.');
+    if(!pid){safeSetHTML(el, laEmpty('Select a property', 'Use development plans to track what the site still needs before it is ready.'));return;}
+    safeSetHTML(el, laEmpty('Loading plans…', 'Bringing in infrastructure, water, power, and security work still on the board.'));
     api('/api/properties/'+pid+'/dev-plans').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=laEmpty('No development plans yet', 'Add the first improvement plan to track budget, priority, and readiness work for this site.');return;}
-      el.innerHTML=rows.map(d=>`<div class="la-list-item">
+      if(!rows.length){safeSetHTML(el, laEmpty('No development plans yet', 'Add the first improvement plan to track budget, priority, and readiness work for this site.'));return;}
+      const built=rows.map(d=>html`<div class="la-list-item">
         <div class="la-list-copy">
-          <div><strong>${esc(d.name||'Development plan')}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${prioColor[d.priority]||'#aaa'}">${esc(laLabel(d.priority))}</span></div>
-          <small class="tone-muted">${esc(laLabel(d.category))} · ${laMoney(d.estimated_cost)} · ${esc(laLabel(d.status))}</small>
+          <div><strong>${d.name||'Development plan'}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${prioColor[d.priority]||'#aaa'}">${laLabel(d.priority)}</span></div>
+          <small class="tone-muted">${laLabel(d.category)} · ${laMoney(d.estimated_cost)} · ${laLabel(d.status)}</small>
         </div>
-        <div class="la-row-actions">${laDeleteButton(`laDeleteDevPlan(${Number(d.id)||0})`, 'Delete development plan')}</div>
-      </div>`).join('');
+        <div class="la-row-actions">${trustedHTML(laDeleteButton(`laDeleteDevPlan(${Number(d.id)||0})`, 'Delete development plan'))}</div>
+      </div>`);
+      safeSetHTML(el, built.join(''));
     }).catch(()=>{
-      el.innerHTML=laEmpty('Development plans unavailable', 'The plan list could not be refreshed right now. Try again in a moment.');
+      safeSetHTML(el, laEmpty('Development plans unavailable', 'The plan list could not be refreshed right now. Try again in a moment.'));
     });
   };
   window.laCreateDevPlan=function(){
@@ -473,26 +482,30 @@
   /* ── Compare ── */
   window.laLoadCompare=function(){
     const el=$('la-compare-list');
-    el.innerHTML=laEmpty('Loading comparison…', 'Ranking saved properties by score, features, and development cost.', 'la-grid-full');
+    safeSetHTML(el, laEmpty('Loading comparison…', 'Ranking saved properties by score, features, and development cost.', 'la-grid-full'));
     api('/api/properties/compare').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=laEmpty('No properties to compare', 'Add at least two saved properties so the comparison view can rank tradeoffs side by side.', 'la-grid-full');return;}
+      if(!rows.length){safeSetHTML(el, laEmpty('No properties to compare', 'Add at least two saved properties so the comparison view can rank tradeoffs side by side.', 'la-grid-full'));return;}
       rows.sort((a,b)=>(b.total_score||0)-(a.total_score||0));
-      el.innerHTML=rows.map((p,i)=>{
+      const built=rows.map((p,i)=>{
         let cats='';
-        if(p.category_scores){cats=Object.entries(p.category_scores).map(([k,v])=>`<div class="cat-row"><span class="cat-label">${esc(laLabel(k))}</span><span class="cat-val">${laNumber(v)}</span></div>`).join('');}
-        return `<div class="la-compare-card">
+        if(p.category_scores){
+          const catParts=Object.entries(p.category_scores).map(([k,v])=>html`<div class="cat-row"><span class="cat-label">${laLabel(k)}</span><span class="cat-val">${laNumber(v)}</span></div>`);
+          cats=catParts.join('');
+        }
+        return html`<div class="la-compare-card">
           <div class="rank">#${i+1}</div>
-          <div class="prop-name">${esc(p.name||('Property '+p.id))}</div>
+          <div class="prop-name">${p.name||('Property '+p.id)}</div>
           <div class="cat-row"><span class="cat-label">Total Score</span><span class="cat-val la-tone-driven" style="--la-tone:${scoreColor(p.total_score||0)}">${p.total_score!=null?laNumber(p.total_score):'--'}</span></div>
-          ${cats}
+          ${trustedHTML(cats)}
           <div class="cat-row"><span class="cat-label">Features</span><span class="cat-val">${laNumber(p.features_count)}</span></div>
           <div class="cat-row"><span class="cat-label">Dev Plans</span><span class="cat-val">${laNumber(p.plans_count)}</span></div>
           <div class="cat-row"><span class="cat-label">Total Dev Cost</span><span class="cat-val">${laMoney(p.total_dev_cost)}</span></div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(el, built.join(''));
     }).catch(()=>{
-      el.innerHTML=laEmpty('Comparison unavailable', 'The ranking view could not be refreshed right now. Try again in a moment.', 'la-grid-full');
+      safeSetHTML(el, laEmpty('Comparison unavailable', 'The ranking view could not be refreshed right now. Try again in a moment.', 'la-grid-full'));
     });
   };
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { escapeHtml, formatBytes, timeAgo, parseInventoryCommand, parseSearchBang } from './utils.js';
+import { escapeHtml, formatBytes, timeAgo, parseInventoryCommand, parseSearchBang, html, trustedHTML, safeSetHTML } from './utils.js';
 
 // ─── escapeHtml ────────────────────────────────────────────────────────────────
 
@@ -234,5 +234,125 @@ describe('parseSearchBang', () => {
   it('does not match bang without trailing space', () => {
     // '/i' without a space after it is not a valid bang
     expect(parseSearchBang('/irice')).toBeNull();
+  });
+});
+
+// ─── html`` tagged template (V8-04) ───────────────────────────────────────────
+
+describe('html`` tagged template', () => {
+  it('passes literal chunks through unchanged', () => {
+    expect(html`<p>hello</p>`).toBe('<p>hello</p>');
+  });
+
+  it('auto-escapes a single interpolation', () => {
+    const name = '<script>alert(1)</script>';
+    const out = html`<div>${name}</div>`;
+    expect(out).not.toContain('<script>');
+    expect(out).toContain('&lt;script&gt;');
+  });
+
+  it('escapes every interpolation independently', () => {
+    const a = '<b>';
+    const b = '"quoted"';
+    const out = html`<span>${a}--${b}</span>`;
+    expect(out).toBe('<span>&lt;b&gt;--"quoted"</span>');
+  });
+
+  it('coerces null and undefined to empty string', () => {
+    expect(html`<p>${null}</p>`).toBe('<p></p>');
+    expect(html`<p>${undefined}</p>`).toBe('<p></p>');
+  });
+
+  it('coerces numbers to escaped strings', () => {
+    expect(html`<p>${42}</p>`).toBe('<p>42</p>');
+  });
+
+  it('opts out of escaping only for trustedHTML() wrapper', () => {
+    const row = '<tr><td>already escaped</td></tr>';
+    const out = html`<table>${trustedHTML(row)}</table>`;
+    expect(out).toBe('<table><tr><td>already escaped</td></tr></table>');
+  });
+
+  it('does NOT treat a plain object with value field as trusted', () => {
+    const spoof = { value: '<script>', __nomadTrustedHTML__: false };
+    const out = html`<p>${spoof}</p>`;
+    // Object falls through to escapeHtml() which text-content-coerces it
+    // to "[object Object]"; the invariant is that the raw <script> in
+    // spoof.value never reaches the output unescaped.
+    expect(out).not.toContain('<script>');
+    expect(out).not.toContain(spoof.value);
+  });
+
+  it('resists prototype-pollution — own-property check beats Object.prototype', () => {
+    // If an attacker (or a buggy plugin) monkey-patched Object.prototype,
+    // every plain object {…} would otherwise inherit __nomadTrustedHTML__
+    // and short-circuit into the unsafe "trusted" branch. The own-property
+    // guard (Object.prototype.hasOwnProperty.call(v, '__nomadTrustedHTML__'))
+    // must reject an inherited flag even when it's truthy.
+    const polluted = {};
+    Object.defineProperty(Object.prototype, '__nomadTrustedHTML__', {
+      value: true, configurable: true, enumerable: false, writable: true,
+    });
+    try {
+      const out = html`<p>${polluted}</p>`;
+      // Plain {} should still go through escapeHtml → "[object Object]",
+      // NOT be treated as trusted with a {} .value lookup (undefined).
+      expect(out).toBe('<p>[object Object]</p>');
+    } finally {
+      delete Object.prototype.__nomadTrustedHTML__;
+    }
+  });
+
+  it('blocks XSS via onerror-bearing img tag', () => {
+    const evil = '<img src=x onerror=alert(1)>';
+    const out = html`<div>${evil}</div>`;
+    expect(out).not.toContain('<img');
+    expect(out).toContain('&lt;img');
+  });
+});
+
+// ─── trustedHTML ─────────────────────────────────────────────────────────────
+
+describe('trustedHTML', () => {
+  it('sets the brand so html`` opts out of escaping', () => {
+    const t = trustedHTML('<b>raw</b>');
+    expect(t.__nomadTrustedHTML__).toBe(true);
+    expect(t.value).toBe('<b>raw</b>');
+  });
+
+  it('coerces null to empty string without throwing', () => {
+    expect(trustedHTML(null).value).toBe('');
+    expect(trustedHTML(undefined).value).toBe('');
+  });
+});
+
+// ─── safeSetHTML ─────────────────────────────────────────────────────────────
+
+describe('safeSetHTML', () => {
+  it('sets innerHTML on a real element', () => {
+    const el = document.createElement('div');
+    safeSetHTML(el, '<span>ok</span>');
+    expect(el.innerHTML).toBe('<span>ok</span>');
+  });
+
+  it('is a no-op when el is null', () => {
+    // Must not throw.
+    expect(() => safeSetHTML(null, '<p>x</p>')).not.toThrow();
+  });
+
+  it('coerces null string input to empty', () => {
+    const el = document.createElement('div');
+    el.innerHTML = 'previous';
+    safeSetHTML(el, null);
+    expect(el.innerHTML).toBe('');
+  });
+
+  it('composes cleanly with html`` for the full XSS-safe sink pattern', () => {
+    const el = document.createElement('div');
+    const evil = '<img src=x onerror=alert(1)>';
+    safeSetHTML(el, html`<p>${evil}</p>`);
+    // Not rendered as a real <img> node — escaped into text.
+    expect(el.querySelector('img')).toBeNull();
+    expect(el.textContent).toContain('<img');
   });
 });

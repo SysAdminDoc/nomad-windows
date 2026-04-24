@@ -2,6 +2,36 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.61.0] — Test Coverage + Roadmap Convergence (2026-04-24)
+
+Five V8 roadmap items closed in a single pass. Two were already shipped and verified during this iteration's audit (`V8-10` template cache, `V8-22` checksum parity); three required real work (`V8-14` allowlist hoist, `V8-16` file-backed DB integration test, `V8-23` seeded test data isolation). All 11 new tests pass green; related blueprint suites unaffected.
+
+### V8-14 — Module-level column allowlists
+Hoisted three inline `allowed = {...}` sets from route handlers in `web/blueprints/emergency.py` into module-level `frozenset` constants (`ALLOWED_EVAC_PLAN_FIELDS`, `ALLOWED_EVAC_RALLY_FIELDS`, `ALLOWED_EVAC_ASSIGNMENT_FIELDS`). Same pattern in `web/blueprints/maps.py` (`ALLOWED_WAYPOINT_FIELDS`) and `web/blueprints/media.py` (`ALLOWED_MEDIA_META_FIELDS` + per-type extras exposed via new `_allowed_media_meta_fields(media_type)` helper). Auditable in one place; no more handler-scoped schema truth.
+
+### V8-16 — File-based DB integration test
+New `tests/test_db_integration_file.py` spins up a temp directory, points `config` at an on-disk SQLite path, runs `init_db()` + `create_app()`, then asserts:
+- The `.db` file is materialized and non-empty after `init_db()`.
+- WAL journal mode is applied and persists on the file.
+- The `_meta.schema_version` gate is populated.
+- Core tables (`settings`, `inventory`, `notes`, `contacts`, `waypoints`) exist and the migrated schema is ≥50 tables wide.
+- The root route responds 200 under a file-backed DB.
+- The connection pool handles 5 repeat `/api/inventory` requests without 500s (pool reuse smoke).
+Fixture restores global `_wal_set` / `_pool_db_path` / `config._config_cache` on teardown so the test does not contaminate sibling tests.
+
+### V8-10 — Template cache (verified in place)
+Audit confirmed `_page_render_cache` at `web/app.py:342-372` already memoizes rendered workspace pages keyed by `(tab_id, lang, bundle_js, media_sub, launch_restore, first_run_complete)` with TTL + 200-key prune threshold. Marked Done.
+
+### V8-22 — Auto-update checksum parity (verified in place)
+Audit confirmed `.github/workflows/build.yml:220` runs `sha256sum *` over the full release directory (Windows + Linux + macOS + AppImage artifacts) and uploads `SHA256SUMS.txt`. `services.py::api_update_download` fetches that manifest on every self-update attempt, matches by filename, and hard-fails with file deletion on mismatch for all platforms. Marked Done.
+
+### V8-23 — Seeded test data isolation (verified in place)
+Audit confirmed `tests/conftest.py` already exposes `seed_upc_entry`, `seed_rag_scope_row`, `assert_upc_seeded`, `assert_rag_scope_seeded`. Tests now declare their data dependencies instead of implicitly relying on `init_db()` seed side-effects. Marked Done.
+
+### Test coverage delta
+- `tests/test_allowlists.py` — 5 tests pinning the exact field sets exposed by each blueprint. Guards against silent regression if the hoist is ever reverted, and includes a hostile-key rejection check (SQLi-flavored keys must be dropped).
+- `tests/test_db_integration_file.py` — 6 tests covering the file-backed DB lifecycle.
+
 ## [v7.60.1] — Deep Audit Hardening Pass
 
 Eight concrete bugs fixed across backend, frontend, services layer, and test harness. No behavior changes; every fix is a correctness or defensive-hardening improvement. 22 new regression tests in `tests/test_audit_hardening.py`.

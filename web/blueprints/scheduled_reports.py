@@ -314,7 +314,20 @@ RULES:
         except Exception:
             _log.warning('Failed to save failure record for SITREP generation', exc_info=True)
         return None
-    """Build context sections for SITREP — mirrors ai.py logic."""
+
+
+def _build_sitrep_context(db):
+    """Build context sections for SITREP — mirrors ai.py logic.
+
+    NOTE (v7.65.1+): this function existed as orphan dead code inside
+    `_generate_sitrep` after `return None` for an unknown number of
+    versions. The `def` line had been lost, leaving the body unreachable
+    at indent=4 of the parent function, while line 239's call site
+    NameError'd into the broad `except Exception:` and returned None.
+    Net effect: every manual + scheduled SITREP returned 503 'AI service
+    may not be running' regardless of ollama state. Restored as a
+    proper module-level def. Surfaced by V8-06 test authoring.
+    """
     parts = []
 
     # Activity log (24h)

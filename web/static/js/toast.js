@@ -9,6 +9,19 @@ let _toastStack = [];
 const _toastIcons = {success:'&#10003;', error:'&#10007;', warning:'&#9888;', info:'&#8505;'};
 const _toastTitles = {success:'Saved', error:'Action needed', warning:'Heads up', info:'Notice'};
 
+function _ensureToastContainer() {
+  let container = document.getElementById('toast-container');
+  if (container) return container;
+  container = document.createElement('div');
+  container.id = 'toast-container';
+  container.setAttribute('role', 'region');
+  container.setAttribute('aria-label', 'Notifications');
+  container.setAttribute('aria-live', 'polite');
+  container.setAttribute('aria-atomic', 'false');
+  document.body.appendChild(container);
+  return container;
+}
+
 function _removeToast(el) {
   if (!el || el.dataset.dismissed === 'true') return;
   el.dataset.dismissed = 'true';
@@ -16,11 +29,11 @@ function _removeToast(el) {
   setTimeout(() => {
     el.remove();
     _toastStack = _toastStack.filter(t => t !== el);
-    _toastStack.forEach((t, i) => { t.style.bottom = (20 + i * 68) + 'px'; });
   }, 250);
 }
 
 function toast(msg, type='info', action=null) {
+  const container = _ensureToastContainer();
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
   el.setAttribute('role', type === 'error' ? 'alert' : 'status');
@@ -39,13 +52,12 @@ function toast(msg, type='info', action=null) {
     const btn = el.querySelector('.toast-action-btn');
     if (btn) btn.addEventListener('click', () => { action.onclick(); _removeToast(el); });
   }
-  document.body.appendChild(el);
+  container.appendChild(el);
   if (_toastStack.length >= 5) {
     const oldest = _toastStack.shift();
     oldest.remove();
   }
   _toastStack.push(el);
-  _toastStack.forEach((t, i) => { t.style.bottom = (20 + i * 68) + 'px'; });
   const closeBtn = el.querySelector('.toast-close');
   if (closeBtn) closeBtn.addEventListener('click', () => _removeToast(el));
   requestAnimationFrame(() => el.classList.add('show'));

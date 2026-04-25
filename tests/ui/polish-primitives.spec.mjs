@@ -104,6 +104,36 @@ test('promptFields supports defaults, selects, and multiline input without nativ
   });
 });
 
+test('toast stack uses a managed container for long notifications', async ({ page }) => {
+  await boot(page);
+  const probe = await page.evaluate(async () => {
+    window.toast('First notification with enough detail to wrap onto multiple lines in the toast surface.', 'info');
+    window.toast('Second notification also wraps, which previously risked a fixed-offset overlap.', 'warning');
+    window.toast('Third notification confirms the stack is driven by layout rather than pixel math.', 'success');
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const container = document.getElementById('toast-container');
+    const toasts = Array.from(container?.querySelectorAll('.toast') || []);
+    const rects = toasts.map(toast => toast.getBoundingClientRect());
+    const overlaps = rects.some((rect, index) => {
+      if (index === 0) return false;
+      return rect.top < rects[index - 1].bottom;
+    });
+    return {
+      containerRole: container?.getAttribute('role'),
+      containerLabel: container?.getAttribute('aria-label'),
+      count: toasts.length,
+      position: toasts[0] ? getComputedStyle(toasts[0]).position : '',
+      overlaps,
+    };
+  });
+
+  expect(probe.containerRole).toBe('region');
+  expect(probe.containerLabel).toBe('Notifications');
+  expect(probe.count).toBe(3);
+  expect(probe.position).not.toBe('fixed');
+  expect(probe.overlaps).toBe(false);
+});
+
 test('aria-busy on a button hides the label and renders a spinner pseudo', async ({ page }) => {
   await boot(page);
   const probe = await page.evaluate(() => {

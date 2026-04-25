@@ -425,7 +425,8 @@
   const api = (url, opts) => fetch(url, opts).then(r => r.json());
   const toast = msg => { if (window.showToast) window.showToast(msg); };
   const API = '/api/agriculture';
-  // XSS guard: every user-sourced string rendered via innerHTML goes through esc().
+  // XSS guard: html`` tagged template escapes all interpolations by default.
+  // `esc()` retained for raw-string helpers (agEmpty, dueTag) that still build strings.
   const esc = s => (window.escapeHtml ? window.escapeHtml(s) : String(s==null?'':s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
@@ -490,25 +491,29 @@
   function fillGuildSelect() {
     const s = el('ag-layer-guild'); if (!s) return;
     const cur = s.value;
-    s.innerHTML = '<option value="">-- Select Guild --</option>' +
-      _guilds.map(g => `<option value="${+g.id||0}"${g.id == cur ? ' selected' : ''}>${esc(g.name)}</option>`).join('');
+    const opts = _guilds.map(g => html`<option value="${+g.id||0}"${trustedHTML(g.id == cur ? ' selected' : '')}>${g.name}</option>`).join('');
+    safeSetHTML(s, '<option value="">-- Select Guild --</option>' + opts);
   }
 
   window.agLoadGuilds = function() {
     api(API + '/food-forest/guilds').then(items => {
       _guilds = items; fillGuildSelect();
       const box = el('ag-guild-list');
-      if (!items.length) { box.innerHTML = agEmpty('No Guilds Yet', 'Start with the first planting guild above to anchor the layout and companion plan.'); return; }
-      box.innerHTML = items.map(g => `<div class="ag-list-item">
-        <div><strong>${esc(g.name)}</strong> <small class="tone-muted">Central: ${esc(g.central_species || '--')} | Zone ${esc(g.zone || '--')}</small>
-          ${g.notes ? `<br><small class="tone-muted">${esc(g.notes)}</small>` : ''}
-          <div class="ag-row-spaced-xs">${(g.layers || []).map(l => `<span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}: ${esc(l.species)}</span>`).join('')}</div>
+      if (!items.length) { safeSetHTML(box, agEmpty('No Guilds Yet', 'Start with the first planting guild above to anchor the layout and companion plan.')); return; }
+      const rows = items.map(g => {
+        const chips = (g.layers || []).map(l => html`<span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${l.layer_type}: ${l.species}</span>`).join('');
+        return html`<div class="ag-list-item">
+        <div><strong>${g.name}</strong> <small class="tone-muted">Central: ${g.central_species || '--'} | Zone ${g.zone || '--'}</small>
+          ${g.notes ? html`<br><small class="tone-muted">${g.notes}</small>` : ''}
+          <div class="ag-row-spaced-xs">${trustedHTML(chips)}</div>
         </div>
         <div class="ag-action-cluster">
           <button class="ag-btn ag-btn-secondary" onclick="agSelectGuild(${+g.id||0})">Layers</button>
           <button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteGuild(${+g.id||0})" aria-label="Remove guild" title="Remove guild">&times;</button>
         </div>
-      </div>`).join('');
+      </div>`;
+      });
+      safeSetHTML(box, rows.join(''));
     });
   };
 
@@ -533,16 +538,16 @@
   window.agLoadLayers = function(guildId) {
     const gid = guildId || val('ag-layer-guild');
     const box = el('ag-layer-list');
-    if (!gid) { box.innerHTML = agEmpty('Choose a Guild', 'Select a guild to review its canopy, support species, and companion roles.'); return; }
+    if (!gid) { safeSetHTML(box, agEmpty('Choose a Guild', 'Select a guild to review its canopy, support species, and companion roles.')); return; }
     api(API + '/food-forest/layers?guild_id=' + gid).then(items => {
-      if (!items.length) { box.innerHTML = agEmpty('No Layers Yet', 'Add canopy, shrub, vine, or ground-cover species above to flesh out the guild.'); return; }
-      box.innerHTML = '<table class="ag-table"><thead><tr><th>Layer</th><th>Species</th><th>Role</th><th></th></tr></thead><tbody>' +
-        items.map(l => `<tr>
-          <td><span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}</span></td>
-          <td>${esc(l.species || '--')}</td>
-          <td>${esc(l.role || '--')}</td>
+      if (!items.length) { safeSetHTML(box, agEmpty('No Layers Yet', 'Add canopy, shrub, vine, or ground-cover species above to flesh out the guild.')); return; }
+      const rows = items.map(l => html`<tr>
+          <td><span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${l.layer_type}</span></td>
+          <td>${l.species || '--'}</td>
+          <td>${l.role || '--'}</td>
           <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteLayer(${+l.id||0})" aria-label="Remove layer" title="Remove layer">&times;</button></div></td>
-        </tr>`).join('') + '</tbody></table>';
+        </tr>`);
+      safeSetHTML(box, '<table class="ag-table"><thead><tr><th>Layer</th><th>Species</th><th>Role</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -561,12 +566,11 @@
   window.agLoadYield = function(guildId) {
     const gid = guildId || val('ag-layer-guild');
     const box = el('ag-yield-timeline');
-    if (!gid) { box.innerHTML = agEmpty('Choose a Guild', 'Select a guild to review its projected seasonal yield rhythm.'); return; }
+    if (!gid) { safeSetHTML(box, agEmpty('Choose a Guild', 'Select a guild to review its projected seasonal yield rhythm.')); return; }
     api(API + '/food-forest/yield-timeline?guild_id=' + gid).then(data => {
-      if (!data || !data.length) { box.innerHTML = agEmpty('No Yield Projection Yet', 'Add a few companion layers to build the first seasonal view for this guild.'); return; }
-      box.innerHTML = '<table class="ag-table"><thead><tr><th>Year</th><th>Species</th><th>Expected Yield</th><th>Unit</th></tr></thead><tbody>' +
-        data.map(y => `<tr><td>${esc(y.year || '--')}</td><td>${esc(y.species || '--')}</td><td>${esc(y.expected_yield || '--')}</td><td>${esc(y.unit || '--')}</td></tr>`).join('') +
-        '</tbody></table>';
+      if (!data || !data.length) { safeSetHTML(box, agEmpty('No Yield Projection Yet', 'Add a few companion layers to build the first seasonal view for this guild.')); return; }
+      const rows = data.map(y => html`<tr><td>${y.year || '--'}</td><td>${y.species || '--'}</td><td>${y.expected_yield || '--'}</td><td>${y.unit || '--'}</td></tr>`);
+      safeSetHTML(box, '<table class="ag-table"><thead><tr><th>Year</th><th>Species</th><th>Expected Yield</th><th>Unit</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -578,28 +582,28 @@
   window.agLoadSoil = function() {
     api(API + '/soil').then(items => {
       const box = el('ag-soil-list');
-      if (!items.length) { box.innerHTML = agEmpty('No Soil Projects Yet', 'Capture the first recovery or improvement effort above to start a measurable baseline.'); return; }
-      box.innerHTML = items.map(s => {
+      if (!items.length) { safeSetHTML(box, agEmpty('No Soil Projects Yet', 'Capture the first recovery or improvement effort above to start a measurable baseline.')); return; }
+      const rows = items.map(s => {
         const badge = soilTypeClass[s.soil_type] || '';
         const stColor = soilStatusColor[s.status] || '#aaa';
-        let testHtml = '';
-        if (s.ph_before != null || s.ph_after != null) {
-          testHtml = `<div style="font-size:.78rem;margin-top:4px;color:var(--text-secondary,#aaa)">
+        const testBlock = (s.ph_before != null || s.ph_after != null)
+          ? html`<div style="font-size:.78rem;margin-top:4px;color:var(--text-secondary,#aaa)">
             pH: ${s.ph_before ?? '--'} -> ${s.ph_after ?? '--'} |
             N: ${s.n_before ?? '--'} -> ${s.n_after ?? '--'} |
             P: ${s.p_before ?? '--'} -> ${s.p_after ?? '--'} |
-            K: ${s.k_before ?? '--'} -> ${s.k_after ?? '--'}</div>`;
-        }
-        return `<div class="ag-list-item">
-          <div><strong>${esc(s.name)}</strong>
-            <span class="ag-badge ${badge} ag-tag-spacer">${esc(s.soil_type)}</span>
-            <span class="ag-badge" style="color:${stColor};margin-left:4px">${esc(s.status)}</span>
-            ${testHtml}
-            ${s.notes ? `<br><small class="tone-muted">${esc(s.notes)}</small>` : ''}
+            K: ${s.k_before ?? '--'} -> ${s.k_after ?? '--'}</div>`
+          : '';
+        return html`<div class="ag-list-item">
+          <div><strong>${s.name}</strong>
+            <span class="ag-badge ${badge} ag-tag-spacer">${s.soil_type}</span>
+            <span class="ag-badge" style="--ag-soil-tone:${stColor};color:var(--ag-soil-tone);margin-left:4px">${s.status}</span>
+            ${testBlock}
+            ${s.notes ? html`<br><small class="tone-muted">${s.notes}</small>` : ''}
           </div>
           <div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteSoil(${+s.id||0})" aria-label="Remove soil project" title="Remove soil project">&times;</button></div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(box, rows.join(''));
     });
   };
 
@@ -631,18 +635,21 @@
   window.agLoadPlants = function() {
     api(API + '/perennials').then(items => {
       const box = el('ag-plant-list');
-      if (!items.length) { box.innerHTML = agEmpty('No Perennials Yet', 'Add the first long-term planting above so care timing and placement stay visible.'); return; }
-      box.innerHTML = '<table class="ag-table"><thead><tr><th>Health</th><th>Name</th><th>Species</th><th>Location</th><th>Planted</th><th>Pruning</th><th>Fertilize</th><th></th></tr></thead><tbody>' +
-        items.map(p => `<tr>
-          <td><span class="ag-health-dot" style="background:${healthColor[p.health] || '#9ca3af'}"></span>${esc(p.health || '--')}</td>
-          <td><strong>${esc(p.name)}</strong></td>
-          <td>${esc(p.species || '--')}</td>
-          <td>${esc(p.location || '--')}</td>
-          <td>${esc(p.date_planted || '--')}</td>
-          <td>${dueTag(p.pruning_due)}</td>
-          <td>${dueTag(p.fertilization_due)}</td>
+      if (!items.length) { safeSetHTML(box, agEmpty('No Perennials Yet', 'Add the first long-term planting above so care timing and placement stay visible.')); return; }
+      const rows = items.map(p => {
+        const healthDot = healthColor[p.health] || '#9ca3af';
+        return html`<tr>
+          <td><span class="ag-health-dot" style="--ag-health-tone:${healthDot};background:var(--ag-health-tone)"></span>${p.health || '--'}</td>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.species || '--'}</td>
+          <td>${p.location || '--'}</td>
+          <td>${p.date_planted || '--'}</td>
+          <td>${trustedHTML(dueTag(p.pruning_due))}</td>
+          <td>${trustedHTML(dueTag(p.fertilization_due))}</td>
           <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeletePlant(${+p.id||0})" aria-label="Remove plant" title="Remove plant">&times;</button></div></td>
-        </tr>`).join('') + '</tbody></table>';
+        </tr>`;
+      });
+      safeSetHTML(box, '<table class="ag-table"><thead><tr><th>Health</th><th>Name</th><th>Species</th><th>Location</th><th>Planted</th><th>Pruning</th><th>Fertilize</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -666,26 +673,27 @@
   window.agLoadBreeding = function() {
     api(API + '/breeding').then(items => {
       const box = el('ag-breed-list');
-      if (!items.length) { box.innerHTML = agEmpty('No Breeding Records Yet', 'Log the first pairing or cycle above to keep livestock timing visible.'); return; }
-      box.innerHTML = items.map(b => `<div class="ag-list-item">
-        <div><strong>${esc(b.name)}</strong>
-          <span class="ag-badge ag-status-${esc(b.status)} ag-tag-spacer">${esc(b.status)}</span>
-          <br><small class="tone-muted">${esc(b.species || '--')} | Bred: ${esc(b.breed_date || '--')} | Due: ${esc(b.due_date || '--')} | Offspring: ${+b.offspring_count||0}</small>
-          ${b.notes ? `<br><small class="tone-muted">${esc(b.notes)}</small>` : ''}
+      if (!items.length) { safeSetHTML(box, agEmpty('No Breeding Records Yet', 'Log the first pairing or cycle above to keep livestock timing visible.')); return; }
+      const rows = items.map(b => html`<div class="ag-list-item">
+        <div><strong>${b.name}</strong>
+          <span class="ag-badge ag-status-${b.status} ag-tag-spacer">${b.status}</span>
+          <br><small class="tone-muted">${b.species || '--'} | Bred: ${b.breed_date || '--'} | Due: ${b.due_date || '--'} | Offspring: ${+b.offspring_count||0}</small>
+          ${b.notes ? html`<br><small class="tone-muted">${b.notes}</small>` : ''}
         </div>
         <div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteBreeding(${+b.id||0})" aria-label="Remove breeding record" title="Remove breeding record">&times;</button></div>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(box, rows.join(''));
     });
     // Due dates
     api(API + '/breeding/due').then(items => {
       const box = el('ag-breed-due-list');
-      if (!items || !items.length) { box.innerHTML = agEmpty('No Due Dates Scheduled', 'The next breeding window will appear here once records include expected dates.'); return; }
-      box.innerHTML = '<table class="ag-table"><thead><tr><th>Animal</th><th>Species</th><th>Due</th><th>Status</th></tr></thead><tbody>' +
-        items.map(b => `<tr>
-          <td>${esc(b.name)}</td><td>${esc(b.species || '--')}</td>
-          <td>${dueTag(b.due_date)}</td>
-          <td><span class="ag-status-${esc(b.status)}">${esc(b.status)}</span></td>
-        </tr>`).join('') + '</tbody></table>';
+      if (!items || !items.length) { safeSetHTML(box, agEmpty('No Due Dates Scheduled', 'The next breeding window will appear here once records include expected dates.')); return; }
+      const rows = items.map(b => html`<tr>
+          <td>${b.name}</td><td>${b.species || '--'}</td>
+          <td>${trustedHTML(dueTag(b.due_date))}</td>
+          <td><span class="ag-status-${b.status}">${b.status}</span></td>
+        </tr>`);
+      safeSetHTML(box, '<table class="ag-table"><thead><tr><th>Animal</th><th>Species</th><th>Due</th><th>Status</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -706,23 +714,23 @@
   window.agLoadFeed = function() {
     api(API + '/feed').then(items => {
       const box = el('ag-feed-list');
-      if (!items.length) { box.innerHTML = agEmpty('No Feed Entries Yet', 'Log the first ration or adjustment above to start tracking usage and cost.'); return; }
-      box.innerHTML = '<table class="ag-table"><thead><tr><th>Date</th><th>Type</th><th>Amount (lbs)</th><th>Cost</th><th>Notes</th><th></th></tr></thead><tbody>' +
-        items.map(f => `<tr>
+      if (!items.length) { safeSetHTML(box, agEmpty('No Feed Entries Yet', 'Log the first ration or adjustment above to start tracking usage and cost.')); return; }
+      const rows = items.map(f => html`<tr>
           <td>${f.date || '--'}</td><td>${f.feed_type || '--'}</td>
           <td>${f.amount || 0}</td><td>$${Number(f.cost || 0).toFixed(2)}</td>
           <td>${f.notes || '--'}</td>
-          <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteFeed(${f.id})" aria-label="Remove feed entry" title="Remove feed entry">&times;</button></div></td>
-        </tr>`).join('') + '</tbody></table>';
+          <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteFeed(${+f.id||0})" aria-label="Remove feed entry" title="Remove feed entry">&times;</button></div></td>
+        </tr>`);
+      safeSetHTML(box, '<table class="ag-table"><thead><tr><th>Date</th><th>Type</th><th>Amount (lbs)</th><th>Cost</th><th>Notes</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
     api(API + '/feed/summary').then(data => {
       const box = el('ag-feed-summary');
-      if (!data) { box.innerHTML = ''; return; }
-      box.innerHTML = `
+      if (!data) { safeSetHTML(box, ''); return; }
+      safeSetHTML(box, html`
         <div class="ag-summary-card"><div class="ag-summary-val">${data.total_entries || 0}</div><div class="ag-summary-label">Entries</div></div>
         <div class="ag-summary-card"><div class="ag-summary-val">${Number(data.total_lbs || 0).toFixed(1)}</div><div class="ag-summary-label">Total Lbs</div></div>
         <div class="ag-summary-card"><div class="ag-summary-val">$${Number(data.total_cost || 0).toFixed(2)}</div><div class="ag-summary-label">Total Cost</div></div>
-        <div class="ag-summary-card"><div class="ag-summary-val">$${Number(data.avg_cost_per_lb || 0).toFixed(2)}</div><div class="ag-summary-label">Avg $/lb</div></div>`;
+        <div class="ag-summary-card"><div class="ag-summary-val">$${Number(data.avg_cost_per_lb || 0).toFixed(2)}</div><div class="ag-summary-label">Avg $/lb</div></div>`);
     });
   };
 
@@ -746,41 +754,44 @@
     // Dashboard summary
     api(API + '/homestead/dashboard').then(data => {
       const box = el('ag-sys-dashboard');
-      if (!data || !data.systems || !data.systems.length) { box.innerHTML = ''; return; }
-      box.innerHTML = data.systems.map(s => {
+      if (!data || !data.systems || !data.systems.length) { safeSetHTML(box, ''); return; }
+      const cards = data.systems.map(s => {
         const pct = s.condition ?? 100;
         const c = gaugeColor(pct);
         const overdue = s.maintenance_due && new Date(s.maintenance_due) < new Date();
-        return `<div class="ag-card" style="margin-bottom:0">
+        const maintColor = overdue ? '#ef4444' : '#94a3b8';
+        return html`<div class="ag-card" style="margin-bottom:0">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <strong>${s.name}</strong>
-            <span class="ag-badge" style="color:${c}">${s.system_type}</span>
+            <span class="ag-badge" style="--ag-gauge-tone:${c};color:var(--ag-gauge-tone)">${s.system_type}</span>
           </div>
           <div style="font-size:.78rem;color:var(--text-secondary,#aaa);margin:4px 0">${s.capacity || '--'}</div>
-          <div class="ag-gauge"><div class="ag-gauge-fill" style="width:${pct}%;background:${c}"></div></div>
+          <div class="ag-gauge"><div class="ag-gauge-fill" style="--ag-gauge-w:${pct}%;--ag-gauge-tone:${c};width:var(--ag-gauge-w);background:var(--ag-gauge-tone)"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:.72rem">
-            <span style="color:${c}">${pct}% condition</span>
-            ${s.maintenance_due ? `<span style="color:${overdue ? '#ef4444' : '#94a3b8'}">${overdue ? 'MAINT OVERDUE' : 'Maint: ' + s.maintenance_due}</span>` : ''}
+            <span style="--ag-gauge-tone:${c};color:var(--ag-gauge-tone)">${pct}% condition</span>
+            ${s.maintenance_due ? html`<span style="--ag-maint-tone:${maintColor};color:var(--ag-maint-tone)">${overdue ? 'MAINT OVERDUE' : 'Maint: ' + s.maintenance_due}</span>` : ''}
           </div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(box, cards.join(''));
     });
     // Full list
     api(API + '/homestead').then(items => {
       const box = el('ag-sys-list');
-      if (!items.length) { box.innerHTML = agEmpty('No Systems Yet', 'Add water, power, or growing systems above so condition and maintenance stay visible.'); return; }
-      box.innerHTML = '<table class="ag-table"><thead><tr><th>Name</th><th>Type</th><th>Capacity</th><th>Condition</th><th>Maintenance</th><th></th></tr></thead><tbody>' +
-        items.map(s => {
-          const pct = s.condition ?? 100;
-          return `<tr>
+      if (!items.length) { safeSetHTML(box, agEmpty('No Systems Yet', 'Add water, power, or growing systems above so condition and maintenance stay visible.')); return; }
+      const rows = items.map(s => {
+        const pct = s.condition ?? 100;
+        const c = gaugeColor(pct);
+        return html`<tr>
             <td><strong>${s.name}</strong></td>
             <td>${s.system_type || '--'}</td>
             <td>${s.capacity || '--'}</td>
-            <td><span style="color:${gaugeColor(pct)}">${pct}%</span></td>
-            <td>${dueTag(s.maintenance_due)}</td>
-            <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteSystem(${s.id})" aria-label="Remove system" title="Remove system">&times;</button></div></td>
+            <td><span style="--ag-gauge-tone:${c};color:var(--ag-gauge-tone)">${pct}%</span></td>
+            <td>${trustedHTML(dueTag(s.maintenance_due))}</td>
+            <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteSystem(${+s.id||0})" aria-label="Remove system" title="Remove system">&times;</button></div></td>
           </tr>`;
-        }).join('') + '</tbody></table>';
+      });
+      safeSetHTML(box, '<table class="ag-table"><thead><tr><th>Name</th><th>Type</th><th>Capacity</th><th>Condition</th><th>Maintenance</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -801,9 +812,8 @@
   window.agLoadAquaponics = function() {
     api(API + '/aquaponics').then(items => {
       const box = el('ag-aqua-list');
-      if (!items.length) { box.innerHTML = agEmpty('No Aquaponics Readings Yet', 'The first water-quality trend will appear here once the system is logged.'); return; }
-      box.innerHTML = '<table class="ag-table"><thead><tr><th>System</th><th>pH</th><th>Ammonia</th><th>Nitrite</th><th>Nitrate</th><th>Temp</th><th>Recorded</th><th></th></tr></thead><tbody>' +
-        items.map(a => `<tr>
+      if (!items.length) { safeSetHTML(box, agEmpty('No Aquaponics Readings Yet', 'The first water-quality trend will appear here once the system is logged.')); return; }
+      const rows = items.map(a => html`<tr>
           <td><strong>${a.name || '--'}</strong></td>
           <td><span class="${wqClass('ph', a.ph)}">${a.ph ?? '--'}</span></td>
           <td><span class="${wqClass('ammonia', a.ammonia)}">${a.ammonia ?? '--'}</span></td>
@@ -811,8 +821,9 @@
           <td><span class="${wqClass('nitrate', a.nitrate)}">${a.nitrate ?? '--'}</span></td>
           <td>${a.temp ?? '--'}F</td>
           <td>${a.created_at || '--'}</td>
-          <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteAquaponics(${a.id})" aria-label="Remove aquaponics reading" title="Remove aquaponics reading">&times;</button></div></td>
-        </tr>`).join('') + '</tbody></table>';
+          <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteAquaponics(${+a.id||0})" aria-label="Remove aquaponics reading" title="Remove aquaponics reading">&times;</button></div></td>
+        </tr>`);
+      safeSetHTML(box, '<table class="ag-table"><thead><tr><th>System</th><th>pH</th><th>Ammonia</th><th>Nitrite</th><th>Nitrate</th><th>Temp</th><th>Recorded</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -835,30 +846,31 @@
   window.agLoadRecycling = function() {
     api(API + '/recycling').then(items => {
       const box = el('ag-rec-list');
-      if (!items.length) { box.innerHTML = agEmpty('No Recycling Systems Yet', 'Add compost, greywater, biogas, or reuse loops above to make the whole cycle visible.'); return; }
-      box.innerHTML = items.map(r => {
+      if (!items.length) { safeSetHTML(box, agEmpty('No Recycling Systems Yet', 'Add compost, greywater, biogas, or reuse loops above to make the whole cycle visible.')); return; }
+      const rows = items.map(r => {
         const badge = recTypeClass[r.system_type] || '';
         const stColor = r.status === 'active' ? '#22c55e' : r.status === 'maintenance' ? '#f59e0b' : r.status === 'offline' ? '#ef4444' : '#94a3b8';
-        return `<div class="ag-list-item">
+        return html`<div class="ag-list-item">
           <div><strong>${r.name}</strong>
             <span class="ag-badge ${badge} ag-tag-spacer">${r.system_type}</span>
-            <span class="ag-badge" style="color:${stColor};margin-left:4px">${r.status}</span>
+            <span class="ag-badge" style="--ag-rec-tone:${stColor};color:var(--ag-rec-tone);margin-left:4px">${r.status}</span>
             <br><small class="tone-muted">In: ${r.input_desc || '--'} | Out: ${r.output_desc || '--'} | Cap: ${r.capacity || '--'}</small>
-            ${r.notes ? `<br><small class="tone-muted">${r.notes}</small>` : ''}
+            ${r.notes ? html`<br><small class="tone-muted">${r.notes}</small>` : ''}
           </div>
-          <div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteRecycling(${r.id})" aria-label="Remove recycling system" title="Remove recycling system">&times;</button></div>
+          <div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteRecycling(${+r.id||0})" aria-label="Remove recycling system" title="Remove recycling system">&times;</button></div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(box, rows.join(''));
     });
     // Summary
     api(API + '/recycling/summary').then(data => {
       const box = el('ag-rec-summary');
-      if (!data) { box.innerHTML = ''; return; }
-      box.innerHTML = `
+      if (!data) { safeSetHTML(box, ''); return; }
+      safeSetHTML(box, html`
         <div class="ag-summary-card"><div class="ag-summary-val">${data.total_systems || 0}</div><div class="ag-summary-label">Systems</div></div>
         <div class="ag-summary-card"><div class="ag-summary-val">${data.active || 0}</div><div class="ag-summary-label">Active</div></div>
         <div class="ag-summary-card"><div class="ag-summary-val">${data.maintenance || 0}</div><div class="ag-summary-label">Maintenance</div></div>
-        <div class="ag-summary-card"><div class="ag-summary-val">${data.offline || 0}</div><div class="ag-summary-label">Offline</div></div>`;
+        <div class="ag-summary-card"><div class="ag-summary-val">${data.offline || 0}</div><div class="ag-summary-label">Offline</div></div>`);
     });
     // Flow visualization
     agLoadRecFlow();
@@ -867,23 +879,28 @@
   function agLoadRecFlow() {
     api(API + '/recycling').then(items => {
       const box = el('ag-rec-flow');
-      if (!items || !items.length) { box.innerHTML = agEmpty('No Resource Loop Yet', 'Add recycling systems to reveal how nutrients, water, and materials move together.'); return; }
+      if (!items || !items.length) { safeSetHTML(box, agEmpty('No Resource Loop Yet', 'Add recycling systems to reveal how nutrients, water, and materials move together.')); return; }
       const byType = {};
       items.forEach(r => { (byType[r.system_type] = byType[r.system_type] || []).push(r); });
-      box.innerHTML = Object.entries(byType).map(([type, systems]) => {
+      const groups = Object.entries(byType).map(([type, systems]) => {
         const cls = recTypeClass[type] || '';
-        return `<div class="ag-row-spaced-sm">
-          <div class="ag-badge ${cls}" style="font-size:.82rem;padding:4px 10px;margin-bottom:6px">${type.replace('_', ' ').toUpperCase()}</div>
-          ${systems.map(s => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.82rem">
+        const rows = systems.map(s => {
+          const statusTone = s.status === 'active' ? '#22c55e' : '#94a3b8';
+          return html`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.82rem">
             <span style="color:var(--text-secondary,#aaa);min-width:120px">${s.input_desc || 'Input'}</span>
             <span class="ag-tone-accent">--></span>
             <strong style="color:var(--text-primary,#eee)">${s.name}</strong>
             <span class="ag-tone-accent">--></span>
             <span class="tone-muted">${s.output_desc || 'Output'}</span>
-            <span class="ag-badge" style="color:${s.status === 'active' ? '#22c55e' : '#94a3b8'};margin-left:auto">${s.status}</span>
-          </div>`).join('')}
+            <span class="ag-badge" style="--ag-flow-tone:${statusTone};color:var(--ag-flow-tone);margin-left:auto">${s.status}</span>
+          </div>`;
+        });
+        return html`<div class="ag-row-spaced-sm">
+          <div class="ag-badge ${cls}" style="font-size:.82rem;padding:4px 10px;margin-bottom:6px">${type.replace('_', ' ').toUpperCase()}</div>
+          ${trustedHTML(rows.join(''))}
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(box, groups.join(''));
     });
   }
 

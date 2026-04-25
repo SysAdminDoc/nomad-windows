@@ -1,8 +1,14 @@
 /* ─── Burn Rate Dashboard ─── */
 async function loadBurnRate() {
   try {
-    const data = await safeFetch('/api/inventory/burn-rate', {}, {});
+    const data = await prepFetchJson('/api/inventory/burn-rate', {}, {
+      action: 'Load burn-rate dashboard',
+      fallback: null,
+      targetId: 'burn-rate-dash',
+      inlineMessage: 'Burn-rate dashboard unavailable.',
+    });
     const el = document.getElementById('burn-rate-dash');
+    if (!el || data === null) return;
     if (!data || typeof data !== 'object' || !Object.keys(data).length) { el.innerHTML = ''; return; }
     let html = '<div class="prep-resource-summary-grid utility-summary-grid">';
     for (const [cat, info] of Object.entries(data).sort((a,b) => (a[1].min_days||999) - (b[1].min_days||999))) {
@@ -133,7 +139,11 @@ async function saveSitBoard() {
 
 async function loadSitBoard() {
   try {
-    const s = await safeFetch('/api/settings', {}, {});
+    const s = await prepFetchJson('/api/settings', {}, {
+      action: 'Load situation board',
+      fallback: {},
+      notifyOptions: {silent: true},
+    });
     if (s.sit_board) {
       const levels = safeJsonParse(s.sit_board, {});
       document.querySelectorAll('.sit-cell').forEach(c => {
@@ -151,7 +161,13 @@ async function loadIncidents() {
   let url = '/api/incidents?limit=200';
   if (cat) url += `&category=${encodeURIComponent(cat)}`;
   try {
-    const items = await safeFetch(url, {}, []);
+    const items = await prepFetchJson(url, {}, {
+      action: 'Load incident log',
+      fallback: null,
+      targetId: 'incidents-list',
+      inlineMessage: 'Incident log unavailable.',
+    });
+    if (items === null) return;
     if (!Array.isArray(items)) throw new Error('invalid incidents payload');
     const el = document.getElementById('incidents-list');
     if (!items.length) {

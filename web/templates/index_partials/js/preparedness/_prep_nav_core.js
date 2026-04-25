@@ -117,6 +117,57 @@ function savePrepWorkspaceState(state) {
   }
 }
 
+function prepRenderPanelError(targetId, message, detail = '') {
+  const el = typeof targetId === 'string' ? document.getElementById(targetId) : targetId;
+  if (!el) return;
+  const copy = detail || 'Check that NOMAD is still running locally, then retry this panel.';
+  if (typeof utilityEmptyState === 'function') {
+    el.innerHTML = utilityEmptyState(message, copy);
+    return;
+  }
+  el.innerHTML = `<div class="prep-empty-state prep-error-state"><strong>${escapeHtml(message)}</strong><div>${escapeHtml(copy)}</div></div>`;
+}
+
+function prepNotifyApiError(action, error, options = {}) {
+  if (options.silent) return;
+  if (typeof window.notifyApiError === 'function') {
+    window.notifyApiError(action, error, options);
+    return;
+  }
+  if (typeof toast === 'function') {
+    toast(action || 'Preparedness data failed to load', 'error');
+  }
+}
+
+async function prepFetchJson(url, opts = {}, options = {}) {
+  const fallback = Object.prototype.hasOwnProperty.call(options, 'fallback') ? options.fallback : null;
+  const action = options.action || 'Preparedness data failed to load';
+  const notifyOptions = options.notifyOptions || {};
+  try {
+    if (typeof window.apiJson === 'function') {
+      return await window.apiJson(url, opts, action, notifyOptions);
+    }
+    if (typeof window.apiFetch === 'function') {
+      return await window.apiFetch(url, opts);
+    }
+    return await safeFetch(url, opts, fallback);
+  } catch (error) {
+    if (options.targetId) {
+      prepRenderPanelError(
+        options.targetId,
+        options.inlineMessage || 'Unable to load this panel.',
+        options.inlineDetail || ''
+      );
+    }
+    if (typeof window.apiJson !== 'function') {
+      prepNotifyApiError(action, error, notifyOptions);
+    }
+    return fallback;
+  }
+}
+window.prepFetchJson = prepFetchJson;
+window.prepRenderPanelError = prepRenderPanelError;
+
 function openPrepWorkspaceFromMemory(sub) {
   if (!sub) return;
   document.querySelector('[data-tab="preparedness"]')?.click();

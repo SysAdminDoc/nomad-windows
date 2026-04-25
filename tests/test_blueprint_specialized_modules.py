@@ -310,6 +310,28 @@ class TestDronesAndFlights:
         assert by_id[did]['total_flights'] == 1
         assert client.delete(f'/api/specialized/flights/{fid}').status_code == 200
 
+    def test_nested_drone_flights_alias(self, client):
+        """The frontend template calls
+        `/drones/<id>/flights` (nested path). Hardening on 2026-04-24 added
+        this route as an alias that filters by drone_id in-route."""
+        did = client.post('/api/specialized/drones',
+                          json={'name': 'Nested-01'}).get_json()['id']
+        # Two flights on this drone, one on another
+        client.post('/api/specialized/flights',
+                    json={'drone_id': did, 'mission_type': 'recon'})
+        client.post('/api/specialized/flights',
+                    json={'drone_id': did, 'mission_type': 'mapping'})
+        other = client.post('/api/specialized/drones',
+                            json={'name': 'Other'}).get_json()['id']
+        client.post('/api/specialized/flights',
+                    json={'drone_id': other, 'mission_type': 'recon'})
+        resp = client.get(f'/api/specialized/drones/{did}/flights')
+        assert resp.status_code == 200
+        rows = resp.get_json()
+        assert len(rows) == 2
+        # Every row belongs to the queried drone
+        assert all(r['drone_id'] == did for r in rows)
+
     def test_flight_requires_drone_id(self, client):
         assert client.post('/api/specialized/flights', json={}).status_code == 400
 
@@ -326,8 +348,53 @@ class TestFitness:
         wid = resp.get_json()['id']
         assert client.delete(f'/api/specialized/fitness/{wid}').status_code == 200
 
+    def test_workout_requires_person(self, client):
+        """POST /fitness now rejects missing `person` — hardening on
+        2026-04-24 added a 400 guard to match every sibling resource."""
+        assert client.post('/api/specialized/fitness', json={}).status_code == 400
+        # whitespace-only person is also rejected
+        assert client.post('/api/specialized/fitness',
+                           json={'person': '   '}).status_code == 400
+
     def test_workout_delete_404(self, client):
         assert client.delete('/api/specialized/fitness/999999').status_code == 404
+
+    def test_frontend_field_synonyms(self, client):
+        """The template sends short field names (workout_type / duration /
+        distance / calories / heart_rate / exertion); the hardening pass
+        on 2026-04-24 added a synonym layer that maps them to canonical
+        DB columns. Verify the insert uses the aliased values end-to-end."""
+        resp = client.post('/api/specialized/fitness', json={
+            'person': 'SynonymUser',
+            'workout_type': 'strength',   # → exercise_type
+            'activity': 'deadlift',
+            'duration': 45,                # → duration_min
+            'distance': 0.5,               # → distance_km
+            'calories': 300,               # → calories_burned
+            'heart_rate': 130,             # → heart_rate_avg
+            'exertion': 8,                 # → perceived_exertion
+            'weight_lbs': 315,             # already canonical
+        })
+        assert resp.status_code == 201
+        body = resp.get_json()
+        assert body['exercise_type'] == 'strength'
+        assert body['duration_min'] == 45
+        assert body['distance_km'] == 0.5
+        assert body['calories_burned'] == 300
+        assert body['heart_rate_avg'] == 130
+        assert body['perceived_exertion'] == 8
+        assert body['weight_lbs'] == 315
+
+    def test_synonym_canonical_wins_when_both_present(self, client):
+        """If a client sends BOTH canonical + synonym, canonical wins."""
+        resp = client.post('/api/specialized/fitness', json={
+            'person': 'Both', 'exercise_type': 'cardio', 'workout_type': 'strength',
+            'duration_min': 50, 'duration': 10,
+        })
+        assert resp.status_code == 201
+        body = resp.get_json()
+        assert body['exercise_type'] == 'cardio'
+        assert body['duration_min'] == 50
 
     def test_stats_endpoint(self, client):
         # Seed a couple of workouts to exercise the aggregator
@@ -336,6 +403,42 @@ class TestFitness:
         resp = client.get('/api/specialized/fitness/stats?person=Bob')
         assert resp.status_code == 200
         assert isinstance(resp.get_json(), dict)
+
+    def test_weekly_alias_endpoint(self, client):
+        """The frontend template calls `/fitness/weekly?person=<X>`. The
+        hardening pass on 2026-04-24 added this route as a native
+        implementation that returns the `{workouts, total_duration,
+        total_calories, total_distance, avg_exertion, person,
+        week_start}` shape the template's stat cards consume."""
+        client.post('/api/specialized/fitness', json={
+            'person': 'Weekly', 'duration_min': 30,
+            'calories_burned': 200, 'distance_km': 2.5, 'perceived_exertion': 6,
+        })
+        client.post('/api/specialized/fitness', json={
+            'person': 'Weekly', 'duration_min': 45,
+            'calories_burned': 350, 'distance_km': 4.0, 'perceived_exertion': 7,
+        })
+        resp = client.get('/api/specialized/fitness/weekly?person=Weekly')
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body['workouts'] == 2
+        assert body['total_duration'] == 75
+        assert body['total_calories'] == 550
+        assert abs(body['total_distance'] - 6.5) < 1e-9
+        assert abs(body['avg_exertion'] - 6.5) < 1e-9
+        assert body['person'] == 'Weekly'
+        assert 'week_start' in body
+
+    def test_weekly_requires_person(self, client):
+        assert client.get('/api/specialized/fitness/weekly').status_code == 400
+
+    def test_weekly_empty_returns_zeros(self, client):
+        resp = client.get('/api/specialized/fitness/weekly?person=Nobody')
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body['workouts'] == 0
+        assert body['total_duration'] == 0
+        assert body['avg_exertion'] == 0
 
 
 # ── CONTENT PACKS ─────────────────────────────────────────────────────────

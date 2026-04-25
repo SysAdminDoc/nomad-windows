@@ -976,7 +976,14 @@ async function offlineStatus() {
 }
 
 async function offlineClear() {
-  if (!confirm('Clear all offline cached data?')) return;
+  const decision = await confirmAction({
+    title: 'Clear offline cache?',
+    message: 'Remove downloaded offline sync data from this device.',
+    detail: 'Server data and exports are not deleted. Run a full sync again before working offline.',
+    confirmLabel: 'Clear Cache',
+    tone: 'danger',
+  });
+  if (!decision.confirmed) return;
   try {
     const dbs = await indexedDB.databases();
     for (const db of dbs) {
@@ -1250,6 +1257,107 @@ function showModal(html, {size, title, onClose} = {}) {
   });
   return overlay;
 }
+function confirmAction({
+  title = 'Confirm action',
+  message = '',
+  detail = '',
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  tone = 'default',
+  fields = [],
+} = {}) {
+  const normalizedFields = Array.isArray(fields) ? fields.map((field, index) => ({
+    name: field && field.name ? String(field.name) : 'field' + index,
+    label: field && field.label ? String(field.label) : 'Required detail',
+    placeholder: field && field.placeholder ? String(field.placeholder) : '',
+    type: field && field.type === 'password' ? 'password' : 'text',
+    autocomplete: field && field.autocomplete ? String(field.autocomplete) : '',
+    required: !!(field && field.required),
+  })) : [];
+  const toneClass = ['danger', 'warning', 'success'].includes(tone) ? tone : 'default';
+  const confirmTextId = 'confirm-desc-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  const triggerEl = document.activeElement;
+  const fieldMarkup = normalizedFields.map(field => {
+    const autocompleteAttr = field.autocomplete ? ' autocomplete="' + escapeAttr(field.autocomplete) + '"' : '';
+    return '<label class="nomad-confirm-field">'
+      + '<span>' + escapeHtml(field.label) + (field.required ? ' <em>required</em>' : '') + '</span>'
+      + '<input class="nomad-confirm-input" data-confirm-field="' + escapeAttr(field.name) + '" type="' + escapeAttr(field.type) + '"'
+      + (field.placeholder ? ' placeholder="' + escapeAttr(field.placeholder) + '"' : '')
+      + autocompleteAttr
+      + (field.required ? ' required' : '')
+      + '>'
+      + '</label>';
+  }).join('');
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = result => {
+      if (settled) return;
+      settled = true;
+      if (overlay && overlay.parentNode) overlay.remove();
+      if (triggerEl && triggerEl.focus) requestAnimationFrame(() => triggerEl.focus());
+      resolve(result);
+    };
+    const overlay = showModal(
+      '<div class="nomad-confirm-body nomad-confirm-tone-' + escapeAttr(toneClass) + '">'
+        + '<div class="nomad-confirm-icon" aria-hidden="true">' + (toneClass === 'danger' ? '!' : toneClass === 'warning' ? '!' : 'i') + '</div>'
+        + '<div class="nomad-confirm-copy" id="' + escapeAttr(confirmTextId) + '">'
+          + (message ? '<p class="nomad-confirm-message">' + escapeHtml(message) + '</p>' : '')
+          + (detail ? '<p class="nomad-confirm-detail">' + escapeHtml(detail) + '</p>' : '')
+          + fieldMarkup
+        + '</div>'
+      + '</div>'
+      + '<div class="nomad-confirm-actions">'
+        + '<button class="btn btn-ghost" type="button" data-confirm-action="cancel">' + escapeHtml(cancelLabel) + '</button>'
+        + '<button class="btn ' + (toneClass === 'danger' ? 'btn-danger' : 'btn-primary') + '" type="button" data-confirm-action="confirm">' + escapeHtml(confirmLabel) + '</button>'
+      + '</div>',
+      {
+        size: 'sm',
+        title,
+        onClose: () => {
+          if (!settled) {
+            settled = true;
+            resolve({confirmed: false, values: {}});
+          }
+        },
+      }
+    );
+    overlay.classList.add('nomad-confirm-overlay');
+    overlay.setAttribute('role', toneClass === 'danger' || toneClass === 'warning' ? 'alertdialog' : 'dialog');
+    overlay.setAttribute('aria-describedby', confirmTextId);
+    const confirmBtn = overlay.querySelector('[data-confirm-action="confirm"]');
+    const cancelBtn = overlay.querySelector('[data-confirm-action="cancel"]');
+    const inputs = Array.from(overlay.querySelectorAll('[data-confirm-field]'));
+    const updateConfirmState = () => {
+      if (!confirmBtn) return;
+      confirmBtn.disabled = normalizedFields.some(field => {
+        if (!field.required) return false;
+        const input = inputs.find(candidate => candidate.dataset.confirmField === field.name);
+        return !input || !input.value.trim();
+      });
+    };
+    cancelBtn?.addEventListener('click', () => finish({confirmed: false, values: {}}));
+    confirmBtn?.addEventListener('click', () => {
+      const values = {};
+      inputs.forEach(input => { values[input.dataset.confirmField] = input.value; });
+      finish({confirmed: true, values});
+    });
+    inputs.forEach(input => {
+      input.addEventListener('input', updateConfirmState);
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && confirmBtn && !confirmBtn.disabled) {
+          event.preventDefault();
+          confirmBtn.click();
+        }
+      });
+    });
+    updateConfirmState();
+    requestAnimationFrame(() => {
+      const initialFocus = inputs.find(input => input.required || input.type === 'password') || cancelBtn || confirmBtn;
+      if (initialFocus && initialFocus.focus) initialFocus.focus();
+    });
+  });
+}
+window.confirmAction = confirmAction;
 /** Safe fetch wrapper — returns parsed JSON or fallback on error. Includes 30s timeout. Usage: const data = await safeFetch('/api/foo', {}, []); */
 async function safeFetch(url, opts = {}, fallback = null) {
   let controller;

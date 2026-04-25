@@ -2291,10 +2291,23 @@ async function loadBackups() {
 }
 
 async function restoreScheduledBackup(filename, encrypted) {
-  if (!confirm('Restore database from ' + filename + '? A safety backup will be created first.')) return;
-  let password = '';
+  const decision = await confirmAction({
+    title: 'Restore scheduled backup?',
+    message: 'Restore database from ' + filename + '.',
+    detail: encrypted ? 'Enter the decryption password. A safety backup will be created first.' : 'A safety backup will be created first.',
+    confirmLabel: 'Restore Backup',
+    tone: 'warning',
+    fields: encrypted ? [{
+      name: 'password',
+      label: 'Decryption password',
+      type: 'password',
+      autocomplete: 'current-password',
+      required: true,
+    }] : [],
+  });
+  if (!decision.confirmed) return;
+  let password = decision.values?.password || '';
   if (encrypted) {
-    password = prompt('Enter decryption password:');
     if (!password) return;
   }
   toast('Restoring...', 'info');
@@ -2311,7 +2324,14 @@ async function restoreScheduledBackup(filename, encrypted) {
 }
 
 async function deleteBackup(filename) {
-  if (!confirm('Delete backup ' + filename + '?')) return;
+  const decision = await confirmAction({
+    title: 'Delete backup?',
+    message: 'Delete ' + filename + '.',
+    detail: 'This removes the local backup file and cannot be undone.',
+    confirmLabel: 'Delete Backup',
+    tone: 'danger',
+  });
+  if (!decision.confirmed) return;
   const r = await safeFetch('/api/system/backup/' + encodeURIComponent(filename), {method: 'DELETE'}, null);
   if (r && r.status === 'deleted') {
     toast('Backup deleted', 'success');

@@ -52,24 +52,64 @@ class TestBriefBaseline:
 # ── WEATHER SECTION ───────────────────────────────────────────────────────
 
 class TestWeatherSection:
-    def test_weather_section_present_when_row_exists(self, client):
-        """The brief queries weather_log ORDER BY created_at DESC LIMIT 1,
-        so a seeded row lights up the section with `recorded_at`. Note:
-        the brief compiler reads `temp_c` / `humidity` / `pressure` /
-        `conditions` guarded by `if 'X' in row.keys()` — the live schema
-        uses `temp_f` / `pressure_hpa` without those fields, so guarded
-        reads fall back to None/''. The section still appears (with
-        `recorded_at` populated) which is the contract we care about."""
+    def test_weather_section_maps_schema_to_brief_payload(self, client):
+        """Schema-fix landed 2026-04-24 — brief.py now reads `temp_f` /
+        `pressure_hpa` from the actual weather_log columns and emits
+        BOTH the legacy `temp_c` (Fahrenheit→Celsius converted) plus
+        canonical `temp_f` / `pressure` / `conditions` (synthesized
+        from clouds + precip). Earlier the section silently emitted
+        all-None data fields."""
         with db_session() as db:
             db.execute(
-                "INSERT INTO weather_log (temp_f, pressure_hpa, notes) VALUES (?,?,?)",
-                (68.0, 1013.0, 'morning reading')
+                "INSERT INTO weather_log "
+                "(temp_f, pressure_hpa, clouds, precip, wind_dir, wind_speed, "
+                " visibility, notes) "
+                "VALUES (?,?,?,?,?,?,?,?)",
+                (68.0, 1013.0, 'partly cloudy', 'light rain',
+                 'NW', '15 km/h', '10 km', 'morning reading')
             )
             db.commit()
-        section = client.get('/api/brief/daily').get_json()['sections'].get('weather')
-        assert section is not None
-        assert section['notes'] == 'morning reading'
-        assert section['recorded_at'] is not None
+        s = client.get('/api/brief/daily').get_json()['sections'].get('weather')
+        assert s is not None
+        assert s['temp_f'] == 68.0
+        # 68 F -> 20.0 C (Fahrenheit→Celsius conversion)
+        assert s['temp_c'] == 20.0
+        assert s['pressure'] == 1013.0
+        assert s['wind_dir'] == 'NW'
+        assert s['wind_speed'] == '15 km/h'
+        assert s['visibility'] == '10 km'
+        # conditions synthesizes from clouds + precip
+        assert 'partly cloudy' in s['conditions']
+        assert 'light rain' in s['conditions']
+        assert s['notes'] == 'morning reading'
+
+    def test_weather_section_handles_partial_data(self, client):
+        """Sparse weather rows don't crash — missing temp_f leaves
+        temp_c None, missing clouds/precip yields empty conditions."""
+        with db_session() as db:
+            db.execute(
+                "INSERT INTO weather_log (notes) VALUES (?)", ('sparse',)
+            )
+            db.commit()
+        s = client.get('/api/brief/daily').get_json()['sections'].get('weather')
+        assert s is not None
+        assert s['temp_c'] is None
+        assert s['conditions'] == ''
+        assert s['notes'] == 'sparse'
+
+    def test_weather_picks_most_recent_row(self, client):
+        """ORDER BY created_at DESC LIMIT 1. Explicit created_at values
+        because SQLite CURRENT_TIMESTAMP rounds to seconds and back-to-back
+        inserts in a test tie."""
+        with db_session() as db:
+            db.execute("INSERT INTO weather_log (temp_f, notes, created_at) "
+                       "VALUES (?,?,?)", (50.0, 'older', '2026-04-23 12:00:00'))
+            db.execute("INSERT INTO weather_log (temp_f, notes, created_at) "
+                       "VALUES (?,?,?)", (75.0, 'newer', '2026-04-24 12:00:00'))
+            db.commit()
+        s = client.get('/api/brief/daily').get_json()['sections'].get('weather')
+        assert s['notes'] == 'newer'
+        assert s['temp_f'] == 75.0
 
 
 # ── PROXIMITY SECTION ─────────────────────────────────────────────────────
@@ -201,27 +241,74 @@ class TestInventorySection:
 # ── TASKS SECTION ─────────────────────────────────────────────────────────
 
 class TestTasksSection:
-    def test_tasks_section_absent_when_query_schema_mismatch(self, client):
-        """FINDING (2026-04-24 V8-06 pass): brief.py queries
-        `SELECT id, title, priority, due_at FROM scheduled_tasks
-         WHERE completed_at IS NULL AND due_at IS NOT NULL` but the
-        scheduled_tasks table has columns `name` / `next_due` /
-        `last_completed`, not `title` / `due_at` / `completed_at`.
-        The query raises sqlite3.OperationalError which is caught by
-        the blueprint's per-section try/except (log.debug'd). Net
-        effect: the tasks section is silently absent from every brief
-        output in production. This test pins that behavior so any
-        future schema-fix that makes the query succeed will need to
-        update this test to reflect the new reality."""
+    """Tasks section was silently broken before 2026-04-24 — brief.py
+    queried legacy column names that didn't exist (title / due_at /
+    completed_at). Schema-fix landed in the same continuation: the
+    query now uses canonical columns (name / next_due / last_completed)
+    and emits a payload with both legacy aliases (title, due_at) AND
+    canonical names so renderers keep working unchanged."""
+
+    def test_tasks_due_today_includes_today_and_overdue(self, client):
+        from datetime import datetime, timezone, timedelta
+        today = datetime.now(timezone.utc).date().isoformat()
+        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).date().isoformat()
+        tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat()
         with db_session() as db:
             db.execute(
-                "INSERT INTO scheduled_tasks (name, category, recurrence) "
-                "VALUES (?,?,?)", ('Any task', 'custom', 'once')
+                "INSERT INTO scheduled_tasks (name, category, recurrence, next_due) "
+                "VALUES (?,?,?,?)", ('Today task', 'high', 'once', today + 'T09:00:00')
+            )
+            db.execute(
+                "INSERT INTO scheduled_tasks (name, category, recurrence, next_due) "
+                "VALUES (?,?,?,?)", ('Overdue', 'critical', 'once', yesterday)
+            )
+            db.execute(
+                "INSERT INTO scheduled_tasks (name, category, recurrence, next_due) "
+                "VALUES (?,?,?,?)", ('Future', 'low', 'once', tomorrow)
             )
             db.commit()
-        sections = client.get('/api/brief/daily').get_json()['sections']
-        # Section is absent (query raised and was swallowed by try/except)
-        assert 'tasks' not in sections
+        due = client.get('/api/brief/daily').get_json()['sections']['tasks']['due_today']
+        titles = {t['title'] for t in due}
+        assert 'Today task' in titles
+        assert 'Overdue' in titles
+        assert 'Future' not in titles
+
+    def test_completed_tasks_excluded(self, client):
+        """A task whose last_completed >= today's ISO date is filtered
+        out of due_today (already done this cycle)."""
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).date().isoformat()
+        with db_session() as db:
+            db.execute(
+                "INSERT INTO scheduled_tasks "
+                "(name, category, recurrence, next_due, last_completed) "
+                "VALUES (?,?,?,?,?)",
+                ('Done today', 'low', 'once', today, today + 'T08:00:00')
+            )
+            db.commit()
+        due = client.get('/api/brief/daily').get_json()['sections']['tasks']['due_today']
+        assert not any(t['title'] == 'Done today' for t in due)
+
+    def test_payload_carries_legacy_and_canonical_field_names(self, client):
+        """Schema-fix backwards-compat: payload includes both legacy
+        aliases (title, due_at, priority) and canonical names (name,
+        next_due, category) so renderers built against either era
+        keep working."""
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).date().isoformat()
+        with db_session() as db:
+            db.execute(
+                "INSERT INTO scheduled_tasks (name, category, recurrence, next_due) "
+                "VALUES (?,?,?,?)", ('Sample', 'medical', 'weekly', today)
+            )
+            db.commit()
+        due = client.get('/api/brief/daily').get_json()['sections']['tasks']['due_today']
+        assert len(due) == 1
+        t = due[0]
+        # Legacy + canonical name fields point to the same value
+        assert t['title'] == 'Sample' and t['name'] == 'Sample'
+        assert t['due_at'] == today and t['next_due'] == today
+        assert t['priority'] == 'medical' and t['category'] == 'medical'
 
 
 # ── FAMILY SECTION ────────────────────────────────────────────────────────

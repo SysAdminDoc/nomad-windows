@@ -1206,8 +1206,10 @@ class TestErrorHandler:
 
         assert "await apiPut(`/api/checklists/${_currentChecklistId}`, {items: _currentChecklistItems});" in nav_text
         assert "await apiDelete(`/api/checklists/${id}`);" in nav_text
+        assert "async function prepFetchJson(url, opts = {}, options = {})" in nav_text
+        assert "window.prepFetchJson = prepFetchJson;" in nav_text
 
-        assert "const timers = await apiFetch('/api/timers');" in mapping_text
+        assert "const timers = await prepFetchJson('/api/timers', {}, {" in mapping_text
         assert "const timerList = Array.isArray(timers) ? timers : [];" in mapping_text
         assert "apiPut('/api/settings', {threat_matrix: JSON.stringify(saved)}).catch(() => {});" in mapping_text
 

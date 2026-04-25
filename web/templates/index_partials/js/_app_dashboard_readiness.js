@@ -1018,19 +1018,24 @@ async function viewVaultEntry(id) {
 
 async function editVaultEntry(id) { await viewVaultEntry(id); }
 
-function deleteVaultEntry(id, btn) {
-  if (!confirm('Delete this vault entry?')) return;
-  if (!btn) return;
-  if (!btn.dataset.confirm) {
-    btn.dataset.confirm = '1';
-    btn.textContent = 'Confirm?';
-      btn.classList.add('is-confirming');
-    setTimeout(() => { btn.textContent = 'Delete'; btn.classList.remove('is-confirming'); delete btn.dataset.confirm; }, 3000);
-    return;
+async function deleteVaultEntry(id, btn) {
+  const confirmed = await confirmChoice('Delete this encrypted vault entry from this device.', {
+    title: 'Delete vault entry?',
+    detail: 'This cannot be undone. Make sure the entry is no longer needed before deleting it.',
+    confirmLabel: 'Delete Entry',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
+  if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
+  try {
+    await apiDelete('/api/vault/' + id);
+    toast('Entry deleted', 'warning');
+    loadVaultList();
+  } catch(e) {
+    toast('Failed to delete entry', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); }
   }
-  apiDelete('/api/vault/' + id)
-    .then(() => { toast('Entry deleted', 'warning'); loadVaultList(); })
-    .catch(() => toast('Failed to delete entry', 'error'));
 }
 
 /* ─── Weather Journal ─── */
@@ -1275,7 +1280,13 @@ async function toggleWeatherRule(id) {
 }
 
 async function deleteWeatherRule(id) {
-  if (!confirm('Delete this weather action rule?')) return;
+  const confirmed = await confirmChoice('Delete this weather action rule.', {
+    title: 'Delete weather rule?',
+    detail: 'Triggered actions attached to this rule will stop running immediately.',
+    confirmLabel: 'Delete Rule',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/weather/action-rules/' + id);
     toast('Rule deleted', 'success');

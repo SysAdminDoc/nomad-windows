@@ -1083,7 +1083,13 @@ async function saveSkill() {
   toast('Skill saved', 'success');
 }
 async function deleteSkill(id) {
-  if (!confirm('Delete this skill?')) return;
+  const confirmed = await confirmChoice('Delete this skill from the training tracker.', {
+    title: 'Delete skill?',
+    detail: 'Practice history attached to this skill will no longer appear in the tracker.',
+    confirmLabel: 'Delete Skill',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/skills/' + id);
     toast('Skill deleted', 'info');
@@ -1211,7 +1217,13 @@ async function saveAmmo() {
   toast('Saved', 'success');
 }
 async function deleteAmmo(id) {
-  if (!confirm('Delete this entry?')) return;
+  const confirmed = await confirmChoice('Delete this ammunition inventory entry.', {
+    title: 'Delete ammo entry?',
+    detail: 'Inventory counts update after the entry is removed.',
+    confirmLabel: 'Delete Entry',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/ammo/' + id);
     loadAmmo();
@@ -1337,7 +1349,13 @@ async function saveCommunity() {
   toast('Saved', 'success');
 }
 async function deleteCommunity(id) {
-  if (!confirm('Remove this person?')) return;
+  const confirmed = await confirmChoice('Remove this person from the community registry.', {
+    title: 'Remove person?',
+    detail: 'Trust level, contact, skills, and equipment notes for this person will be removed.',
+    confirmLabel: 'Remove Person',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/community/' + id);
     loadCommunity();
@@ -1421,7 +1439,13 @@ async function logRadiation() {
   } catch(e) { toast('Failed to log reading', 'error'); }
 }
 async function clearRadiation() {
-  if (!confirm('Clear all radiation dose log entries? This cannot be undone.')) return;
+  const confirmed = await confirmChoice('Clear all radiation dose log entries.', {
+    title: 'Clear radiation log?',
+    detail: 'This cannot be undone. Cumulative dose history will reset after clearing.',
+    confirmLabel: 'Clear Log',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiPost('/api/radiation/clear');
     loadRadiation();
@@ -1793,7 +1817,13 @@ async function loadSavedRoutes() {
 }
 
 async function deleteSavedRoute(routeId) {
-  if (!confirm('Delete this route?')) return;
+  const confirmed = await confirmChoice('Delete this saved route.', {
+    title: 'Delete route?',
+    detail: 'Waypoint profile and route planning details for this route will be removed.',
+    confirmLabel: 'Delete Route',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   await safeFetch('/api/maps/routes/' + routeId, {method:'DELETE'});
   loadSavedRoutes();
   const epPanel = document.getElementById('elevation-profile-panel');
@@ -2540,7 +2570,13 @@ async function updatePeerTrust(nodeId, trust) {
 }
 
 async function removePeer(nodeId) {
-  if (!confirm('Remove this federation peer?')) return;
+  const confirmed = await confirmChoice('Remove this federation peer.', {
+    title: 'Remove federation peer?',
+    detail: 'The node will stop appearing in federation trust and marketplace views.',
+    confirmLabel: 'Remove Peer',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/federation/peers/' + nodeId);
     loadFederationPeers();
@@ -2786,7 +2822,13 @@ function renderFreqTable() {
 }
 function filterFreqTable() { renderFreqTable(); }
 async function deleteFreq(id) {
-  if (!confirm('Delete this frequency?')) return;
+  const confirmed = await confirmChoice('Delete this communications frequency.', {
+    title: 'Delete frequency?',
+    detail: 'The saved channel will be removed from the frequency database.',
+    confirmLabel: 'Delete Frequency',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/comms/frequencies/${id}`);
   } catch(e) { toast('Delete failed — network error', 'error'); return; }
@@ -3995,7 +4037,13 @@ async function saveFuel() {
 }
 
 async function deleteFuel(id) {
-  if (!confirm('Delete this fuel entry?')) return;
+  const confirmed = await confirmChoice('Delete this fuel storage entry.', {
+    title: 'Delete fuel entry?',
+    detail: 'Fuel totals and expiration tracking will update after removal.',
+    confirmLabel: 'Delete Entry',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/fuel/${id}`);
     loadFuel();
@@ -4142,7 +4190,13 @@ async function markServiced(id) {
 }
 
 async function deleteEquip(id) {
-  if (!confirm('Delete this equipment entry?')) return;
+  const confirmed = await confirmChoice('Delete this equipment maintenance entry.', {
+    title: 'Delete equipment entry?',
+    detail: 'Maintenance status and service history for this item will be removed.',
+    confirmLabel: 'Delete Entry',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/equipment/${id}`);
     loadEquipment();
@@ -4252,7 +4306,13 @@ async function completeTask(id) {
 }
 
 async function deleteTask(id) {
-  if (!confirm('Delete this task?')) return;
+  const confirmed = await confirmChoice('Delete this recurring preparedness task.', {
+    title: 'Delete task?',
+    detail: 'Due-date tracking and recurrence for this task will stop.',
+    confirmLabel: 'Delete Task',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/tasks/${id}`);
     toast('Task deleted', 'info');
@@ -4352,7 +4412,13 @@ async function viewWatchSchedule(id) {
 }
 
 async function deleteWatchSchedule(id) {
-  if (!confirm('Delete this watch schedule?')) return;
+  const confirmed = await confirmChoice('Delete this watch schedule.', {
+    title: 'Delete watch schedule?',
+    detail: 'Shift rotation details for this schedule will be removed.',
+    confirmLabel: 'Delete Schedule',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/watch-schedules/${id}`);
     toast('Watch schedule deleted', 'info');
@@ -4726,7 +4792,13 @@ async function updateFamilyStatus(memberId, status) {
 }
 
 async function deleteFamilyMember(memberId, name) {
-  if (!confirm(`Remove ${name} from check-in board?`)) return;
+  const confirmed = await confirmChoice(`Remove ${name || 'this member'} from the check-in board.`, {
+    title: 'Remove check-in member?',
+    detail: 'Their current status and contact details will be removed from this board.',
+    confirmLabel: 'Remove Member',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/family-checkins/' + memberId);
     loadFamilyCheckins();
@@ -4736,7 +4808,13 @@ async function deleteFamilyMember(memberId, name) {
 }
 
 async function resetFamilyCheckins() {
-  if (!confirm('Reset every member back to OK? (use after a drill or when the situation ends)')) return;
+  const confirmed = await confirmChoice('Reset every member back to OK.', {
+    title: 'Reset check-ins?',
+    detail: 'Use this after a drill or when the situation ends.',
+    confirmLabel: 'Reset Statuses',
+    tone: 'warning',
+  });
+  if (!confirmed) return;
   try {
     await apiPost('/api/family-checkins/reset-all', {});
     loadFamilyCheckins();
@@ -5117,7 +5195,13 @@ async function addAIMemory() {
 }
 
 async function deleteAIMemory(id) {
-  if (!confirm('Delete this AI memory?')) return;
+  const confirmed = await confirmChoice('Delete this AI memory fact.', {
+    title: 'Delete AI memory?',
+    detail: 'Future AI context will no longer include this fact.',
+    confirmLabel: 'Delete Memory',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/ai/memory/${id}`);
     toast('Memory deleted', 'info');

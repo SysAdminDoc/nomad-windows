@@ -1358,6 +1358,11 @@ function confirmAction({
   });
 }
 window.confirmAction = confirmAction;
+async function confirmChoice(message, options = {}) {
+  const decision = await confirmAction(Object.assign({message}, options));
+  return !!decision.confirmed;
+}
+window.confirmChoice = confirmChoice;
 /** Safe fetch wrapper — returns parsed JSON or fallback on error. Includes 30s timeout. Usage: const data = await safeFetch('/api/foo', {}, []); */
 async function safeFetch(url, opts = {}, fallback = null) {
   let controller;

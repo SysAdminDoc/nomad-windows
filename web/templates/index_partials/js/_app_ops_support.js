@@ -1619,7 +1619,13 @@ function exportJournal() {
 }
 
 async function deleteJournalEntry(id) {
-  if (!confirm('Delete this journal entry?')) return;
+  const confirmed = await confirmChoice('Delete this journal entry.', {
+    title: 'Delete journal entry?',
+    detail: 'The entry will be removed from the preparedness journal.',
+    confirmLabel: 'Delete Entry',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/journal/${id}`);
     toast('Entry deleted', 'warning');
@@ -1796,7 +1802,13 @@ async function addCamera() {
 }
 
 async function deleteCamera(id) {
-  if (!confirm('Remove this camera?')) return;
+  const confirmed = await confirmChoice('Remove this camera from the security dashboard.', {
+    title: 'Remove camera?',
+    detail: 'Motion detection and snapshots for this camera will stop.',
+    confirmLabel: 'Remove Camera',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/security/cameras/${id}`);
     toast('Camera removed', 'warning');
@@ -2078,7 +2090,13 @@ async function loadPowerDevices() {
 }
 
 async function deletePowerDevice(id) {
-  if (!confirm('Remove this power device?')) return;
+  const confirmed = await confirmChoice('Remove this power device from capacity planning.', {
+    title: 'Remove power device?',
+    detail: 'Power dashboard totals will update after the device is removed.',
+    confirmLabel: 'Remove Device',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/power/devices/${id}`);
     toast('Device removed', 'warning');
@@ -2522,7 +2540,13 @@ async function submitPreservation() {
 }
 
 async function deletePreservation(id) {
-  if (!confirm('Delete this preservation entry?')) return;
+  const confirmed = await confirmChoice('Delete this preservation batch entry.', {
+    title: 'Delete preservation entry?',
+    detail: 'This removes the logged batch from the garden record.',
+    confirmLabel: 'Delete Entry',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/garden/preservation/' + id);
     loadPreservationLog();
@@ -2587,7 +2611,13 @@ async function addPlot() {
 }
 
 async function deletePlot(id) {
-  if (!confirm('Remove this garden plot?')) return;
+  const confirmed = await confirmChoice('Remove this garden plot.', {
+    title: 'Remove garden plot?',
+    detail: 'Plot records and related planning context will be removed from this view.',
+    confirmLabel: 'Remove Plot',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/garden/plots/' + id);
     toast('Plot removed', 'warning');
@@ -2633,7 +2663,13 @@ async function addSeed() {
 }
 
 async function deleteSeed(id) {
-  if (!confirm('Remove this seed entry?')) return;
+  const confirmed = await confirmChoice('Remove this seed entry from inventory.', {
+    title: 'Remove seed entry?',
+    detail: 'Seed inventory and viability planning will update after removal.',
+    confirmLabel: 'Remove Seed',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/garden/seeds/' + id);
     toast('Seed removed', 'warning');
@@ -2775,7 +2811,13 @@ async function addLivestock() {
 }
 
 async function deleteLivestock(id) {
-  if (!confirm('Remove this animal?')) return;
+  const confirmed = await confirmChoice('Remove this animal from livestock records.', {
+    title: 'Remove livestock record?',
+    detail: 'Health events and planning context attached to this record will no longer be shown.',
+    confirmLabel: 'Remove Record',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/livestock/' + id);
     toast('Animal removed', 'warning');

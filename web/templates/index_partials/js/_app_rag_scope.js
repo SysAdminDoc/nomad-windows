@@ -117,7 +117,13 @@
     async function onDeleteRow(ev) {
         const row = ev.currentTarget.closest('.rag-scope-row');
         if (!row) return;
-        if (!window.confirm(`Remove custom RAG entry "${row.dataset.table}"?`)) return;
+        const confirmed = await window.confirmChoice(`Remove custom RAG entry "${row.dataset.table}".`, {
+            title: 'Remove RAG scope entry?',
+            detail: 'The table will no longer contribute custom retrieval context until it is added again.',
+            confirmLabel: 'Remove Entry',
+            tone: 'danger',
+        });
+        if (!confirmed) return;
         try {
             await window.apiDelete(`/api/ai/rag/scope/${encodeURIComponent(row.dataset.table)}`);
             setStatus(`Removed ${row.dataset.table}`, 'success');
@@ -143,7 +149,13 @@
     }
 
     async function onReset() {
-        if (!window.confirm('Reset all builtin RAG scope entries to defaults? Custom entries are preserved.')) return;
+        const confirmed = await window.confirmChoice('Reset all builtin RAG scope entries to defaults.', {
+            title: 'Reset RAG defaults?',
+            detail: 'Custom entries are preserved, but builtin table weights and enabled states will be restored.',
+            confirmLabel: 'Reset Defaults',
+            tone: 'warning',
+        });
+        if (!confirmed) return;
         try {
             await window.apiPost('/api/ai/rag/scope/reset', {});
             setStatus('Defaults restored', 'success');

@@ -547,7 +547,13 @@ async function selectConvo(id) {
   } catch(e) { toast(e.message || 'Failed to load conversation', 'error'); }
 }
 async function deleteConvo(id) {
-  if (!confirm('Delete this conversation?')) return;
+  const confirmed = await confirmChoice('Delete this AI conversation and its message history.', {
+    title: 'Delete conversation?',
+    detail: 'This removes the conversation from the local workspace history.',
+    confirmLabel: 'Delete Conversation',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await fetchJsonStrict(`/api/conversations/${id}`, {method:'DELETE'}, 'Failed to delete conversation');
   } catch(e) { /* network error — continue cleanup */ }
@@ -1283,7 +1289,13 @@ function startZimQueuePoll() {
 }
 
 async function deleteZim(filename) {
-  if (!confirm('Delete this content pack? This cannot be undone.')) return;
+  const confirmed = await confirmChoice('Delete this offline content pack from local storage.', {
+    title: 'Delete content pack?',
+    detail: 'This cannot be undone. The content pack must be downloaded again to use it offline.',
+    confirmLabel: 'Delete Pack',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await fetchJsonStrict('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) }, 'Failed to delete content pack');
   } catch (e) {

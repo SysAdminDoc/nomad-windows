@@ -134,6 +134,26 @@ test('toast stack uses a managed container for long notifications', async ({ pag
   expect(probe.overlaps).toBe(false);
 });
 
+test('legacy showToast calls route through the managed toast system', async ({ page }) => {
+  await boot(page);
+  const probe = await page.evaluate(async () => {
+    window.showToast('Workspace action saved.', 'success');
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const toast = document.querySelector('#toast-container .toast-success');
+    return {
+      aliasType: typeof window.showToast,
+      sameFunction: window.showToast === window.toast,
+      title: toast?.querySelector('.toast-title')?.textContent?.trim(),
+      message: toast?.querySelector('.toast-message')?.textContent?.trim(),
+    };
+  });
+
+  expect(probe.aliasType).toBe('function');
+  expect(probe.sameFunction).toBe(true);
+  expect(probe.title).toBe('Saved');
+  expect(probe.message).toBe('Workspace action saved.');
+});
+
 test('toastError combines action, detail, and recovery copy', async ({ page }) => {
   await boot(page);
   const probe = await page.evaluate(async () => {

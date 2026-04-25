@@ -428,7 +428,8 @@
     const parsed = parseFloat(val(id));
     return Number.isFinite(parsed) ? parsed : (def ?? 0);
   };
-  // XSS guard: every user-sourced string rendered via innerHTML goes through esc().
+  // XSS guard: html`` tagged template escapes all interpolations by default.
+  // `esc()` is retained for helpers that still build raw strings (mpEmpty, mpDeleteButton aria-label).
   const esc=s=>(window.escapeHtml?window.escapeHtml(s):String(s==null?'':s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
@@ -441,16 +442,17 @@
   /* ── Pregnancy ── */
   window.mpLoadPregnancies=function(){
     const el=$('mp-preg-list');
-    el.innerHTML=mpEmpty('Loading maternal care…', 'Gathering pregnancy records, due dates, and delivery status.');
+    safeSetHTML(el, mpEmpty('Loading maternal care…', 'Gathering pregnancy records, due dates, and delivery status.'));
     api('/api/medical/pregnancies').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=mpEmpty('No maternal care records yet', 'Add the first patient above to keep due dates, blood type, and care status in one place.');return;}
+      if(!rows.length){safeSetHTML(el, mpEmpty('No maternal care records yet', 'Add the first patient above to keep due dates, blood type, and care status in one place.'));return;}
       const badge={active:'mp-badge-active',delivered:'mp-badge-delivered',loss:'mp-badge-loss'};
-      el.innerHTML=rows.map(p=>`<div class="mp-list-item">
-        <div class="mp-list-copy"><div><strong>${esc(p.patient_name)}</strong> <span class="mp-badge ${badge[p.status]||''} mp-tag-spacer">${esc(String(p.status||'').toUpperCase())}</span></div>
-          <small class="tone-muted">Due: ${esc(p.due_date||'--')} | G${+p.gravida||0}P${+p.para||0} | ${esc(p.blood_type||'--')}</small></div>
-        <div class="mp-item-actions">${mpDeleteButton(`mpDeletePregnancy(${Number(p.id)||0})`, 'Delete pregnancy record')}</div>
-      </div>`).join('');
+      const out=rows.map(p=>html`<div class="mp-list-item">
+        <div class="mp-list-copy"><div><strong>${p.patient_name}</strong> <span class="mp-badge ${trustedHTML(badge[p.status]||'')} mp-tag-spacer">${String(p.status||'').toUpperCase()}</span></div>
+          <small class="tone-muted">Due: ${p.due_date||'--'} | G${+p.gravida||0}P${+p.para||0} | ${p.blood_type||'--'}</small></div>
+        <div class="mp-item-actions">${trustedHTML(mpDeleteButton(`mpDeletePregnancy(${Number(p.id)||0})`, 'Delete pregnancy record'))}</div>
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpCreatePregnancy=function(){
@@ -468,15 +470,16 @@
   /* ── Dental ── */
   window.mpLoadDental=function(){
     const el=$('mp-dent-list');
-    el.innerHTML=mpEmpty('Loading dental records…', 'Checking treatment history, pain notes, and affected teeth.');
+    safeSetHTML(el, mpEmpty('Loading dental records…', 'Checking treatment history, pain notes, and affected teeth.'));
     api('/api/medical/dental').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=mpEmpty('No dental records yet', 'Log the first tooth, condition, or treatment note above to keep care decisions grounded.');return;}
-      el.innerHTML=rows.map(d=>`<div class="mp-list-item">
-        <div class="mp-list-copy"><div><strong>${esc(d.patient_name)}</strong> - Tooth #${+d.tooth_number||0}</div>
-          <small class="tone-muted">${esc(d.condition)} | Tx: ${esc(d.treatment||'--')} | Pain: ${+d.pain_level||0}/10 | ${esc(d.treatment_date||'--')}</small></div>
-        <div class="mp-item-actions">${mpDeleteButton(`mpDeleteDental(${Number(d.id)||0})`, 'Delete dental record')}</div>
-      </div>`).join('');
+      if(!rows.length){safeSetHTML(el, mpEmpty('No dental records yet', 'Log the first tooth, condition, or treatment note above to keep care decisions grounded.'));return;}
+      const out=rows.map(d=>html`<div class="mp-list-item">
+        <div class="mp-list-copy"><div><strong>${d.patient_name}</strong> - Tooth #${+d.tooth_number||0}</div>
+          <small class="tone-muted">${d.condition} | Tx: ${d.treatment||'--'} | Pain: ${+d.pain_level||0}/10 | ${d.treatment_date||'--'}</small></div>
+        <div class="mp-item-actions">${trustedHTML(mpDeleteButton(`mpDeleteDental(${Number(d.id)||0})`, 'Delete dental record'))}</div>
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpCreateDental=function(){
@@ -494,31 +497,33 @@
   /* ── Chronic Conditions ── */
   window.mpLoadChronic=function(){
     const el=$('mp-chr-list');
-    el.innerHTML=mpEmpty('Loading chronic care…', 'Gathering active conditions, severity, and medication runway.');
+    safeSetHTML(el, mpEmpty('Loading chronic care…', 'Gathering active conditions, severity, and medication runway.'));
     api('/api/medical/chronic').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=mpEmpty('No chronic-care records yet', 'Add the first condition and medication buffer above to surface stockpile risk sooner.');return;}
+      if(!rows.length){safeSetHTML(el, mpEmpty('No chronic-care records yet', 'Add the first condition and medication buffer above to surface stockpile risk sooner.'));return;}
       const badge={mild:'mp-badge-mild',moderate:'mp-badge-moderate',severe:'mp-badge-severe',critical:'mp-badge-critical'};
-      el.innerHTML=rows.map(c=>`<div class="mp-list-item">
-        <div class="mp-list-copy"><div><strong>${esc(c.patient_name)}</strong> - ${esc(c.condition_name)} <span class="mp-badge ${badge[c.severity]||''} mp-tag-spacer">${esc(String(c.severity||'').toUpperCase())}</span></div>
+      const out=rows.map(c=>html`<div class="mp-list-item">
+        <div class="mp-list-copy"><div><strong>${c.patient_name}</strong> - ${c.condition_name} <span class="mp-badge ${trustedHTML(badge[c.severity]||'')} mp-tag-spacer">${String(c.severity||'').toUpperCase()}</span></div>
           <small class="tone-muted">Stockpile: ${mpNumber(c.medication_stockpile_days)} days</small></div>
         <div class="mp-item-actions">
           <button type="button" class="mp-btn mp-btn-secondary" onclick="mpEditChronic(${Number(c.id)||0}, ${Number(c.medication_stockpile_days)||0})">Adjust Days</button>
-          ${mpDeleteButton(`mpDeleteChronic(${Number(c.id)||0})`, 'Delete chronic-care record')}
+          ${trustedHTML(mpDeleteButton(`mpDeleteChronic(${Number(c.id)||0})`, 'Delete chronic-care record'))}
         </div>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpLoadChronicAlerts=function(){
     const el=$('mp-chr-alerts');
-    el.innerHTML=mpEmpty('Loading medication alerts…', 'Checking which chronic-care records need stockpile attention first.');
+    safeSetHTML(el, mpEmpty('Loading medication alerts…', 'Checking which chronic-care records need stockpile attention first.'));
     api('/api/medical/chronic/stockpile-alerts').then(alerts=>{
       const rows=Array.isArray(alerts)?alerts:[];
-      if(!rows.length){el.innerHTML='<div class="mp-callout-success">Medication stockpiles look stable right now.</div>';return;}
-      el.innerHTML=rows.map(a=>`<div class="mp-alert-card">
-        <strong>${esc(a.patient_name)}</strong> - ${esc(a.condition_name)}
+      if(!rows.length){safeSetHTML(el, '<div class="mp-callout-success">Medication stockpiles look stable right now.</div>');return;}
+      const out=rows.map(a=>html`<div class="mp-alert-card">
+        <strong>${a.patient_name}</strong> - ${a.condition_name}
         <br><small>Only <strong>${mpNumber(a.medication_stockpile_days)} days</strong> of medication remaining</small>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpCreateChronic=function(){
@@ -544,27 +549,29 @@
   /* ── Vaccinations ── */
   window.mpLoadVax=function(){
     const el=$('mp-vax-list');
-    el.innerHTML=mpEmpty('Loading vaccination records…', 'Pulling immunization history and next-due dates.');
+    safeSetHTML(el, mpEmpty('Loading vaccination records…', 'Pulling immunization history and next-due dates.'));
     api('/api/medical/vaccinations').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=mpEmpty('No vaccination records yet', 'Add the first immunization above so follow-up dates stay visible.');return;}
-      el.innerHTML=rows.map(v=>`<div class="mp-list-item">
-        <div class="mp-list-copy"><div><strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})</div>
-          <small class="tone-muted">Given: ${esc(v.date_administered||'--')} | Next due: ${esc(v.next_due||'--')}</small></div>
-        <div class="mp-item-actions">${mpDeleteButton(`mpDeleteVax(${Number(v.id)||0})`, 'Delete vaccination record')}</div>
-      </div>`).join('');
+      if(!rows.length){safeSetHTML(el, mpEmpty('No vaccination records yet', 'Add the first immunization above so follow-up dates stay visible.'));return;}
+      const out=rows.map(v=>html`<div class="mp-list-item">
+        <div class="mp-list-copy"><div><strong>${v.patient_name}</strong> - ${v.vaccine_name} (Dose ${+v.dose_number||0})</div>
+          <small class="tone-muted">Given: ${v.date_administered||'--'} | Next due: ${v.next_due||'--'}</small></div>
+        <div class="mp-item-actions">${trustedHTML(mpDeleteButton(`mpDeleteVax(${Number(v.id)||0})`, 'Delete vaccination record'))}</div>
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpLoadVaxDue=function(){
     const el=$('mp-vax-due');
-    el.innerHTML=mpEmpty('Loading due vaccinations…', 'Checking what is due next so follow-up stays visible.');
+    safeSetHTML(el, mpEmpty('Loading due vaccinations…', 'Checking what is due next so follow-up stays visible.'));
     api('/api/medical/vaccinations/due').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML='<div class="mp-callout-success">No vaccinations are due or overdue right now.</div>';return;}
-      el.innerHTML=rows.map(v=>`<div class="mp-alert-card">
-        <strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})
-        <br><small>Due: <strong>${esc(v.next_due)}</strong></small>
-      </div>`).join('');
+      if(!rows.length){safeSetHTML(el, '<div class="mp-callout-success">No vaccinations are due or overdue right now.</div>');return;}
+      const out=rows.map(v=>html`<div class="mp-alert-card">
+        <strong>${v.patient_name}</strong> - ${v.vaccine_name} (Dose ${+v.dose_number||0})
+        <br><small>Due: <strong>${v.next_due}</strong></small>
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpCreateVax=function(){
@@ -582,29 +589,30 @@
   /* ── Mental Health ── */
   window.mpLoadMH=function(){
     const el=$('mp-mh-list');
-    el.innerHTML=mpEmpty('Loading wellness check-ins…', 'Gathering recent mood, anxiety, sleep, and energy notes.');
+    safeSetHTML(el, mpEmpty('Loading wellness check-ins…', 'Gathering recent mood, anxiety, sleep, and energy notes.'));
     api('/api/medical/mental-health').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=mpEmpty('No wellness check-ins yet', 'Log the first mental-health entry above to make trends and follow-up easier to trust.');return;}
-      el.innerHTML=rows.map(m=>`<div class="mp-list-item">
-        <div class="mp-list-copy"><div><strong>${esc(m.patient_name)}</strong> - ${esc(m.check_date||'--')}</div>
+      if(!rows.length){safeSetHTML(el, mpEmpty('No wellness check-ins yet', 'Log the first mental-health entry above to make trends and follow-up easier to trust.'));return;}
+      const out=rows.map(m=>html`<div class="mp-list-item">
+        <div class="mp-list-copy"><div><strong>${m.patient_name}</strong> - ${m.check_date||'--'}</div>
           <small class="tone-muted">Mood: ${+m.mood_score||0}/10 | Anxiety: ${+m.anxiety_level||0}/10 | Sleep: ${mpNumber(m.sleep_hours)}h | Energy: ${+m.energy_level||0}/10</small></div>
-        <div class="mp-item-actions">${mpDeleteButton(`mpDeleteMH(${Number(m.id)||0})`, 'Delete wellness check-in')}</div>
-      </div>`).join('');
+        <div class="mp-item-actions">${trustedHTML(mpDeleteButton(`mpDeleteMH(${Number(m.id)||0})`, 'Delete wellness check-in'))}</div>
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpLoadMHTrends=function(){
     const p=val('mp-mh-trend-patient');if(!p)return;
     api('/api/medical/mental-health/trends?patient='+encodeURIComponent(p)).then(t=>{
       const el=$('mp-mh-trends');
-      if(!t||t.error){el.innerHTML=mpEmpty('No trend data yet', 'This patient needs more than one check-in before trends become useful.');return;}
-      el.innerHTML=`<div class="mp-trend-row">
+      if(!t||t.error){safeSetHTML(el, mpEmpty('No trend data yet', 'This patient needs more than one check-in before trends become useful.'));return;}
+      safeSetHTML(el, html`<div class="mp-trend-row">
         <div class="mp-trend-stat"><div class="mp-trend-val">${t.avg_mood!=null?t.avg_mood.toFixed(1):'--'}</div><div class="mp-trend-label">Avg Mood</div></div>
         <div class="mp-trend-stat"><div class="mp-trend-val">${t.avg_anxiety!=null?t.avg_anxiety.toFixed(1):'--'}</div><div class="mp-trend-label">Avg Anxiety</div></div>
         <div class="mp-trend-stat"><div class="mp-trend-val">${t.avg_sleep!=null?t.avg_sleep.toFixed(1):'--'}</div><div class="mp-trend-label">Avg Sleep (h)</div></div>
         <div class="mp-trend-stat"><div class="mp-trend-val">${t.avg_energy!=null?t.avg_energy.toFixed(1):'--'}</div><div class="mp-trend-label">Avg Energy</div></div>
         <div class="mp-trend-stat"><div class="mp-trend-val">${t.total_checks||0}</div><div class="mp-trend-label">Total Checks</div></div>
-      </div>`;
+      </div>`);
     });
   };
   window.mpCreateMH=function(){
@@ -622,15 +630,16 @@
   /* ── Vet ── */
   window.mpLoadVet=function(){
     const el=$('mp-vet-list');
-    el.innerHTML=mpEmpty('Loading animal care…', 'Checking veterinary notes, weight, condition, and treatment history.');
+    safeSetHTML(el, mpEmpty('Loading animal care…', 'Checking veterinary notes, weight, condition, and treatment history.'));
     api('/api/medical/vet').then(items=>{
       const rows=Array.isArray(items)?items:[];
-      if(!rows.length){el.innerHTML=mpEmpty('No veterinary records yet', 'Add the first animal or livestock entry above to keep treatment history close at hand.');return;}
-      el.innerHTML=rows.map(v=>`<div class="mp-list-item">
-        <div class="mp-list-copy"><div><strong>${esc(v.animal_name)}</strong> (${esc(v.species)}${v.breed?' - '+esc(v.breed):''})</div>
-          <small class="tone-muted">${mpNumber(v.weight_lb)}lb | ${esc(v.condition||'--')} | Tx: ${esc(v.treatment||'--')}</small></div>
-        <div class="mp-item-actions">${mpDeleteButton(`mpDeleteVet(${Number(v.id)||0})`, 'Delete veterinary record')}</div>
-      </div>`).join('');
+      if(!rows.length){safeSetHTML(el, mpEmpty('No veterinary records yet', 'Add the first animal or livestock entry above to keep treatment history close at hand.'));return;}
+      const out=rows.map(v=>html`<div class="mp-list-item">
+        <div class="mp-list-copy"><div><strong>${v.animal_name}</strong> (${v.species}${v.breed?' - '+v.breed:''})</div>
+          <small class="tone-muted">${mpNumber(v.weight_lb)}lb | ${v.condition||'--'} | Tx: ${v.treatment||'--'}</small></div>
+        <div class="mp-item-actions">${trustedHTML(mpDeleteButton(`mpDeleteVet(${Number(v.id)||0})`, 'Delete veterinary record'))}</div>
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpCreateVet=function(){
@@ -655,15 +664,16 @@
     const q=val('mp-herb-search');
     api('/api/medical/herbal'+(q?'?q='+encodeURIComponent(q):'')).then(items=>{
       const el=$('mp-herb-results');
-      if(!items.length){el.innerHTML='<div class="mp-empty">No remedies match this search yet.</div>';return;}
-      el.innerHTML=items.map(h=>`<div class="mp-herb-card">
-        <h4>${esc(h.name)}</h4>
-        ${h.common_names?'<div class="mp-herb-meta">Also: '+esc(h.common_names)+'</div>':''}
-        <div class="mp-herb-detail"><strong>Uses:</strong> ${esc(h.uses||'--')}</div>
-        <div class="mp-herb-detail"><strong>Preparation:</strong> ${esc(h.preparation||'--')}</div>
-        <div class="mp-herb-detail"><strong>Dosage:</strong> ${esc(h.dosage||'--')}</div>
-        ${h.contraindications?'<div class="mp-herb-warn">Caution: '+esc(h.contraindications)+'</div>':''}
-      </div>`).join('');
+      if(!items.length){safeSetHTML(el, '<div class="mp-empty">No remedies match this search yet.</div>');return;}
+      const out=items.map(h=>html`<div class="mp-herb-card">
+        <h4>${h.name}</h4>
+        ${h.common_names?html`<div class="mp-herb-meta">Also: ${h.common_names}</div>`:''}
+        <div class="mp-herb-detail"><strong>Uses:</strong> ${h.uses||'--'}</div>
+        <div class="mp-herb-detail"><strong>Preparation:</strong> ${h.preparation||'--'}</div>
+        <div class="mp-herb-detail"><strong>Dosage:</strong> ${h.dosage||'--'}</div>
+        ${h.contraindications?html`<div class="mp-herb-warn">Caution: ${h.contraindications}</div>`:''}
+      </div>`);
+      safeSetHTML(el, out.join(''));
     });
   };
   window.mpSeedHerbal=function(){
@@ -683,7 +693,7 @@
         drop_factor:numVal('mp-iv-drop',20)})
     }).then(r=>{
       const el=$('mp-iv-result');el.style.display='block';
-      el.innerHTML=`<span class="val">${r.ml_per_hour} mL/hr</span> &mdash; <span class="val">${r.drops_per_min} gtt/min</span>`;
+      safeSetHTML(el, html`<span class="val">${r.ml_per_hour} mL/hr</span> &mdash; <span class="val">${r.drops_per_min} gtt/min</span>`);
     });
   };
   window.mpCalcBurns=function(){
@@ -695,10 +705,10 @@
       body:JSON.stringify({regions:regions,weight_kg:numVal('mp-burn-weight',70)})
     }).then(r=>{
       const el=$('mp-burn-result');el.style.display='block';
-      el.innerHTML=`<span class="val">${r.total_bsa_pct}% BSA</span><br>
+      safeSetHTML(el, html`<span class="val">${r.total_bsa_pct}% BSA</span><br>
         <small>Severity: <strong>${r.severity||'--'}</strong></small><br>
         <small>Parkland formula (first 24h): <strong>${r.parkland_ml||'--'} mL</strong> LR
-        ${r.parkland_ml?'<br>First 8h: '+(r.parkland_ml/2).toFixed(0)+' mL | Next 16h: '+(r.parkland_ml/2).toFixed(0)+' mL':''}</small>`;
+        ${r.parkland_ml?trustedHTML('<br>First 8h: '+(r.parkland_ml/2).toFixed(0)+' mL | Next 16h: '+(r.parkland_ml/2).toFixed(0)+' mL'):''}</small>`);
     });
   };
   window.mpCalcApgar=function(){
@@ -709,8 +719,8 @@
     }).then(r=>{
       const el=$('mp-apgar-result');el.style.display='block';
       const color=r.score>=7?'var(--mp-green)':r.score>=4?'var(--mp-amber)':'var(--mp-red)';
-      el.innerHTML=`<span class="val" style="color:${color}">${r.score}/10</span><br>
-        <small>${r.assessment||''}</small>`;
+      safeSetHTML(el, html`<span class="val" style="--mp-apgar-tone:${color};color:var(--mp-apgar-tone)">${r.score}/10</span><br>
+        <small>${r.assessment||''}</small>`);
     });
   };
 

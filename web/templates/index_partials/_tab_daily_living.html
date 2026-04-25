@@ -688,21 +688,19 @@
   window.dlLoadSchedules = function() {
     api('/api/daily-living/schedules').then(function(items) {
       var c = el('dl-schedule-list');
-      if (!items.length) { c.innerHTML = dlEmpty('No Schedules Yet', 'Build the first routine above so the household cadence stays visible at a glance.'); return; }
-      c.innerHTML = items.map(function(s) {
-        return '<div class="dl-list-item"><div><strong>' + s.name + '</strong> ' + typeBadge(s.type || 'normal') +
-          '<br><small class="tone-muted">' + (s.description || 'No description') +
-          ' &middot; ' + (s.active_days || []).join(', ') + '</small></div>' +
-          '<div class="dl-action-cluster">' +
-          '<button class="dl-btn dl-btn-secondary" onclick="dlEditSchedule(' + s.id + ')">Edit</button>' +
-          dlDeleteButton('dlDeleteSchedule(' + s.id + ')', 'schedule') + '</div></div>';
-      }).join('');
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Schedules Yet', 'Build the first routine above so the household cadence stays visible at a glance.')); return; }
+      var rows = items.map(function(s) {
+        var days = (s.active_days || []).join(', ');
+        return html`<div class="dl-list-item"><div><strong>${s.name}</strong> ${trustedHTML(typeBadge(s.type || 'normal'))}<br><small class="tone-muted">${s.description || 'No description'} &middot; ${days}</small></div><div class="dl-action-cluster"><button class="dl-btn dl-btn-secondary" onclick="dlEditSchedule(${Number(s.id)||0})">Edit</button>${trustedHTML(dlDeleteButton('dlDeleteSchedule(' + (Number(s.id)||0) + ')', 'schedule'))}</div></div>`;
+      });
+      safeSetHTML(c, rows.join(''));
       /* Update stats */
       var stats = el('dl-schedule-stats');
-      stats.innerHTML = '<div class="dl-stat-card"><div class="dl-stat-val">' + items.length + '</div><div class="dl-stat-label">Schedules</div></div>' +
-        '<div class="dl-stat-card"><div class="dl-stat-val">' + items.filter(function(s){return s.type==='normal';}).length + '</div><div class="dl-stat-label">Normal</div></div>' +
-        '<div class="dl-stat-card"><div class="dl-stat-val">' + items.filter(function(s){return s.type==='grid_down';}).length + '</div><div class="dl-stat-label">Grid Down</div></div>' +
-        '<div class="dl-stat-card"><div class="dl-stat-val">' + items.filter(function(s){return s.type==='emergency';}).length + '</div><div class="dl-stat-label">Emergency</div></div>';
+      var total = items.length;
+      var normal = items.filter(function(s){return s.type==='normal';}).length;
+      var gridDown = items.filter(function(s){return s.type==='grid_down';}).length;
+      var emergency = items.filter(function(s){return s.type==='emergency';}).length;
+      safeSetHTML(stats, html`<div class="dl-stat-card"><div class="dl-stat-val">${total}</div><div class="dl-stat-label">Schedules</div></div><div class="dl-stat-card"><div class="dl-stat-val">${normal}</div><div class="dl-stat-label">Normal</div></div><div class="dl-stat-card"><div class="dl-stat-val">${gridDown}</div><div class="dl-stat-label">Grid Down</div></div><div class="dl-stat-card"><div class="dl-stat-val">${emergency}</div><div class="dl-stat-label">Emergency</div></div>`);
     });
   };
 
@@ -743,13 +741,11 @@
     var box = el('dl-schedule-templates');
     box.classList.remove('is-hidden');
     api('/api/daily-living/schedules/templates').then(function(templates) {
-      if (!templates.length) { box.innerHTML = dlEmpty('No Templates Available', 'Built-in routines are unavailable right now. You can still build one from scratch.'); return; }
-      box.innerHTML = '<div class="dl-card-title">Schedule Templates</div>' +
-        templates.map(function(t) {
-          return '<div class="dl-list-item"><div><strong>' + t.name + '</strong> ' + typeBadge(t.type || 'normal') +
-            '<br><small class="tone-muted">' + (t.description || '') + '</small></div>' +
-            '<button class="dl-btn dl-btn-primary" onclick="dlApplyTemplate(' + t.id + ')">Apply</button></div>';
-        }).join('');
+      if (!templates.length) { safeSetHTML(box, dlEmpty('No Templates Available', 'Built-in routines are unavailable right now. You can still build one from scratch.')); return; }
+      var rows = templates.map(function(t) {
+        return html`<div class="dl-list-item"><div><strong>${t.name}</strong> ${trustedHTML(typeBadge(t.type || 'normal'))}<br><small class="tone-muted">${t.description || ''}</small></div><button class="dl-btn dl-btn-primary" onclick="dlApplyTemplate(${Number(t.id)||0})">Apply</button></div>`;
+      });
+      safeSetHTML(box, '<div class="dl-card-title">Schedule Templates</div>' + rows.join(''));
     });
   };
 
@@ -761,19 +757,13 @@
   window.dlLoadChores = function() {
     api('/api/daily-living/chores').then(function(items) {
       var c = el('dl-chore-list');
-      if (!items.length) { c.innerHTML = dlEmpty('No Chores Yet', 'Add the first recurring responsibility above to start the household rotation.'); return; }
-      c.innerHTML = items.map(function(ch) {
-        var completedCls = ch.completed ? ' class="dl-faded"' : '';
-        return '<div class="dl-list-item"' + completedCls + '><div>' +
-          '<strong>' + ch.name + '</strong> <span class="dl-badge dl-tag-accent">' + ch.category + '</span>' +
-          ' <span class="dl-badge" style="background:var(--border,#333)">' + ch.frequency + '</span>' +
-          '<br><small class="tone-muted">Assigned: ' + (ch.assigned_to || 'Unassigned') +
-          ' &middot; ' + (ch.duration || 30) + 'min &middot; Priority: ' + (ch.priority || 'medium') + '</small></div>' +
-          '<div class="dl-action-cluster">' +
-          (!ch.completed ? '<button class="dl-btn dl-btn-success" onclick="dlCompleteChore(' + ch.id + ')">Done</button>' : '') +
-          '<button class="dl-btn dl-btn-secondary" onclick="dlEditChore(' + ch.id + ')">Edit</button>' +
-          dlDeleteButton('dlDeleteChore(' + ch.id + ')', 'chore') + '</div></div>';
-      }).join('');
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Chores Yet', 'Add the first recurring responsibility above to start the household rotation.')); return; }
+      var rows = items.map(function(ch) {
+        var id = Number(ch.id) || 0;
+        var doneBtn = !ch.completed ? html`<button class="dl-btn dl-btn-success" onclick="dlCompleteChore(${id})">Done</button>` : '';
+        return html`<div class="dl-list-item${ch.completed ? ' dl-faded' : ''}"><div><strong>${ch.name}</strong> <span class="dl-badge dl-tag-accent">${ch.category}</span> <span class="dl-badge" style="background:var(--border,#333)">${ch.frequency}</span><br><small class="tone-muted">Assigned: ${ch.assigned_to || 'Unassigned'} &middot; ${ch.duration || 30}min &middot; Priority: ${ch.priority || 'medium'}</small></div><div class="dl-action-cluster">${doneBtn}<button class="dl-btn dl-btn-secondary" onclick="dlEditChore(${id})">Edit</button>${trustedHTML(dlDeleteButton('dlDeleteChore(' + id + ')', 'chore'))}</div></div>`;
+      });
+      safeSetHTML(c, rows.join(''));
     });
   };
 
@@ -827,23 +817,18 @@
       var currentVal = select.value;
       var people = [];
       items.forEach(function(it) { if (it.person && people.indexOf(it.person) === -1) people.push(it.person); });
-      var opts = '<option value="">All People</option>' + people.map(function(p) {
-        return '<option value="' + p + '"' + (p === currentVal ? ' selected' : '') + '>' + p + '</option>';
+      var optRows = people.map(function(p) {
+        return html`<option value="${p}"${trustedHTML(p === currentVal ? ' selected' : '')}>${p}</option>`;
       }).join('');
-      select.innerHTML = opts;
+      safeSetHTML(select, '<option value="">All People</option>' + optRows);
 
-      if (!items.length) { c.innerHTML = dlEmpty('No Clothing Items Yet', 'Add the first climate or work layer above so each person’s coverage stays visible.'); return; }
-      c.innerHTML = items.map(function(it) {
-        return '<div class="dl-recipe-card"><div class="dl-recipe-title">' + it.item_name +
-          (it.waterproof ? ' <span class="dl-badge" style="background:rgba(59,130,246,.2);color:var(--dl-blue)">Waterproof</span>' : '') +
-          '</div><div class="dl-recipe-meta">' + (it.person || '') + ' &middot; ' + (it.category || '').replace('_', ' ') +
-          ' &middot; ' + (it.size || '-') + ' &middot; Qty: ' + (it.quantity || 1) + ' &middot; ' + (it.condition || 'good') +
-          ' &middot; ' + (it.season || 'all') + '</div>' +
-          '<div class="dl-row-spaced-xs">' + stars(it.warmth_rating || 1) + ' <small class="tone-muted">warmth</small></div>' +
-          '<div class="dl-action-cluster dl-row-spaced-xs">' +
-          '<button class="dl-btn dl-btn-secondary" onclick="dlEditClothing(' + it.id + ')">Edit</button>' +
-          dlDeleteButton('dlDeleteClothing(' + it.id + ')', 'clothing item') + '</div></div>';
-      }).join('');
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Clothing Items Yet', 'Add the first climate or work layer above so each person\u2019s coverage stays visible.')); return; }
+      var rows = items.map(function(it) {
+        var id = Number(it.id) || 0;
+        var waterBadge = it.waterproof ? html` <span class="dl-badge" style="background:rgba(59,130,246,.2);color:var(--dl-blue)">Waterproof</span>` : '';
+        return html`<div class="dl-recipe-card"><div class="dl-recipe-title">${it.item_name}${waterBadge}</div><div class="dl-recipe-meta">${it.person || ''} &middot; ${(it.category || '').replace('_', ' ')} &middot; ${it.size || '-'} &middot; Qty: ${it.quantity || 1} &middot; ${it.condition || 'good'} &middot; ${it.season || 'all'}</div><div class="dl-row-spaced-xs">${trustedHTML(stars(it.warmth_rating || 1))} <small class="tone-muted">warmth</small></div><div class="dl-action-cluster dl-row-spaced-xs"><button class="dl-btn dl-btn-secondary" onclick="dlEditClothing(${id})">Edit</button>${trustedHTML(dlDeleteButton('dlDeleteClothing(' + id + ')', 'clothing item'))}</div></div>`;
+      });
+      safeSetHTML(c, rows.join(''));
     });
   };
 
@@ -888,16 +873,15 @@
     var box = el('dl-clothing-assessment');
     box.classList.remove('is-hidden');
     api('/api/daily-living/clothing/assessment').then(function(data) {
-      var html = '<div class="dl-card-title">Cold Weather Assessment</div>';
-      if (data.summary) html += '<p style="color:var(--text-primary,#eee);margin-bottom:8px;">' + data.summary + '</p>';
+      var summaryBlock = data.summary ? html`<p style="color:var(--text-primary,#eee);margin-bottom:8px;">${data.summary}</p>` : '';
+      var gapsBlock = '';
       if (data.gaps && data.gaps.length) {
-        html += '<div style="color:var(--dl-amber);font-weight:600;margin-bottom:4px;">Gaps Identified:</div><ul class="dl-list-meta">';
-        data.gaps.forEach(function(g) { html += '<li>' + g + '</li>'; });
-        html += '</ul>';
+        var gapItems = data.gaps.map(function(g) { return html`<li>${g}</li>`; }).join('');
+        gapsBlock = html`<div style="color:var(--dl-amber);font-weight:600;margin-bottom:4px;">Gaps Identified:</div><ul class="dl-list-meta">${trustedHTML(gapItems)}</ul>`;
       } else {
-        html += '<div style="color:var(--dl-green);">No warmth gaps detected.</div>';
+        gapsBlock = '<div style="color:var(--dl-green);">No warmth gaps detected.</div>';
       }
-      box.innerHTML = html;
+      safeSetHTML(box, html`<div class="dl-card-title">Cold Weather Assessment</div>${summaryBlock}${trustedHTML(gapsBlock)}`);
     });
   };
 
@@ -905,31 +889,28 @@
   window.dlLoadSanitation = function() {
     api('/api/daily-living/sanitation').then(function(items) {
       var c = el('dl-sanitation-list');
-      if (!items.length) { c.innerHTML = dlEmpty('No Sanitation Supplies Yet', 'Add the essentials that protect hygiene, morale, and daily rhythm.'); return; }
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Sanitation Supplies Yet', 'Add the essentials that protect hygiene, morale, and daily rhythm.')); return; }
       /* Check for low stock alerts */
       var lowStock = items.filter(function(s) { return s.quantity < (s.min_stock || 0); });
       var alertBox = el('dl-sanitation-alerts');
       if (lowStock.length) {
         alertBox.classList.remove('is-hidden');
-        alertBox.innerHTML = '<div class="dl-card-title" style="color:var(--dl-red);">Low Stock Alerts (' + lowStock.length + ')</div>' +
-          lowStock.map(function(s) {
-            return '<div class="dl-row-spaced-bottom-xs"><strong class="dl-low-stock">' + s.name + '</strong> <small class="tone-muted">' +
-              s.quantity + ' / ' + s.min_stock + ' ' + (s.unit || '') + '</small></div>';
-          }).join('');
+        var lowRows = lowStock.map(function(s) {
+          return html`<div class="dl-row-spaced-bottom-xs"><strong class="dl-low-stock">${s.name}</strong> <small class="tone-muted">${s.quantity} / ${s.min_stock} ${s.unit || ''}</small></div>`;
+        }).join('');
+        safeSetHTML(alertBox, html`<div class="dl-card-title" style="color:var(--dl-red);">Low Stock Alerts (${lowStock.length})</div>${trustedHTML(lowRows)}`);
       } else {
         alertBox.classList.add('is-hidden');
       }
 
-      c.innerHTML = '<table class="dl-table"><thead><tr><th>Supply</th><th>Category</th><th>Qty</th><th>Unit</th><th>Min</th><th>Rate/Day</th><th>Days Left</th><th>Expires</th><th></th></tr></thead><tbody>' +
-        items.map(function(s) {
-          var daysLeft = s.daily_usage_rate > 0 ? Math.floor(s.quantity / s.daily_usage_rate) : '-';
-          var lowCls = s.quantity < (s.min_stock || 0) ? ' class="dl-low-stock"' : '';
-          return '<tr><td' + lowCls + '>' + s.name + '</td><td><span class="dl-badge dl-tag-accent">' + (s.category || '') + '</span></td>' +
-            '<td' + lowCls + '>' + s.quantity + '</td><td>' + (s.unit || '') + '</td><td>' + (s.min_stock || 0) + '</td>' +
-            '<td>' + (s.daily_usage_rate || 0) + '</td><td>' + daysLeft + '</td><td>' + (s.expiration_date || '-') + '</td>' +
-            '<td class="dl-nowrap"><div class="dl-action-cluster"><button class="dl-btn dl-btn-secondary" onclick="dlEditSanitation(' + s.id + ')">Edit</button>' +
-            dlDeleteButton('dlDeleteSanitation(' + s.id + ')', 'sanitation supply') + '</div></td></tr>';
-        }).join('') + '</tbody></table>';
+      var rows = items.map(function(s) {
+        var id = Number(s.id) || 0;
+        var daysLeft = s.daily_usage_rate > 0 ? Math.floor(s.quantity / s.daily_usage_rate) : '-';
+        var isLow = s.quantity < (s.min_stock || 0);
+        var lowCls = isLow ? 'dl-low-stock' : '';
+        return html`<tr><td class="${lowCls}">${s.name}</td><td><span class="dl-badge dl-tag-accent">${s.category || ''}</span></td><td class="${lowCls}">${s.quantity}</td><td>${s.unit || ''}</td><td>${s.min_stock || 0}</td><td>${s.daily_usage_rate || 0}</td><td>${daysLeft}</td><td>${s.expiration_date || '-'}</td><td class="dl-nowrap"><div class="dl-action-cluster"><button class="dl-btn dl-btn-secondary" onclick="dlEditSanitation(${id})">Edit</button>${trustedHTML(dlDeleteButton('dlDeleteSanitation(' + id + ')', 'sanitation supply'))}</div></td></tr>`;
+      });
+      safeSetHTML(c, '<table class="dl-table"><thead><tr><th>Supply</th><th>Category</th><th>Qty</th><th>Unit</th><th>Min</th><th>Rate/Day</th><th>Days Left</th><th>Expires</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
 
     /* Load projections */
@@ -937,9 +918,10 @@
       var box = el('dl-sanitation-projections');
       var cats = data.categories || data;
       if (Array.isArray(cats)) {
-        box.innerHTML = cats.map(function(c) {
-          return '<div class="dl-stat-card"><div class="dl-stat-val">' + (c.days_supply || 0) + 'd</div><div class="dl-stat-label">' + c.category + '</div></div>';
-        }).join('');
+        var cards = cats.map(function(c) {
+          return html`<div class="dl-stat-card"><div class="dl-stat-val">${c.days_supply || 0}d</div><div class="dl-stat-label">${c.category}</div></div>`;
+        });
+        safeSetHTML(box, cards.join(''));
       }
     });
   };
@@ -989,31 +971,30 @@
       var currentVal = select.value;
       var people = [];
       items.forEach(function(it) { if (it.person && people.indexOf(it.person) === -1) people.push(it.person); });
-      var opts = '<option value="">All People</option>' + people.map(function(p) {
-        return '<option value="' + p + '"' + (p === currentVal ? ' selected' : '') + '>' + p + '</option>';
+      var optRows = people.map(function(p) {
+        return html`<option value="${p}"${trustedHTML(p === currentVal ? ' selected' : '')}>${p}</option>`;
       }).join('');
-      select.innerHTML = opts;
+      safeSetHTML(select, '<option value="">All People</option>' + optRows);
 
-      if (!items.length) { c.innerHTML = dlEmpty('No Morale Check-Ins Yet', 'Start logging how the household is holding up so trends appear over time.'); return; }
-      c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Date</th><th>Morale</th><th>Stress</th><th>Sleep</th><th>Physical</th><th>Social</th><th>Activities</th><th></th></tr></thead><tbody>' +
-        items.map(function(m) {
-          return '<tr><td>' + (m.person || '') + '</td><td>' + (m.date || '') + '</td>' +
-            '<td>' + (m.morale || 0) + '</td><td>' + (m.stress || 0) + '</td>' +
-            '<td>' + (m.sleep_quality || 0) + '</td><td>' + (m.physical_health || 0) + '</td>' +
-            '<td>' + (m.social || 0) + '</td><td><small>' + ((m.activities || []).join(', ') || '-') + '</small></td>' +
-            '<td><div class="dl-action-cluster">' + dlDeleteButton('dlDeleteMorale(' + m.id + ')', 'morale entry') + '</div></td></tr>';
-        }).join('') + '</tbody></table>';
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Morale Check-Ins Yet', 'Start logging how the household is holding up so trends appear over time.')); return; }
+      var rows = items.map(function(m) {
+        var id = Number(m.id) || 0;
+        var acts = (m.activities || []).join(', ') || '-';
+        return html`<tr><td>${m.person || ''}</td><td>${m.date || ''}</td><td>${m.morale || 0}</td><td>${m.stress || 0}</td><td>${m.sleep_quality || 0}</td><td>${m.physical_health || 0}</td><td>${m.social || 0}</td><td><small>${acts}</small></td><td><div class="dl-action-cluster">${trustedHTML(dlDeleteButton('dlDeleteMorale(' + id + ')', 'morale entry'))}</div></td></tr>`;
+      });
+      safeSetHTML(c, '<table class="dl-table"><thead><tr><th>Person</th><th>Date</th><th>Morale</th><th>Stress</th><th>Sleep</th><th>Physical</th><th>Social</th><th>Activities</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
 
     /* Load trends */
     api('/api/daily-living/morale/trends').then(function(data) {
       var box = el('dl-morale-trends');
       var fields = ['morale','stress','sleep_quality','physical_health','social'];
-      box.innerHTML = fields.map(function(f) {
+      var cards = fields.map(function(f) {
         var v = data[f + '_avg'] !== undefined ? data[f + '_avg'] : (data[f] || '-');
         if (typeof v === 'number') v = v.toFixed(1);
-        return '<div class="dl-stat-card"><div class="dl-stat-val">' + v + '</div><div class="dl-stat-label">' + f.replace(/_/g, ' ') + ' (7d avg)</div></div>';
-      }).join('');
+        return html`<div class="dl-stat-card"><div class="dl-stat-val">${v}</div><div class="dl-stat-label">${f.replace(/_/g, ' ')} (7d avg)</div></div>`;
+      });
+      safeSetHTML(box, cards.join(''));
     });
   };
 
@@ -1044,15 +1025,12 @@
   window.dlLoadSleep = function() {
     api('/api/daily-living/sleep').then(function(items) {
       var c = el('dl-sleep-list');
-      if (!items.length) { c.innerHTML = dlEmpty('No Sleep Records Yet', 'The first entries will unlock fatigue trends and better watch planning.'); return; }
-      c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Date</th><th>Start</th><th>End</th><th>Quality</th><th>Interruptions</th><th>Watch</th><th></th></tr></thead><tbody>' +
-        items.map(function(s) {
-          return '<tr><td>' + (s.person || '') + '</td><td>' + (s.date || '') + '</td>' +
-            '<td>' + (s.sleep_start || '') + '</td><td>' + (s.sleep_end || '') + '</td>' +
-            '<td>' + (s.quality || 0) + '/10</td><td>' + (s.interruptions || 0) + '</td>' +
-            '<td>' + (s.watch_duty ? 'Yes' : '-') + '</td>' +
-            '<td><div class="dl-action-cluster">' + dlDeleteButton('dlDeleteSleep(' + s.id + ')', 'sleep entry') + '</div></td></tr>';
-        }).join('') + '</tbody></table>';
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Sleep Records Yet', 'The first entries will unlock fatigue trends and better watch planning.')); return; }
+      var rows = items.map(function(s) {
+        var id = Number(s.id) || 0;
+        return html`<tr><td>${s.person || ''}</td><td>${s.date || ''}</td><td>${s.sleep_start || ''}</td><td>${s.sleep_end || ''}</td><td>${s.quality || 0}/10</td><td>${s.interruptions || 0}</td><td>${s.watch_duty ? 'Yes' : '-'}</td><td><div class="dl-action-cluster">${trustedHTML(dlDeleteButton('dlDeleteSleep(' + id + ')', 'sleep entry'))}</div></td></tr>`;
+      });
+      safeSetHTML(c, '<table class="dl-table"><thead><tr><th>Person</th><th>Date</th><th>Start</th><th>End</th><th>Quality</th><th>Interruptions</th><th>Watch</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
 
     /* Sleep debt */
@@ -1060,10 +1038,11 @@
       var box = el('dl-sleep-debt');
       var people = data.people || data;
       if (Array.isArray(people)) {
-        box.innerHTML = people.map(function(p) {
+        var cards = people.map(function(p) {
           var color = p.debt_hours > 8 ? 'var(--dl-red)' : p.debt_hours > 4 ? 'var(--dl-amber)' : 'var(--dl-green)';
-          return '<div class="dl-stat-card"><div class="dl-stat-val" style="color:' + color + '">' + (p.debt_hours || 0).toFixed(1) + 'h</div><div class="dl-stat-label">' + p.person + ' debt</div></div>';
-        }).join('');
+          return html`<div class="dl-stat-card"><div class="dl-stat-val" style="--dl-debt-tone:${color};color:var(--dl-debt-tone)">${(p.debt_hours || 0).toFixed(1)}h</div><div class="dl-stat-label">${p.person} debt</div></div>`;
+        });
+        safeSetHTML(box, cards.join(''));
       }
     });
   };
@@ -1088,11 +1067,11 @@
   window.dlRunWatchOptimizer = function() {
     api('/api/daily-living/sleep/watch-optimizer').then(function(data) {
       var box = el('dl-watch-result');
-      if (!data.rotation || !data.rotation.length) { box.innerHTML = dlEmpty('Not Enough Sleep Data Yet', 'Log a few more nights to build a more reliable watch rotation.'); return; }
-      box.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Watch Start</th><th>Watch End</th><th>Notes</th></tr></thead><tbody>' +
-        data.rotation.map(function(r) {
-          return '<tr><td>' + r.person + '</td><td>' + r.start + '</td><td>' + r.end + '</td><td>' + (r.notes || '') + '</td></tr>';
-        }).join('') + '</tbody></table>';
+      if (!data.rotation || !data.rotation.length) { safeSetHTML(box, dlEmpty('Not Enough Sleep Data Yet', 'Log a few more nights to build a more reliable watch rotation.')); return; }
+      var rows = data.rotation.map(function(r) {
+        return html`<tr><td>${r.person}</td><td>${r.start}</td><td>${r.end}</td><td>${r.notes || ''}</td></tr>`;
+      });
+      safeSetHTML(box, '<table class="dl-table"><thead><tr><th>Person</th><th>Watch Start</th><th>Watch End</th><th>Notes</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -1100,14 +1079,12 @@
   window.dlLoadPerformance = function() {
     api('/api/daily-living/performance').then(function(items) {
       var c = el('dl-perf-list');
-      if (!items.length) { c.innerHTML = dlEmpty('No Performance Checks Yet', 'Log the first readiness check above to start surfacing fatigue risk.'); return; }
-      c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Hours Awake</th><th>Fatigue</th><th>Cognitive</th><th>Physical</th><th>Risk</th><th></th></tr></thead><tbody>' +
-        items.map(function(p) {
-          return '<tr><td>' + (p.person || '') + '</td><td>' + (p.hours_awake || 0) + '</td>' +
-            '<td>' + (p.fatigue || 0) + '/10</td><td>' + (p.cognitive_score || 0) + '/10</td>' +
-            '<td>' + (p.physical_score || 0) + '/10</td><td>' + riskBadge(p.risk_level || 'low') + '</td>' +
-            '<td><div class="dl-action-cluster">' + dlDeleteButton('dlDeletePerformance(' + p.id + ')', 'performance check') + '</div></td></tr>';
-        }).join('') + '</tbody></table>';
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Performance Checks Yet', 'Log the first readiness check above to start surfacing fatigue risk.')); return; }
+      var rows = items.map(function(p) {
+        var id = Number(p.id) || 0;
+        return html`<tr><td>${p.person || ''}</td><td>${p.hours_awake || 0}</td><td>${p.fatigue || 0}/10</td><td>${p.cognitive_score || 0}/10</td><td>${p.physical_score || 0}/10</td><td>${trustedHTML(riskBadge(p.risk_level || 'low'))}</td><td><div class="dl-action-cluster">${trustedHTML(dlDeleteButton('dlDeletePerformance(' + id + ')', 'performance check'))}</div></td></tr>`;
+      });
+      safeSetHTML(c, '<table class="dl-table"><thead><tr><th>Person</th><th>Hours Awake</th><th>Fatigue</th><th>Cognitive</th><th>Physical</th><th>Risk</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
 
     /* Risk summary */
@@ -1115,14 +1092,15 @@
       var box = el('dl-risk-summary');
       if (!data || (!data.people && !data.summary)) { box.classList.add('is-hidden'); return; }
       box.classList.remove('is-hidden');
-      var html = '<div class="dl-card-title">Fatigue Risk Summary</div>';
+      var peopleBlock = '';
       if (data.people) {
-        html += '<div class="dl-grid">' + data.people.map(function(p) {
-          return '<div class="dl-stat-card"><div class="dl-stat-val">' + riskBadge(p.risk_level || 'low') + '</div><div class="dl-stat-label">' + p.person + '</div></div>';
-        }).join('') + '</div>';
+        var cards = data.people.map(function(p) {
+          return html`<div class="dl-stat-card"><div class="dl-stat-val">${trustedHTML(riskBadge(p.risk_level || 'low'))}</div><div class="dl-stat-label">${p.person}</div></div>`;
+        }).join('');
+        peopleBlock = html`<div class="dl-grid">${trustedHTML(cards)}</div>`;
       }
-      if (data.summary) html += '<p class="dl-meta-text">' + data.summary + '</p>';
-      box.innerHTML = html;
+      var summaryBlock = data.summary ? html`<p class="dl-meta-text">${data.summary}</p>` : '';
+      safeSetHTML(box, html`<div class="dl-card-title">Fatigue Risk Summary</div>${peopleBlock}${summaryBlock}`);
     });
 
     /* Work-rest reference */
@@ -1130,11 +1108,10 @@
       var box = el('dl-work-rest-ref');
       if (!data || !data.table) { box.classList.add('is-hidden'); return; }
       box.classList.remove('is-hidden');
-      box.innerHTML = '<div class="dl-card-title">Work-Rest Reference</div>' +
-        '<table class="dl-table"><thead><tr><th>Hours Awake</th><th>Risk</th><th>Recommendation</th></tr></thead><tbody>' +
-        data.table.map(function(r) {
-          return '<tr><td>' + r.hours + '</td><td>' + riskBadge(r.risk) + '</td><td>' + r.recommendation + '</td></tr>';
-        }).join('') + '</tbody></table>';
+      var rows = data.table.map(function(r) {
+        return html`<tr><td>${r.hours}</td><td>${trustedHTML(riskBadge(r.risk))}</td><td>${r.recommendation}</td></tr>`;
+      });
+      safeSetHTML(box, '<div class="dl-card-title">Work-Rest Reference</div><table class="dl-table"><thead><tr><th>Hours Awake</th><th>Risk</th><th>Recommendation</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -1161,10 +1138,7 @@
     var box = el('dl-recipe-ingredients');
     var row = document.createElement('div');
     row.className = 'dl-ingredient-row';
-    row.innerHTML = '<input name="dl-ingredient-name-' + ingredientCounter + '" placeholder="Ingredient" class="dl-field-grow-2">' +
-      '<input name="dl-ingredient-qty-' + ingredientCounter + '" placeholder="Amount" class="dl-field-grow">' +
-      '<input name="dl-ingredient-unit-' + ingredientCounter + '" placeholder="Unit" class="dl-field-grow">' +
-      dlDeleteButton('this.parentElement.remove()', 'ingredient row');
+    safeSetHTML(row, html`<input name="dl-ingredient-name-${ingredientCounter}" placeholder="Ingredient" class="dl-field-grow-2"><input name="dl-ingredient-qty-${ingredientCounter}" placeholder="Amount" class="dl-field-grow"><input name="dl-ingredient-unit-${ingredientCounter}" placeholder="Unit" class="dl-field-grow">${trustedHTML(dlDeleteButton('this.parentElement.remove()', 'ingredient row'))}`);
     box.appendChild(row);
     ingredientCounter++;
   };
@@ -1200,27 +1174,23 @@
     var url = '/api/daily-living/recipes' + (params.length ? '?' + params.join('&') : '');
     api(url).then(function(items) {
       var c = el('dl-recipe-list');
-      if (!items.length) { c.innerHTML = dlEmpty('No Recipes Yet', 'Add the first grid-down meal plan above to build your cooking shelf.'); return; }
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Recipes Yet', 'Add the first grid-down meal plan above to build your cooking shelf.')); return; }
       var lastDate = '';
-      c.innerHTML = items.map(function(r) {
+      var rows = items.map(function(r) {
+        var id = Number(r.id) || 0;
         var header = '';
         var label = _dlDateLabel(r.created_at);
-        if (label && label !== lastDate) { lastDate = label; header = '<div class="dl-date-header">' + label + '</div>'; }
-        return header + '<div class="dl-recipe-card">' +
-          '<div class="dl-recipe-title">' + methodIcon(r.cooking_method) + ' ' + r.name + '</div>' +
-          '<div class="dl-recipe-meta">' + (r.category || '') + ' &middot; ' + (r.cooking_method || '').replace('_', ' ') +
-          ' &middot; Prep: ' + (r.prep_time || 0) + 'm &middot; Cook: ' + (r.cook_time || 0) + 'm' +
-          ' &middot; ' + (r.calories_per_serving || 0) + ' cal &middot; Serves ' + (r.servings || 1) + '</div>' +
-          '<div class="dl-action-cluster dl-row-spaced-xs">' +
-          '<button class="dl-btn dl-btn-secondary" onclick="dlEditRecipe(' + r.id + ')">Edit</button>' +
-          dlDeleteButton('dlDeleteRecipe(' + r.id + ')', 'recipe') + '</div></div>';
-      }).join('');
+        if (label && label !== lastDate) { lastDate = label; header = html`<div class="dl-date-header">${label}</div>`; }
+        return html`${header}<div class="dl-recipe-card"><div class="dl-recipe-title">${trustedHTML(methodIcon(r.cooking_method))} ${r.name}</div><div class="dl-recipe-meta">${r.category || ''} &middot; ${(r.cooking_method || '').replace('_', ' ')} &middot; Prep: ${r.prep_time || 0}m &middot; Cook: ${r.cook_time || 0}m &middot; ${r.calories_per_serving || 0} cal &middot; Serves ${r.servings || 1}</div><div class="dl-action-cluster dl-row-spaced-xs"><button class="dl-btn dl-btn-secondary" onclick="dlEditRecipe(${id})">Edit</button>${trustedHTML(dlDeleteButton('dlDeleteRecipe(' + id + ')', 'recipe'))}</div></div>`;
+      });
+      safeSetHTML(c, rows.join(''));
 
       /* Populate fuel calculator dropdown */
       var select = el('dl-fuel-recipe');
-      select.innerHTML = '<option value="">Select a recipe…</option>' + items.map(function(r) {
-        return '<option value="' + r.id + '">' + r.name + '</option>';
+      var opts = items.map(function(r) {
+        return html`<option value="${Number(r.id)||0}">${r.name}</option>`;
       }).join('');
+      safeSetHTML(select, '<option value="">Select a recipe\u2026</option>' + opts);
     });
   };
 
@@ -1229,16 +1199,12 @@
     if (!q || q.length < 2) { dlLoadRecipes(); return; }
     api('/api/daily-living/recipes/search?q=' + encodeURIComponent(q)).then(function(items) {
       var c = el('dl-recipe-list');
-      if (!items.length) { c.innerHTML = dlEmpty('No Recipe Matches', 'Try a broader ingredient, cooking method, or meal name.'); return; }
-      c.innerHTML = items.map(function(r) {
-        return '<div class="dl-recipe-card">' +
-          '<div class="dl-recipe-title">' + methodIcon(r.cooking_method) + ' ' + r.name + '</div>' +
-          '<div class="dl-recipe-meta">' + (r.category || '') + ' &middot; ' + (r.cooking_method || '').replace('_', ' ') +
-          ' &middot; ' + (r.calories_per_serving || 0) + ' cal &middot; Serves ' + (r.servings || 1) + '</div>' +
-          '<div class="dl-action-cluster dl-row-spaced-xs">' +
-          '<button class="dl-btn dl-btn-secondary" onclick="dlEditRecipe(' + r.id + ')">Edit</button>' +
-          dlDeleteButton('dlDeleteRecipe(' + r.id + ')', 'recipe') + '</div></div>';
-      }).join('');
+      if (!items.length) { safeSetHTML(c, dlEmpty('No Recipe Matches', 'Try a broader ingredient, cooking method, or meal name.')); return; }
+      var rows = items.map(function(r) {
+        var id = Number(r.id) || 0;
+        return html`<div class="dl-recipe-card"><div class="dl-recipe-title">${trustedHTML(methodIcon(r.cooking_method))} ${r.name}</div><div class="dl-recipe-meta">${r.category || ''} &middot; ${(r.cooking_method || '').replace('_', ' ')} &middot; ${r.calories_per_serving || 0} cal &middot; Serves ${r.servings || 1}</div><div class="dl-action-cluster dl-row-spaced-xs"><button class="dl-btn dl-btn-secondary" onclick="dlEditRecipe(${id})">Edit</button>${trustedHTML(dlDeleteButton('dlDeleteRecipe(' + id + ')', 'recipe'))}</div></div>`;
+      });
+      safeSetHTML(c, rows.join(''));
     });
   };
 
@@ -1252,7 +1218,7 @@
     var p = editId ? put('/api/daily-living/recipes/' + editId, body) : post('/api/daily-living/recipes', body);
     p.then(function() {
       el('dl-recipe-name').value = ''; el('dl-recipe-instructions').value = ''; el('dl-recipe-edit-id').value = '';
-      el('dl-recipe-ingredients').innerHTML = '';
+      safeSetHTML(el('dl-recipe-ingredients'), '');
       toast(editId ? 'Recipe updated' : 'Recipe added'); dlLoadRecipes();
     });
   };
@@ -1269,7 +1235,7 @@
       el('dl-recipe-calories').value = r.calories_per_serving || 0;
       el('dl-recipe-instructions').value = r.instructions || '';
       /* Rebuild ingredient rows */
-      el('dl-recipe-ingredients').innerHTML = '';
+      safeSetHTML(el('dl-recipe-ingredients'), '');
       if (r.ingredients && r.ingredients.length) {
         r.ingredients.forEach(function(ing) {
           dlAddIngredientRow();
@@ -1300,12 +1266,8 @@
     var servings = numVal('dl-fuel-servings', 4);
     post('/api/daily-living/recipes/calculate-fuel', {recipe_id:parseInt(recipeId), servings:servings}).then(function(data) {
       var box = el('dl-fuel-result');
-      box.innerHTML = '<div class="dl-grid">' +
-        '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.fuel_amount || '-') + '</div><div class="dl-stat-label">Fuel Needed (' + (data.fuel_unit || '') + ')</div></div>' +
-        '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.cook_time || '-') + 'm</div><div class="dl-stat-label">Cook Time</div></div>' +
-        '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.total_calories || '-') + '</div><div class="dl-stat-label">Total Calories</div></div>' +
-        '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.method || '-') + '</div><div class="dl-stat-label">Method</div></div>' +
-        '</div>' + (data.notes ? '<p class="dl-meta-text">' + data.notes + '</p>' : '');
+      var notesBlock = data.notes ? html`<p class="dl-meta-text">${data.notes}</p>` : '';
+      safeSetHTML(box, html`<div class="dl-grid"><div class="dl-stat-card"><div class="dl-stat-val">${data.fuel_amount || '-'}</div><div class="dl-stat-label">Fuel Needed (${data.fuel_unit || ''})</div></div><div class="dl-stat-card"><div class="dl-stat-val">${data.cook_time || '-'}m</div><div class="dl-stat-label">Cook Time</div></div><div class="dl-stat-card"><div class="dl-stat-val">${data.total_calories || '-'}</div><div class="dl-stat-label">Total Calories</div></div><div class="dl-stat-card"><div class="dl-stat-val">${data.method || '-'}</div><div class="dl-stat-label">Method</div></div></div>${notesBlock}`);
     });
   };
 

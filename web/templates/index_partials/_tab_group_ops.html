@@ -494,7 +494,7 @@
   const goDeleteButton=(action,label)=>`<button type="button" class="go-btn go-btn-icon go-btn-danger-quiet" onclick='${action}' title="Delete ${esc(label)}" aria-label="Delete ${esc(label)}">&times;</button>`;
   const goConfirmDelete=(label, context)=>window.confirm(`Delete ${label}?${context ? ` ${context}` : ''}`);
 
-  const statusBadge=s=>`<span class="go-badge go-badge-${esc(s)}">${esc(s)}</span>`;
+  const statusBadge=s=>html`<span class="go-badge go-badge-${s}">${s}</span>`;
   const severityColor={minor:'var(--go-green)',moderate:'var(--go-yellow)',major:'var(--go-orange)',destroyed:'var(--go-red)'};
   const icsColors={'201':'#3b82f6','202':'#8b5cf6','203':'#06b6d4','204':'#22c55e','205':'#f59e0b','206':'#ef4444','207':'#ec4899','208':'#f97316','209':'#14b8a6','210':'#6366f1','211':'#84cc16','213':'#a855f7','214':'#0ea5e9','215':'#e11d48'};
 
@@ -504,9 +504,8 @@
     selects.forEach(sid=>{
       const s=el(sid);if(!s)return;
       const v=s.value;
-      const opts='<option value="">-- '+(sid.includes('filter')?'All Pods':'Select Pod')+' --</option>'+
-        pods.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-      s.innerHTML=opts;
+      const opts=pods.map(p=>html`<option value="${Number(p.id)||0}">${p.name}</option>`).join('');
+      safeSetHTML(s, '<option value="">-- '+(sid.includes('filter')?'All Pods':'Select Pod')+' --</option>'+opts);
       if(v)s.value=v;
     });
   }
@@ -516,40 +515,42 @@
     api('/api/group/pods').then(pods=>{
       populatePodSelects(pods);
       const list=el('go-pod-list');
-      if(!pods.length){list.innerHTML=goEmpty('No pods yet', 'Create the first team above to anchor staffing, governance, and duty coverage.');return;}
-      list.innerHTML='<div class="go-grid">'+pods.map(p=>`<div class="go-card">
+      if(!pods.length){safeSetHTML(list, goEmpty('No pods yet', 'Create the first team above to anchor staffing, governance, and duty coverage.'));return;}
+      const cards=pods.map(p=>html`<div class="go-card">
         <div class="go-row-header">
-          <div><strong class="go-tone-accent">${esc(p.name)}</strong> ${statusBadge(p.status||'active')}
-            <br><small class="tone-muted">Leader: ${esc(p.leader||'Unassigned')} | Members: ${p.member_count||0}</small>
-            ${p.description?'<br><small class="tone-muted">'+esc(p.description)+'</small>':''}
+          <div><strong class="go-tone-accent">${p.name}</strong> ${trustedHTML(statusBadge(p.status||'active'))}
+            <br><small class="tone-muted">Leader: ${p.leader||'Unassigned'} | Members: ${p.member_count||0}</small>
+            ${p.description?html`<br><small class="tone-muted">${p.description}</small>`:''}
           </div>
-          <div class="go-row-actions">${goDeleteButton(`goDeletePod(${p.id}, ${JSON.stringify(p.name || 'pod')})`, p.name || 'pod')}</div>
+          <div class="go-row-actions">${trustedHTML(goDeleteButton(`goDeletePod(${Number(p.id)||0}, ${JSON.stringify(p.name || 'pod')})`, p.name || 'pod'))}</div>
         </div>
-        <div class="go-row-spaced"><button class="go-btn go-btn-secondary" onclick="goToggleMembers(${p.id},this)">Show Members</button></div>
-        <div class="go-members-expand" id="go-pod-members-${p.id}"></div>
-      </div>`).join('')+'</div>';
+        <div class="go-row-spaced"><button class="go-btn go-btn-secondary" onclick="goToggleMembers(${Number(p.id)||0},this)">Show Members</button></div>
+        <div class="go-members-expand" id="go-pod-members-${Number(p.id)||0}"></div>
+      </div>`);
+      safeSetHTML(list, '<div class="go-grid">'+cards.join('')+'</div>');
       goLoadPodStats();
     });
   };
   window.goLoadPodStats=function(){
     api('/api/group/summary').then(s=>{
-      el('go-pod-stats').innerHTML=[
+      const stats=[
         {v:s.total_pods||0,l:'Total Pods'},{v:s.total_members||0,l:'Total Members'},
         {v:s.active_pods||0,l:'Active Pods'},{v:s.active_duties||0,l:'Active Duties'}
-      ].map(x=>`<div class="go-card go-stat"><div class="go-stat-val">${x.v}</div><div class="go-stat-label">${x.l}</div></div>`).join('');
+      ].map(x=>html`<div class="go-card go-stat"><div class="go-stat-val">${x.v}</div><div class="go-stat-label">${x.l}</div></div>`);
+      safeSetHTML(el('go-pod-stats'), stats.join(''));
     });
   };
   window.goToggleMembers=function(podId,btn){
     const wrap=el('go-pod-members-'+podId);
     if(wrap.classList.contains('open')){wrap.classList.remove('open');btn.textContent='Show Members';return;}
     api('/api/group/pods/'+podId+'/members').then(members=>{
-      const membersHtml = members.length
-        ? members.map(m=>`<div class="go-list-item">
-            <div class="go-list-copy"><div><strong>${esc(m.name)}</strong></div><div class="go-list-meta">${esc(m.role||'No role assigned')}</div></div>
-            <div class="go-row-actions">${goDeleteButton(`goRemoveMember(${m.id},${podId}, ${JSON.stringify(m.name || 'member')})`, m.name || 'member')}</div>
+      const memberRows = members.length
+        ? members.map(m=>html`<div class="go-list-item">
+            <div class="go-list-copy"><div><strong>${m.name}</strong></div><div class="go-list-meta">${m.role||'No role assigned'}</div></div>
+            <div class="go-row-actions">${trustedHTML(goDeleteButton(`goRemoveMember(${Number(m.id)||0},${Number(podId)||0}, ${JSON.stringify(m.name || 'member')})`, m.name || 'member'))}</div>
           </div>`).join('')
         : goEmpty('No members assigned yet', 'Add the first member below so this pod has visible staffing coverage.');
-      wrap.innerHTML='<div style="padding:8px 0">'+membersHtml+'<div class="go-form-row go-row-spaced"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="Member name"></div><div class="field go-field-fixed"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add Member</button></div></div></div>';
+      safeSetHTML(wrap, html`<div style="padding:8px 0">${trustedHTML(memberRows)}<div class="go-form-row go-row-spaced"><div class="field"><input name="go-add-member-${Number(podId)||0}" id="go-add-member-${Number(podId)||0}" placeholder="Member name"></div><div class="field go-field-fixed"><button class="go-btn go-btn-primary" onclick="goAddMember(${Number(podId)||0})">Add Member</button></div></div></div>`);
       wrap.classList.add('open');btn.textContent='Hide Members';
     });
   };
@@ -576,21 +577,22 @@
 
   /* ═══ GOVERNANCE ═══ */
   window.goLoadRoles=function(){
-    const podId=val('go-gov-pod');if(!podId){el('go-role-list').innerHTML=goEmpty('Choose a pod first', 'Select a pod to review role coverage and assigned leaders.');el('go-chain-view').innerHTML=goEmpty('Choose a pod first', 'Select a pod to outline the current chain of command.');return;}
+    const podId=val('go-gov-pod');if(!podId){safeSetHTML(el('go-role-list'), goEmpty('Choose a pod first', 'Select a pod to review role coverage and assigned leaders.'));safeSetHTML(el('go-chain-view'), goEmpty('Choose a pod first', 'Select a pod to outline the current chain of command.'));return;}
     api('/api/group/pods/'+podId+'/roles').then(roles=>{
       const list=el('go-role-list');
-      if(!roles.length){list.innerHTML=goEmpty('No roles defined yet', 'Add the first leadership or support role above to map authority clearly.');return;}
+      if(!roles.length){safeSetHTML(list, goEmpty('No roles defined yet', 'Add the first leadership or support role above to map authority clearly.'));return;}
       roles.sort((a,b)=>(a.authority_level||99)-(b.authority_level||99));
-      list.innerHTML='<table class="go-table"><thead><tr><th>#</th><th>Title</th><th>Assigned To</th><th>Authority</th><th>Actions</th></tr></thead><tbody>'+
-        roles.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.title)}</td><td>${esc(r.assigned_to||'Vacant')}</td><td>${r.authority_level||'-'}</td>
-          <td class="go-row-actions">${goDeleteButton(`goDeleteRole(${r.id}, ${JSON.stringify(r.title || 'role')})`, r.title || 'role')}</td></tr>`).join('')+'</tbody></table>';
+      const rows=roles.map((r,i)=>html`<tr><td>${i+1}</td><td>${r.title}</td><td>${r.assigned_to||'Vacant'}</td><td>${r.authority_level||'-'}</td>
+          <td class="go-row-actions">${trustedHTML(goDeleteButton(`goDeleteRole(${Number(r.id)||0}, ${JSON.stringify(r.title || 'role')})`, r.title || 'role'))}</td></tr>`);
+      safeSetHTML(list, '<table class="go-table"><thead><tr><th>#</th><th>Title</th><th>Assigned To</th><th>Authority</th><th>Actions</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>');
     });
     api('/api/group/pods/'+podId+'/chain-of-command').then(chain=>{
       const view=el('go-chain-view');
-      if(!chain.length){view.innerHTML=goEmpty('No chain of command yet', 'Add a few roles to outline the escalation path for this pod.');return;}
-      view.innerHTML='<div class="go-chain">'+chain.map((c,i)=>`<div class="go-chain-node">
-        <span class="rank">${i+1}</span><strong>${esc(c.title)}</strong><span style="color:var(--text-secondary,#aaa);margin-left:auto">${esc(c.assigned_to||'Vacant')}</span>
-      </div>`).join('')+'</div>';
+      if(!chain.length){safeSetHTML(view, goEmpty('No chain of command yet', 'Add a few roles to outline the escalation path for this pod.'));return;}
+      const nodes=chain.map((c,i)=>html`<div class="go-chain-node">
+        <span class="rank">${i+1}</span><strong>${c.title}</strong><span style="color:var(--text-secondary,#aaa);margin-left:auto">${c.assigned_to||'Vacant'}</span>
+      </div>`);
+      safeSetHTML(view, '<div class="go-chain">'+nodes.join('')+'</div>');
     });
   };
   el('go-gov-pod').addEventListener('change',()=>{goLoadRoles();});
@@ -609,15 +611,20 @@
   window.goLoadSOPs=function(){
     api('/api/group/sops').then(sops=>{
       const list=el('go-sop-list');
-      if(!sops.length){list.innerHTML=goEmpty('No SOPs yet', 'Publish the first operating procedure above to give the team a shared playbook.');return;}
+      if(!sops.length){safeSetHTML(list, goEmpty('No SOPs yet', 'Publish the first operating procedure above to give the team a shared playbook.'));return;}
       const catColor={security:'#ef4444',comms:'#06b6d4',medical:'#22c55e',logistics:'#f59e0b',operations:'#8b5cf6',admin:'#6b7280'};
-      list.innerHTML=sops.map(s=>`<div class="go-list-item">
-        <div class="go-list-copy"><div><strong>${esc(s.title)}</strong> <span class="go-badge" style="background:rgba(255,255,255,.08);color:${catColor[s.category]||'#aaa'}">${esc(s.category)}</span>
+      const rows=sops.map(s=>{
+        const col=catColor[s.category]||'#aaa';
+        const preview=s.content?s.content.substring(0,120)+(s.content.length>120?'...':''):'';
+        return html`<div class="go-list-item">
+        <div class="go-list-copy"><div><strong>${s.title}</strong> <span class="go-badge" style="background:rgba(255,255,255,.08);--go-sop-tone:${col};color:var(--go-sop-tone)">${s.category}</span>
           <span class="go-badge go-badge-${s.status||'active'}">v${s.version||'1.0'}</span>
-          ${s.content?'<br><small class="tone-muted">'+esc(s.content.substring(0,120)+(s.content.length>120?'...':''))+'</small>':''}
+          ${s.content?html`<br><small class="tone-muted">${preview}</small>`:''}
         </div>
-        <div class="go-row-actions">${goDeleteButton(`goDeleteSOP(${s.id}, ${JSON.stringify(s.title || 'SOP')})`, s.title || 'SOP')}</div>
-      </div>`).join('');
+        <div class="go-row-actions">${trustedHTML(goDeleteButton(`goDeleteSOP(${Number(s.id)||0}, ${JSON.stringify(s.title || 'SOP')})`, s.title || 'SOP'))}</div>
+      </div>`;
+      });
+      safeSetHTML(list, rows.join(''));
     });
   };
   window.goCreateSOP=function(){
@@ -638,14 +645,19 @@
     if(pod)url+='pod_id='+pod+'&';if(dt)url+='date='+dt+'&';
     api(url).then(duties=>{
       const list=el('go-duty-list');
-      if(!duties.length){list.innerHTML=goEmpty('No duty assignments yet', 'Schedule the first shift or watch rotation above to build visible coverage.');return;}
-      list.innerHTML='<table class="go-table"><thead><tr><th>Date</th><th>Time</th><th>Assignee</th><th>Task</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
-        duties.map(d=>`<tr><td>${esc(d.date||'')}</td><td>${esc(d.start_time||'')} - ${esc(d.end_time||'')}</td><td>${esc(d.assignee||'')}</td><td>${esc(d.role||'')}</td>
-          <td>${statusBadge(d.status||'scheduled')}</td>
-          <td><div class="go-row-actions"><select name="go-duty-chg-${d.id}" onchange="goUpdateDutyStatus(${d.id},this.value)" class="go-mini-input">
-            <option value="scheduled"${d.status==='scheduled'?' selected':''}>Scheduled</option><option value="active"${d.status==='active'?' selected':''}>Active</option>
-            <option value="completed"${d.status==='completed'?' selected':''}>Completed</option><option value="missed"${d.status==='missed'?' selected':''}>Missed</option>
-          </select>${goDeleteButton(`goDeleteDuty(${d.id}, ${JSON.stringify((d.role || 'duty assignment') + (d.assignee ? ' for ' + d.assignee : ''))})`, d.role || 'duty assignment')}</div></td></tr>`).join('')+'</tbody></table>';
+      if(!duties.length){safeSetHTML(list, goEmpty('No duty assignments yet', 'Schedule the first shift or watch rotation above to build visible coverage.'));return;}
+      const sel=(st,want)=>st===want?' selected':'';
+      const rows=duties.map(d=>{
+        const id=Number(d.id)||0;
+        const deleteLabel=(d.role || 'duty assignment') + (d.assignee ? ' for ' + d.assignee : '');
+        return html`<tr><td>${d.date||''}</td><td>${d.start_time||''} - ${d.end_time||''}</td><td>${d.assignee||''}</td><td>${d.role||''}</td>
+          <td>${trustedHTML(statusBadge(d.status||'scheduled'))}</td>
+          <td><div class="go-row-actions"><select name="go-duty-chg-${id}" onchange="goUpdateDutyStatus(${id},this.value)" class="go-mini-input">
+            <option value="scheduled"${trustedHTML(sel(d.status,'scheduled'))}>Scheduled</option><option value="active"${trustedHTML(sel(d.status,'active'))}>Active</option>
+            <option value="completed"${trustedHTML(sel(d.status,'completed'))}>Completed</option><option value="missed"${trustedHTML(sel(d.status,'missed'))}>Missed</option>
+          </select>${trustedHTML(goDeleteButton(`goDeleteDuty(${id}, ${JSON.stringify(deleteLabel)})`, d.role || 'duty assignment'))}</div></td></tr>`;
+      });
+      safeSetHTML(list, '<table class="go-table"><thead><tr><th>Date</th><th>Time</th><th>Assignee</th><th>Task</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>');
     });
   };
   window.goCreateDuty=function(){
@@ -669,13 +681,15 @@
     api('/api/group/disputes').then(disputes=>{
       const list=el('go-dispute-list');
       const sel=el('go-vote-dispute');
-      sel.innerHTML='<option value="">-- Select Dispute --</option>'+disputes.filter(d=>d.status==='open').map(d=>`<option value="${d.id}">${esc(d.title)}</option>`).join('');
-      if(!disputes.length){list.innerHTML=goEmpty('No disputes logged', 'Formal issues, mediation history, and governance decisions will appear here.');return;}
-      list.innerHTML=disputes.map(d=>`<div class="go-list-item">
-        <div class="go-list-copy"><div><strong>${esc(d.title)}</strong> ${statusBadge(d.status||'open')} <span class="go-badge go-badge-${d.severity||'low'}">${esc(d.severity||'low')}</span></div>
-          <div class="go-list-meta">Filed by: ${esc(d.filed_by||'Unknown')}${d.description?' | '+esc(d.description.substring(0,80)) : ''}</div></div>
-        <div class="go-row-actions">${d.status==='open'?'<button class="go-btn go-btn-secondary" onclick="goResolveDispute('+d.id+')">Resolve</button>':''}</div>
-      </div>`).join('');
+      const opts=disputes.filter(d=>d.status==='open').map(d=>html`<option value="${Number(d.id)||0}">${d.title}</option>`);
+      safeSetHTML(sel, '<option value="">-- Select Dispute --</option>'+opts.join(''));
+      if(!disputes.length){safeSetHTML(list, goEmpty('No disputes logged', 'Formal issues, mediation history, and governance decisions will appear here.'));return;}
+      const rows=disputes.map(d=>html`<div class="go-list-item">
+        <div class="go-list-copy"><div><strong>${d.title}</strong> ${trustedHTML(statusBadge(d.status||'open'))} <span class="go-badge go-badge-${d.severity||'low'}">${d.severity||'low'}</span></div>
+          <div class="go-list-meta">Filed by: ${d.filed_by||'Unknown'}${d.description?' | '+d.description.substring(0,80) : ''}</div></div>
+        <div class="go-row-actions">${d.status==='open'?html`<button class="go-btn go-btn-secondary" onclick="goResolveDispute(${Number(d.id)||0})">Resolve</button>`:''}</div>
+      </div>`);
+      safeSetHTML(list, rows.join(''));
     });
   };
   window.goCreateDispute=function(){
@@ -694,28 +708,33 @@
     api('/api/group/disputes').then(disputes=>{
       const container=el('go-vote-list');
       const openIds=disputes.filter(d=>d.status==='open').map(d=>d.id);
-      if(!openIds.length){container.innerHTML=goEmpty('No open disputes ready for a vote', 'Votes appear here when an active dispute has ballot options.');return;}
+      if(!openIds.length){safeSetHTML(container, goEmpty('No open disputes ready for a vote', 'Votes appear here when an active dispute has ballot options.'));return;}
       Promise.all(openIds.map(id=>api('/api/group/disputes/'+id))).then(details=>{
-        let html='';
+        let out='';
         details.forEach(d=>{
           if(!d.votes||!d.votes.length)return;
           d.votes.forEach(v=>{
             const total=v.results?Object.values(v.results).reduce((a,b)=>a+b,0):0;
             const barColors=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
-            html+=`<div class="go-card"><div class="go-card-title">${esc(v.question)} <span class="go-badge go-badge-${v.status||'open'}">${esc(v.status||'open')}</span></div>`;
+            let body=html`<div class="go-card"><div class="go-card-title">${v.question} <span class="go-badge go-badge-${v.status||'open'}">${v.status||'open'}</span></div>`;
             if(v.results&&total>0){
-              html+='<div class="go-vote-bar">'+Object.entries(v.results).map(([opt,cnt],i)=>{
+              const bars=Object.entries(v.results).map(([opt,cnt],i)=>{
                 const pct=Math.round(cnt/total*100);
-                return `<div style="width:${pct}%;background:${barColors[i%barColors.length]}" title="${esc(opt)}: ${cnt}">${pct>8?esc(opt)+' '+pct+'%':''}</div>`;
-              }).join('')+'</div><small class="tone-muted">Total votes: '+total+'</small>';
+                const color=barColors[i%barColors.length];
+                return html`<div style="width:${pct}%;--go-bar-tone:${color};background:var(--go-bar-tone)" title="${opt}: ${cnt}">${pct>8?opt+' '+pct+'%':''}</div>`;
+              });
+              body+=html`<div class="go-vote-bar">${trustedHTML(bars.join(''))}</div><small class="tone-muted">Total votes: ${total}</small>`;
             }
             if(v.status==='open'&&v.options){
-              html+='<div class="go-form-row go-row-spaced">'+v.options.map(o=>`<button class="go-btn go-btn-secondary" onclick="goCastVote(${v.id},'${o.replace(/'/g,"\\'")}')">${esc(o)}</button>`).join('')+'</div>';
+              const voteId=Number(v.id)||0;
+              const btns=v.options.map(o=>html`<button class="go-btn go-btn-secondary" onclick='goCastVote(${voteId}, ${JSON.stringify(o)})'>${o}</button>`);
+              body+=html`<div class="go-form-row go-row-spaced">${trustedHTML(btns.join(''))}</div>`;
             }
-            html+='</div>';
+            body+='</div>';
+            out+=body;
           });
         });
-        container.innerHTML=html||goEmpty('No votes launched yet', 'Create one from an open dispute above when the group needs a formal decision.');
+        safeSetHTML(container, out||goEmpty('No votes launched yet', 'Create one from an open dispute above when the group needs a formal decision.'));
       });
     });
   };
@@ -750,32 +769,37 @@
   };
   window.goLoadICSTemplate=function(){
     const type=val('go-ics-type'),container=el('go-ics-template-fields');
-    if(!type){container.innerHTML='';return;}
+    if(!type){safeSetHTML(container, '');return;}
     const fields=icsTemplateFields[type]||[];
-    container.innerHTML=fields.map(f=>{
+    const rows=fields.map(f=>{
       const label=f.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
       const isLong=f.includes('message')||f.includes('log')||f.includes('situation')||f.includes('objectives')||f.includes('procedures');
-      return `<div class="go-form-row"><div class="field"><label>${label}</label>${isLong?
-        '<textarea name="go-ics-field-'+f+'" id="go-ics-field-'+f+'" rows="2"></textarea>':
-        '<input name="go-ics-field-'+f+'" id="go-ics-field-'+f+'" placeholder="'+label+'">'}</div></div>`;
-    }).join('');
+      const fieldId='go-ics-field-'+f;
+      return isLong
+        ? html`<div class="go-form-row"><div class="field"><label>${label}</label><textarea name="${fieldId}" id="${fieldId}" rows="2"></textarea></div></div>`
+        : html`<div class="go-form-row"><div class="field"><label>${label}</label><input name="${fieldId}" id="${fieldId}" placeholder="${label}"></div></div>`;
+    });
+    safeSetHTML(container, rows.join(''));
   };
   window.goLoadICSForms=function(){
     api('/api/group/ics-forms').then(forms=>{
       const list=el('go-ics-list');
-      if(!forms.length){list.innerHTML=goEmpty('No ICS forms yet', 'Capture the first incident document above to start building the incident record.');return;}
-      list.innerHTML=forms.map(f=>{
+      if(!forms.length){safeSetHTML(list, goEmpty('No ICS forms yet', 'Capture the first incident document above to start building the incident record.'));return;}
+      const sel=(st,want)=>st===want?' selected':'';
+      const rows=forms.map(f=>{
         const color=icsColors[f.form_type]||'#6b7280';
-        return `<div class="go-list-item">
-          <div class="go-list-copy"><div><span class="go-ics-badge" style="background:${color}22;color:${color};padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600">ICS ${esc(f.form_type)}</span>
-            <strong class="go-tag-spacer">${esc(f.incident_name||'Untitled')}</strong> ${statusBadge(f.status||'draft')}</div>
-            <div class="go-list-meta">Created: ${esc(f.created_at||'Unknown')}</div></div>
+        const id=Number(f.id)||0;
+        return html`<div class="go-list-item">
+          <div class="go-list-copy"><div><span class="go-ics-badge" style="--go-ics-bg:${color}22;--go-ics-fg:${color};background:var(--go-ics-bg);color:var(--go-ics-fg);padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600">ICS ${f.form_type}</span>
+            <strong class="go-tag-spacer">${f.incident_name||'Untitled'}</strong> ${trustedHTML(statusBadge(f.status||'draft'))}</div>
+            <div class="go-list-meta">Created: ${f.created_at||'Unknown'}</div></div>
           <div class="go-row-actions">
-            <select name="go-ics-status-${f.id}" onchange="goUpdateICSStatus(${f.id},this.value)" class="go-mini-input">
-              <option value="draft"${f.status==='draft'?' selected':''}>Draft</option><option value="active"${f.status==='active'?' selected':''}>Active</option>
-              <option value="archived"${f.status==='archived'?' selected':''}>Archived</option>
+            <select name="go-ics-status-${id}" onchange="goUpdateICSStatus(${id},this.value)" class="go-mini-input">
+              <option value="draft"${trustedHTML(sel(f.status,'draft'))}>Draft</option><option value="active"${trustedHTML(sel(f.status,'active'))}>Active</option>
+              <option value="archived"${trustedHTML(sel(f.status,'archived'))}>Archived</option>
             </select></div></div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
     });
   };
   window.goCreateICSForm=function(){
@@ -784,7 +808,7 @@
     const data={};fields.forEach(f=>{data[f]=val('go-ics-field-'+f);});
     api('/api/group/ics-forms',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({form_type:type,incident_name:incident,status:val('go-ics-status'),data})
-    }).then(()=>{el('go-ics-incident').value='';el('go-ics-template-fields').innerHTML='';el('go-ics-type').value='';toast('ICS form created');goLoadICSForms();});
+    }).then(()=>{el('go-ics-incident').value='';safeSetHTML(el('go-ics-template-fields'), '');el('go-ics-type').value='';toast('ICS form created');goLoadICSForms();});
   };
   window.goUpdateICSStatus=function(id,status){
     api('/api/group/ics-forms/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
@@ -795,17 +819,21 @@
   window.goLoadCERT=function(){
     api('/api/group/cert-teams').then(teams=>{
       const list=el('go-cert-list');
-      if(!teams.length){list.innerHTML=goEmpty('No CERT teams yet', 'Create the first response team above to map specialty coverage and leadership.');return;}
+      if(!teams.length){safeSetHTML(list, goEmpty('No CERT teams yet', 'Create the first response team above to map specialty coverage and leadership.'));return;}
       const specColor={search_rescue:'#3b82f6',medical:'#22c55e',fire_suppression:'#ef4444',logistics:'#f59e0b',communications:'#06b6d4',damage_assessment:'#8b5cf6'};
-      list.innerHTML=teams.map(t=>`<div class="go-card">
+      const rows=teams.map(t=>{
+        const col=specColor[t.specialty]||'#6b7280';
+        return html`<div class="go-card">
         <div class="go-row-header">
-          <div><strong class="go-tone-accent">${esc(t.name)}</strong>
-            <span class="go-badge" style="background:${(specColor[t.specialty]||'#6b7280')}22;color:${specColor[t.specialty]||'#6b7280'}">${esc((t.specialty||'').replace(/_/g,' '))}</span>
-            <br><small class="tone-muted">Leader: ${esc(t.leader||'None')}</small>
-            ${t.members?'<br><small class="tone-muted">Members: '+esc(t.members)+'</small>':''}
+          <div><strong class="go-tone-accent">${t.name}</strong>
+            <span class="go-badge" style="--go-spec-bg:${col}22;--go-spec-fg:${col};background:var(--go-spec-bg);color:var(--go-spec-fg)">${(t.specialty||'').replace(/_/g,' ')}</span>
+            <br><small class="tone-muted">Leader: ${t.leader||'None'}</small>
+            ${t.members?html`<br><small class="tone-muted">Members: ${t.members}</small>`:''}
           </div>
         </div>
-      </div>`).join('');
+      </div>`;
+      });
+      safeSetHTML(list, rows.join(''));
     });
   };
   window.goCreateCERT=function(){
@@ -819,15 +847,15 @@
   window.goLoadDamageAssessments=function(){
     api('/api/group/damage-assessments').then(items=>{
       const list=el('go-da-list');
-      if(!items.length){list.innerHTML=goEmpty('No damage assessments yet', 'The first field report will appear here once a site is assessed.');return;}
-      list.innerHTML='<table class="go-table"><thead><tr><th>Location</th><th>Type</th><th>Severity</th><th>Occupants</th><th>Utilities</th><th>Assessor</th></tr></thead><tbody>'+
-        items.map(a=>{
-          const sc=severityColor[a.severity]||'var(--go-gray)';
-          const utils=[];if(a.power)utils.push('Pwr');if(a.water)utils.push('H2O');if(a.gas)utils.push('Gas');if(a.sewer)utils.push('Swr');if(a.comms)utils.push('Com');
-          return `<tr><td>${esc(a.location||'')}</td><td>${esc(a.structure_type||'')}</td>
-            <td><span class="go-badge" style="background:${sc}22;color:${sc}">${a.severity||''}</span></td>
-            <td>${a.occupants||0}</td><td>${utils.join(', ')||'None'}</td><td>${esc(a.assessed_by||'')}</td></tr>`;
-        }).join('')+'</tbody></table>';
+      if(!items.length){safeSetHTML(list, goEmpty('No damage assessments yet', 'The first field report will appear here once a site is assessed.'));return;}
+      const rows=items.map(a=>{
+        const sc=severityColor[a.severity]||'var(--go-gray)';
+        const utils=[];if(a.power)utils.push('Pwr');if(a.water)utils.push('H2O');if(a.gas)utils.push('Gas');if(a.sewer)utils.push('Swr');if(a.comms)utils.push('Com');
+        return html`<tr><td>${a.location||''}</td><td>${a.structure_type||''}</td>
+          <td><span class="go-badge" style="--go-sev-bg:${sc}22;--go-sev-fg:${sc};background:var(--go-sev-bg);color:var(--go-sev-fg)">${a.severity||''}</span></td>
+          <td>${a.occupants||0}</td><td>${utils.join(', ')||'None'}</td><td>${a.assessed_by||''}</td></tr>`;
+      });
+      safeSetHTML(list, '<table class="go-table"><thead><tr><th>Location</th><th>Type</th><th>Severity</th><th>Occupants</th><th>Utilities</th><th>Assessor</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>');
     });
   };
   window.goCreateDamageAssessment=function(){
@@ -845,26 +873,29 @@
   window.goLoadShelters=function(){
     api('/api/group/shelters').then(shelters=>{
       const list=el('go-shelter-list');
-      if(!shelters.length){list.innerHTML=goEmpty('No shelters registered yet', 'Add the first site above to track capacity, occupancy, and shelter status.');return;}
-      list.innerHTML=shelters.map(s=>{
+      if(!shelters.length){safeSetHTML(list, goEmpty('No shelters registered yet', 'Add the first site above to track capacity, occupancy, and shelter status.'));return;}
+      const rows=shelters.map(s=>{
         const pct=s.capacity>0?Math.round((s.occupancy||0)/s.capacity*100):0;
         const barColor=pct>=90?'var(--go-red)':pct>=70?'var(--go-yellow)':'var(--go-green)';
-        return `<div class="go-list-item" style="flex-direction:column;align-items:stretch">
+        const id=Number(s.id)||0;
+        return html`<div class="go-list-item" style="flex-direction:column;align-items:stretch">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div><strong>${esc(s.name)}</strong> ${statusBadge(s.status||'active')}
-              <br><small class="tone-muted">${esc(s.location||'')} | Contact: ${esc(s.contact||'N/A')}</small></div>
-            <button class="go-btn go-btn-secondary" onclick="goEditShelterOccupancy(${s.id},${s.occupancy||0},${s.capacity})">Update</button>
+            <div><strong>${s.name}</strong> ${trustedHTML(statusBadge(s.status||'active'))}
+              <br><small class="tone-muted">${s.location||''} | Contact: ${s.contact||'N/A'}</small></div>
+            <button class="go-btn go-btn-secondary" onclick="goEditShelterOccupancy(${id},${Number(s.occupancy)||0},${Number(s.capacity)||0})">Update</button>
           </div>
-          <div class="go-capacity-bar"><div class="go-capacity-fill" style="width:${pct}%;background:${barColor}"></div>
+          <div class="go-capacity-bar"><div class="go-capacity-fill" style="--go-cap-w:${pct}%;--go-cap-tone:${barColor};width:var(--go-cap-w);background:var(--go-cap-tone)"></div>
             <span class="go-capacity-text">${s.occupancy||0} / ${s.capacity} (${pct}%)</span></div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
     });
     api('/api/group/shelters/capacity').then(cap=>{
-      el('go-shelter-capacity-summary').innerHTML=[
+      const stats=[
         {v:cap.total_shelters||0,l:'Total Shelters'},{v:cap.total_capacity||0,l:'Total Capacity'},
         {v:cap.total_occupancy||0,l:'Current Occupancy'},{v:(cap.utilization_pct||0)+'%',l:'Utilization'}
-      ].map(x=>`<div class="go-card go-stat"><div class="go-stat-val">${x.v}</div><div class="go-stat-label">${x.l}</div></div>`).join('');
+      ].map(x=>html`<div class="go-card go-stat"><div class="go-stat-val">${x.v}</div><div class="go-stat-label">${x.l}</div></div>`);
+      safeSetHTML(el('go-shelter-capacity-summary'), stats.join(''));
     });
   };
   window.goCreateShelter=function(){
@@ -886,15 +917,19 @@
   window.goLoadWarnings=function(){
     api('/api/group/warnings').then(warnings=>{
       const list=el('go-warning-list');
-      if(!warnings.length){list.innerHTML=goEmpty('No community warnings yet', 'Published alerts and advisories will appear here when they are issued.');return;}
-      list.innerHTML=warnings.map(w=>`<div class="go-list-item">
-        <div class="go-list-copy"><div><span class="go-badge go-badge-${w.severity||'info'}">${esc((w.severity||'info').toUpperCase())}</span>
-          <strong class="go-tag-spacer">${esc(w.title)}</strong></div>
-          <div class="go-list-meta">${esc(w.issued_by||'')} | Area: ${esc(w.area||'All')}${w.expires?' | Expires: '+esc(w.expires):''}</div>
-          ${w.message?'<div class="go-list-meta" style="color:var(--text-secondary,#ccc)">'+esc(w.message.substring(0,150))+'</div>':''}
+      if(!warnings.length){safeSetHTML(list, goEmpty('No community warnings yet', 'Published alerts and advisories will appear here when they are issued.'));return;}
+      const rows=warnings.map(w=>{
+        const preview=w.message?w.message.substring(0,150):'';
+        return html`<div class="go-list-item">
+        <div class="go-list-copy"><div><span class="go-badge go-badge-${w.severity||'info'}">${(w.severity||'info').toUpperCase()}</span>
+          <strong class="go-tag-spacer">${w.title}</strong></div>
+          <div class="go-list-meta">${w.issued_by||''} | Area: ${w.area||'All'}${w.expires?' | Expires: '+w.expires:''}</div>
+          ${w.message?html`<div class="go-list-meta" style="color:var(--text-secondary,#ccc)">${preview}</div>`:''}
         </div>
-        <div class="go-row-actions"><button class="go-btn go-btn-secondary" onclick="goArchiveWarning(${w.id})">Archive</button></div>
-      </div>`).join('');
+        <div class="go-row-actions"><button class="go-btn go-btn-secondary" onclick="goArchiveWarning(${Number(w.id)||0})">Archive</button></div>
+      </div>`;
+      });
+      safeSetHTML(list, rows.join(''));
     });
   };
   window.goCreateWarning=function(){

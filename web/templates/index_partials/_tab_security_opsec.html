@@ -659,8 +659,8 @@
   const soDeleteLabel=(action,fallback)=>root.querySelector('[onclick="'+action+'"]')?.getAttribute('data-item-label')||fallback;
   const soConfirmDelete=label=>window.confirm('Delete '+label+'? This removes it from the security workspace.');
 
-  const classificationBadge=c=>`<span class="so-badge so-badge-${esc(c)}">${esc(String(c||'').replace(/_/g,' ').toUpperCase())}</span>`;
-  const categoryBadge=c=>`<span class="so-badge so-badge-${esc(c)}">${esc(c)}</span>`;
+  const classificationBadge=c=>html`<span class="so-badge so-badge-${c}">${String(c||'').replace(/_/g,' ').toUpperCase()}</span>`;
+  const categoryBadge=c=>html`<span class="so-badge so-badge-${c}">${c}</span>`;
   function riskColor(score){
     if(score<=5)return'#22c55e';if(score<=10)return'#eab308';
     if(score<=15)return'#f97316';return'#ef4444';
@@ -675,15 +675,16 @@
   window.soLoadCompartments=function(){
     api('/api/security-ops/opsec/compartments').then(items=>{
       const list=el('so-compartment-list');
-      if(!items.length){list.innerHTML=soEmpty('No compartments yet', 'Create the first compartment above to define access boundaries and member lists.');return;}
-      list.innerHTML=items.map(c=>`<div class="so-card">
+      if(!items.length){safeSetHTML(list, soEmpty('No compartments yet', 'Create the first compartment above to define access boundaries and member lists.'));return;}
+      const out=items.map(c=>html`<div class="so-card">
         <div class="so-row-header">
-          <div><strong>${c.name}</strong> ${classificationBadge(c.classification)}</div>
-          <div class="so-action-cluster">${soDeleteButton('soDeleteCompartment(' + c.id + ')', c.name || 'compartment')}</div>
+          <div><strong>${c.name}</strong> ${trustedHTML(classificationBadge(c.classification))}</div>
+          <div class="so-action-cluster">${trustedHTML(soDeleteButton('soDeleteCompartment(' + (Number(c.id)||0) + ')', c.name || 'compartment'))}</div>
         </div>
-        ${c.description?'<div style="font-size:.82rem;color:var(--text-secondary,#aaa);margin-top:4px">'+c.description+'</div>':''}
-        ${c.members?'<div style="font-size:.78rem;margin-top:6px;color:var(--text-secondary,#ccc)">Members: '+c.members+'</div>':''}
-      </div>`).join('');
+        ${c.description?html`<div style="font-size:.82rem;color:var(--text-secondary,#aaa);margin-top:4px">${c.description}</div>`:''}
+        ${c.members?html`<div style="font-size:.78rem;margin-top:6px;color:var(--text-secondary,#ccc)">Members: ${c.members}</div>`:''}
+      </div>`);
+      safeSetHTML(list, out.join(''));
     });
   };
   window.soCreateCompartment=function(){
@@ -703,22 +704,25 @@
   window.soLoadChecklists=function(){
     api('/api/security-ops/opsec/checklists').then(items=>{
       const list=el('so-checklist-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No checklists yet. Seed the built-in audits or add your first inspection flow above.</div>';return;}
-      list.innerHTML=items.map(cl=>{
+      if(!items.length){safeSetHTML(list, '<div class="so-empty">No checklists yet. Seed the built-in audits or add your first inspection flow above.</div>');return;}
+      const out=items.map(cl=>{
         const checkItems=(cl.items||[]);
         const done=checkItems.filter(i=>i.checked).length;
         const total=checkItems.length;
         const pct=total?Math.round(done/total*100):0;
-        return`<div class="so-card">
-          <div class="so-row-header">
-            <div><strong>${cl.name}</strong> <span class="so-score" style="color:${pct>=80?'var(--so-green)':pct>=50?'var(--so-yellow)':'var(--so-red)'}">${pct}%</span> <small>(${done}/${total})</small></div>
-          </div>
-          <div class="so-row-spaced-sm">${checkItems.map((item,idx)=>`<div class="so-checklist-item">
-            <input type="checkbox" name="so-cl-${cl.id}-${idx}" ${item.checked?'checked':''} onchange="soToggleCheckItem(${cl.id},${idx},this.checked)">
+        const tone=pct>=80?'var(--so-green)':pct>=50?'var(--so-yellow)':'var(--so-red)';
+        const itemRows=checkItems.map((item,idx)=>html`<div class="so-checklist-item">
+            <input type="checkbox" name="so-cl-${Number(cl.id)||0}-${idx}" ${trustedHTML(item.checked?'checked':'')} onchange="soToggleCheckItem(${Number(cl.id)||0},${idx},this.checked)">
             <span style="font-size:.85rem;color:var(--text-primary,#eee)">${item.text||item}</span>
-          </div>`).join('')}</div>
+          </div>`);
+        return html`<div class="so-card">
+          <div class="so-row-header">
+            <div><strong>${cl.name}</strong> <span class="so-score" style="--so-score-tone:${tone};color:var(--so-score-tone)">${pct}%</span> <small>(${done}/${total})</small></div>
+          </div>
+          <div class="so-row-spaced-sm">${trustedHTML(itemRows.join(''))}</div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, out.join(''));
     });
   };
   window.soCreateChecklist=function(){
@@ -748,14 +752,15 @@
     api('/api/security-ops/opsec/compartments?type=duress').catch(()=>({items:[]})).then(data=>{
       const items=data.items||data||[];
       const duress=items.filter(i=>i.type==='duress_signal'||i.type==='cover_story');
-      if(!duress.length){list.innerHTML=soEmpty('No duress signals yet', 'Add the first covert phrase or cover story above.');return;}
-      list.innerHTML=duress.map(d=>`<div class="so-list-item">
+      if(!duress.length){safeSetHTML(list, soEmpty('No duress signals yet', 'Add the first covert phrase or cover story above.'));return;}
+      const out=duress.map(d=>html`<div class="so-list-item">
         <div><span class="so-badge so-badge-${d.type==='duress_signal'?'need_to_know':'restricted'}">${d.type==='duress_signal'?'DURESS':'COVER'}</span>
           <strong class="so-tag-spacer">${d.name||d.word}</strong>
-          ${d.description?'<br><small class="tone-muted">'+d.description+'</small>':''}
+          ${d.description?html`<br><small class="tone-muted">${d.description}</small>`:''}
         </div>
-        <div class="so-action-cluster">${soDeleteButton('soDeleteCompartment(' + d.id + ')', (d.name||d.word||'duress item'))}</div>
-      </div>`).join('');
+        <div class="so-action-cluster">${trustedHTML(soDeleteButton('soDeleteCompartment(' + (Number(d.id)||0) + ')', (d.name||d.word||'duress item')))}</div>
+      </div>`);
+      safeSetHTML(list, out.join(''));
     });
   };
   window.soCreateDuress=function(){
@@ -771,17 +776,18 @@
   window.soLoadThreats=function(){
     api('/api/security-ops/threat-matrix').then(items=>{
       const tbody=el('so-threat-tbody');
-      if(!items.length){tbody.innerHTML=soEmptyRow(7, 'No threats logged yet', 'Add the first threat above to start scoring likelihood and impact.');return;}
-      tbody.innerHTML=items.map(t=>{
+      if(!items.length){safeSetHTML(tbody, soEmptyRow(7, 'No threats logged yet', 'Add the first threat above to start scoring likelihood and impact.'));return;}
+      const out=items.map(t=>{
         const score=(t.likelihood||1)*(t.impact||1);
-        return`<tr>
+        return html`<tr>
           <td>${t.name}</td><td>${t.category||''}</td>
           <td>${t.likelihood}</td><td>${t.impact}</td>
-          <td><strong class="${riskClass(score)}" style="color:${riskColor(score)}">${score}</strong></td>
+          <td><strong class="${riskClass(score)}" style="--so-risk-tone:${riskColor(score)};color:var(--so-risk-tone)">${score}</strong></td>
           <td class="so-cell-truncate">${t.mitigation||''}</td>
-          <td class="so-action-cluster">${soDeleteButton('soDeleteThreat(' + t.id + ')', t.name || 'threat')}</td>
+          <td class="so-action-cluster">${trustedHTML(soDeleteButton('soDeleteThreat(' + (Number(t.id)||0) + ')', t.name || 'threat'))}</td>
         </tr>`;
-      }).join('');
+      });
+      safeSetHTML(tbody, out.join(''));
     });
   };
   window.soCreateThreat=function(){
@@ -802,17 +808,18 @@
   window.soLoadOPs=function(){
     api('/api/security-ops/observation-posts').then(items=>{
       const list=el('so-op-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No observation posts yet. Add the first post above to define sectors and staffing.</div>';return;}
-      list.innerHTML=items.map(op=>`<div class="so-list-item">
+      if(!items.length){safeSetHTML(list, '<div class="so-empty">No observation posts yet. Add the first post above to define sectors and staffing.</div>');return;}
+      const out=items.map(op=>html`<div class="so-list-item">
         <div>
           <span class="so-badge so-badge-${op.status||'active'}">${(op.status||'active').toUpperCase()}</span>
           <strong class="so-tag-spacer">${op.name}</strong>
           <small style="margin-left:8px;color:var(--text-secondary,#aaa)">Sector: ${op.sector||'--'} | Personnel: ${op.personnel||'--'}</small>
         </div>
         <div>
-          <button class="so-btn so-btn-secondary" onclick="soToggleOPStatus(${op.id},'${op.status==='active'?'standby':'active'}')">Toggle</button>
+          <button class="so-btn so-btn-secondary" onclick="soToggleOPStatus(${Number(op.id)||0},'${op.status==='active'?'standby':'active'}')">Toggle</button>
         </div>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(list, out.join(''));
       populatePostSelects(items);
     });
   };
@@ -830,7 +837,8 @@
     ['so-log-post','so-log-filter-post'].forEach(sid=>{
       const s=el(sid);if(!s)return;
       const v=s.value;
-      s.innerHTML='<option value="">All Posts</option>'+posts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+      const opts=posts.map(p=>html`<option value="${Number(p.id)||0}">${p.name}</option>`);
+      safeSetHTML(s, '<option value="">All Posts</option>'+opts.join(''));
       s.value=v;
     });
   }
@@ -846,25 +854,27 @@
     if(catFilter)url+='category='+catFilter+'&';
     api(url).then(items=>{
       const list=el('so-log-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No log entries match the current filters yet. Field reports and watch updates will appear here.</div>';return;}
-      list.innerHTML=items.map(e=>`<div class="so-list-item" style="flex-wrap:wrap">
+      if(!items.length){safeSetHTML(list, '<div class="so-empty">No log entries match the current filters yet. Field reports and watch updates will appear here.</div>');return;}
+      const out=items.map(e=>html`<div class="so-list-item" style="flex-wrap:wrap">
         <div style="flex:1">
-          ${categoryBadge(e.category||'other')}
+          ${trustedHTML(categoryBadge(e.category||'other'))}
           <strong class="so-tag-spacer">${e.description||''}</strong>
           <br><small class="tone-muted">
             ${e.post_name?'Post: '+e.post_name+' | ':''}${e.grid?'Grid: '+e.grid+' | ':''}${e.bearing?'Brg: '+e.bearing+' | ':''}${e.distance?'Dist: '+e.distance+' | ':''}
             ${e.created_at||''}
           </small>
         </div>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(list, out.join(''));
     });
   };
   window.soLoadLogStats=function(){
     api('/api/security-ops/op-log/summary').then(s=>{
-      el('so-oplog-stats').innerHTML=[
+      const stats=[
         {v:s.total||0,l:'Total Entries'},{v:s.last_24h||0,l:'Last 24h'},
         {v:s.most_active_post||'--',l:'Most Active Post'},{v:s.top_category||'--',l:'Top Category'}
-      ].map(x=>`<div class="so-card so-stat"><div class="so-stat-val">${x.v}</div><div class="so-stat-label">${x.l}</div></div>`).join('');
+      ].map(x=>html`<div class="so-card so-stat"><div class="so-stat-val">${x.v}</div><div class="so-stat-label">${x.l}</div></div>`);
+      safeSetHTML(el('so-oplog-stats'), stats.join(''));
     });
   };
   window.soCreateLog=function(){
@@ -894,18 +904,19 @@
             thermal:['No thermal exposures logged yet','Log heat-producing sources and mitigation steps here.']
           };
           const [title, body] = labelMap[cat] || ['No signature items logged yet', 'Add the first exposure above to measure visibility and mitigation.'];
-          list.innerHTML=soEmpty(title, body);
+          safeSetHTML(list, soEmpty(title, body));
           return;
         }
-        list.innerHTML=byCat[cat].map(s=>{
+        const out=byCat[cat].map(s=>{
           totalIntensity+=(s.intensity||0);totalItems++;
-          return`<div class="so-list-item">
+          return html`<div class="so-list-item">
             <div><strong>${s.source}</strong> <small>Intensity: ${s.intensity}/10</small>
-              ${s.mitigation?'<br><small class="tone-muted">Mitigation: '+s.mitigation+'</small>':''}
+              ${s.mitigation?html`<br><small class="tone-muted">Mitigation: ${s.mitigation}</small>`:''}
             </div>
-            <div class="so-action-cluster">${soDeleteButton('soDeleteSignature(' + s.id + ')', s.source || 'signature item')}</div>
+            <div class="so-action-cluster">${trustedHTML(soDeleteButton('soDeleteSignature(' + (Number(s.id)||0) + ')', s.source || 'signature item'))}</div>
           </div>`;
-        }).join('');
+        });
+        safeSetHTML(list, out.join(''));
       });
       const avgScore=totalItems?Math.round(totalIntensity/totalItems*10):0;
       updateConcealmentGauge(avgScore);
@@ -937,9 +948,10 @@
   window.soLoadSigGuide=function(){
     api('/api/security-ops/signatures/guide').then(guide=>{
       const container=el('so-sig-guide');
-      if(!guide||!guide.length){container.innerHTML='<div class="so-ref-item">Reference notes are not available yet.</div>';return;}
-      container.innerHTML=guide.map(g=>`<div class="so-ref-item"><strong>${g.title||g.category}</strong><br>${g.description||g.text||''}</div>`).join('');
-    }).catch(()=>{el('so-sig-guide').innerHTML='<div class="so-ref-item">Couldn\'t load the signature guide right now.</div>';});
+      if(!guide||!guide.length){safeSetHTML(container, '<div class="so-ref-item">Reference notes are not available yet.</div>');return;}
+      const out=guide.map(g=>html`<div class="so-ref-item"><strong>${g.title||g.category}</strong><br>${g.description||g.text||''}</div>`);
+      safeSetHTML(container, out.join(''));
+    }).catch(()=>{safeSetHTML(el('so-sig-guide'), '<div class="so-ref-item">Couldn\'t load the signature guide right now.</div>');});
   };
 
   /* ══════════════════════════════════════════════════════════
@@ -987,16 +999,17 @@
   window.soLoadNightOps=function(){
     api('/api/security-ops/night-ops').then(items=>{
       const list=el('so-nightop-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No night movement plans yet. Add the first route, timing, and rally point above.</div>';return;}
-      list.innerHTML=items.map(op=>`<div class="so-card">
+      if(!items.length){safeSetHTML(list, '<div class="so-empty">No night movement plans yet. Add the first route, timing, and rally point above.</div>');return;}
+      const out=items.map(op=>html`<div class="so-card">
         <div class="so-row-header">
           <div><strong>${op.name}</strong> <small class="tone-muted">${op.datetime||''}</small></div>
         </div>
-        ${op.route?'<div style="font-size:.82rem;color:var(--text-secondary,#ccc);margin-top:6px">Route: '+op.route+'</div>':''}
+        ${op.route?html`<div style="font-size:.82rem;color:var(--text-secondary,#ccc);margin-top:6px">Route: ${op.route}</div>`:''}
         <div style="font-size:.78rem;color:var(--text-secondary,#aaa);margin-top:4px">
           Rally: ${op.rally_point||'--'} | Personnel: ${op.personnel||'--'} | Ambient: ${op.ambient_light||'--'}
         </div>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(list, out.join(''));
     });
   };
   window.soCreateNightOp=function(){
@@ -1030,17 +1043,20 @@
   window.soLoadCBRNEquipment=function(){
     api('/api/security-ops/cbrn/equipment').then(items=>{
       const list=el('so-cbrn-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No CBRN equipment yet. Add the first detector, suit, or mask above.</div>';return;}
-      list.innerHTML=items.map(i=>{
+      if(!items.length){safeSetHTML(list, '<div class="so-empty">No CBRN equipment yet. Add the first detector, suit, or mask above.</div>');return;}
+      const out=items.map(i=>{
         const overdue=i.calibration_due&&new Date(i.calibration_due)<new Date();
-        return`<div class="so-list-item">
+        const condStyle=i.condition==='serviceable'?'background:rgba(34,197,94,.2);color:var(--so-green)':'background:rgba(239,68,68,.2);color:var(--so-red)';
+        const dueStyle='color:'+(overdue?'var(--so-red)':'var(--text-secondary,#aaa)');
+        return html`<div class="so-list-item">
           <div>
             <strong>${i.name}</strong> <small>x${i.quantity||1}</small>
-            <span class="so-badge" style="margin-left:6px;${i.condition==='serviceable'?'background:rgba(34,197,94,.2);color:var(--so-green)':'background:rgba(239,68,68,.2);color:var(--so-red)'}">${(i.condition||'').replace(/_/g,' ')}</span>
-            ${i.calibration_due?'<br><small style="color:'+(overdue?'var(--so-red)':'var(--text-secondary,#aaa)')+'">Cal due: '+i.calibration_due+(overdue?' OVERDUE':'')+'</small>':''}
+            <span class="so-badge" style="margin-left:6px;${trustedHTML(condStyle)}">${(i.condition||'').replace(/_/g,' ')}</span>
+            ${i.calibration_due?html`<br><small style="${trustedHTML(dueStyle)}">Cal due: ${i.calibration_due}${overdue?' OVERDUE':''}</small>`:''}
           </div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, out.join(''));
     });
   };
   window.soCreateCBRNItem=function(){
@@ -1055,13 +1071,14 @@
   window.soLoadProcedures=function(){
     api('/api/security-ops/cbrn/procedures').then(items=>{
       const list=el('so-proc-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No procedures yet. Seed the built-in playbooks or add your first response sequence above.</div>';return;}
-      list.innerHTML=items.map(p=>`<div class="so-card">
+      if(!items.length){safeSetHTML(list, '<div class="so-empty">No procedures yet. Seed the built-in playbooks or add your first response sequence above.</div>');return;}
+      const out=items.map(p=>html`<div class="so-card">
         <div class="so-row-header">
           <div><strong>${p.name}</strong> <span class="so-badge so-badge-${p.type==='immediate_action'?'need_to_know':p.type==='decontamination'?'confidential':'restricted'}">${(p.type||'').replace(/_/g,' ')}</span></div>
         </div>
         <pre class="so-pre-block">${p.steps||''}</pre>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(list, out.join(''));
     });
   };
   window.soCreateProcedure=function(){
@@ -1079,13 +1096,14 @@
     const rate=numVal('so-fallout-rate',100);
     const h1=numVal('so-fallout-hours',1);
     const h2=numVal('so-fallout-target',49);
-    if(h2<=h1){el('so-fallout-result').innerHTML='Target hours must be greater than initial.';el('so-fallout-result').classList.remove('is-hidden');return;}
+    if(h2<=h1){safeSetHTML(el('so-fallout-result'), 'Target hours must be greater than initial.');el('so-fallout-result').classList.remove('is-hidden');return;}
     /* 7-10 rule: for every 7x increase in time, dose rate drops by factor of 10 */
     const decayRate=rate*Math.pow(h2/h1,-1.2);
     const safe=decayRate<0.5;
-    el('so-fallout-result').innerHTML=`<strong>Predicted dose rate at ${h2}h:</strong> ${decayRate.toFixed(2)} R/hr<br>
-      <small>${safe?'<span style="color:var(--so-green)">Below 0.5 R/hr — movement possible with caution</span>':'<span style="color:var(--so-red)">Above 0.5 R/hr — continue sheltering</span>'}</small>
-      <br><small>Based on t^-1.2 decay approximation from initial ${rate} R/hr at ${h1}h post-detonation</small>`;
+    const verdict=safe?html`<span style="color:var(--so-green)">Below 0.5 R/hr — movement possible with caution</span>`:html`<span style="color:var(--so-red)">Above 0.5 R/hr — continue sheltering</span>`;
+    safeSetHTML(el('so-fallout-result'), html`<strong>Predicted dose rate at ${h2}h:</strong> ${decayRate.toFixed(2)} R/hr<br>
+      <small>${trustedHTML(verdict)}</small>
+      <br><small>Based on t^-1.2 decay approximation from initial ${rate} R/hr at ${h1}h post-detonation</small>`);
     el('so-fallout-result').classList.remove('is-hidden');
   };
   window.soCalcDecon=function(){
@@ -1094,8 +1112,8 @@
     const level=val('so-decon-level');
     const timePerPerson={light:8,moderate:15,heavy:25}[level]||15;
     const totalMin=Math.ceil(personnel/stations)*timePerPerson;
-    el('so-decon-result').innerHTML=`<strong>Estimated decon time:</strong> ${totalMin} minutes<br>
-      <small>${personnel} personnel at ${timePerPerson} min each across ${stations} station(s)</small>`;
+    safeSetHTML(el('so-decon-result'), html`<strong>Estimated decon time:</strong> ${totalMin} minutes<br>
+      <small>${personnel} personnel at ${timePerPerson} min each across ${stations} station(s)</small>`);
     el('so-decon-result').classList.remove('is-hidden');
   };
 
@@ -1103,19 +1121,20 @@
   window.soLoadEMPInventory=function(){
     api('/api/security-ops/emp/inventory').then(items=>{
       const list=el('so-emp-list');
-      if(!items.length){list.innerHTML=soEmpty('No EMP inventory yet', 'Add the first critical item above to assess protection gaps.');return;}
-      list.innerHTML=items.map(i=>{
+      if(!items.length){safeSetHTML(list, soEmpty('No EMP inventory yet', 'Add the first critical item above to assess protection gaps.'));return;}
+      const out=items.map(i=>{
         const protClass=i.protection==='protected'?'so-protected':i.protection==='partial'?'so-badge-confidential':'so-unprotected';
         const protIcon=i.protection==='protected'?'&#9679;':i.protection==='partial'?'&#9681;':'&#9675;';
-        return`<div class="so-list-item">
+        return html`<div class="so-list-item">
           <div>
-            <span class="${protClass}" title="${i.protection}">${protIcon}</span>
+            <span class="${protClass}" title="${i.protection}">${trustedHTML(protIcon)}</span>
             <strong class="so-tag-spacer">${i.name}</strong>
             <small style="margin-left:6px;color:var(--text-secondary,#aaa)">${i.category||''} | Priority: ${i.priority||'low'}</small>
           </div>
-          <div class="so-action-cluster">${soDeleteButton('soDeleteEMPItem(' + i.id + ')', i.name || 'EMP item')}</div>
+          <div class="so-action-cluster">${trustedHTML(soDeleteButton('soDeleteEMPItem(' + (Number(i.id)||0) + ')', i.name || 'EMP item'))}</div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, out.join(''));
     });
   };
   window.soCreateEMPItem=function(){
@@ -1132,18 +1151,20 @@
   window.soLoadEMPAnalysis=function(){
     api('/api/security-ops/emp/analysis').then(data=>{
       const container=el('so-emp-analysis');
-      if(!data||(!data.categories&&!data.total)){container.innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:8px">Protection analysis will appear once a few EMP-critical items are tracked above.</div>';return;}
+      if(!data||(!data.categories&&!data.total)){safeSetHTML(container, '<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:8px">Protection analysis will appear once a few EMP-critical items are tracked above.</div>');return;}
       const cats=data.categories||{};
       const total=data.total||0;
       const protectedPct=total?Math.round((data.protected||0)/total*100):0;
-      container.innerHTML=`<div style="margin-bottom:8px"><strong>Protection Coverage:</strong> <span style="color:${protectedPct>=70?'var(--so-green)':protectedPct>=40?'var(--so-yellow)':'var(--so-red)'}">${protectedPct}%</span> of ${total} items protected</div>
-        <div class="so-gauge"><div class="so-gauge-fill so-bar-fill" style="--so-bar-w:${protectedPct}%;--so-tone:${protectedPct>=70?'var(--so-green)':protectedPct>=40?'var(--so-yellow)':'var(--so-red)'}"></div><div class="so-gauge-text">${protectedPct}% Protected</div></div>
-        ${Object.keys(cats).length?'<div style="margin-top:10px;font-size:.82rem">'+Object.entries(cats).map(([cat,info])=>`<div class="so-list-item so-row-padding-y">
+      const tone=protectedPct>=70?'var(--so-green)':protectedPct>=40?'var(--so-yellow)':'var(--so-red)';
+      const catRows=Object.entries(cats).map(([cat,info])=>html`<div class="so-list-item so-row-padding-y">
           <span>${cat}</span>
           <span><span class="so-protected">${info.protected||0}</span> / ${info.total||0} protected</span>
-        </div>`).join('')+'</div>':''}
-        ${data.critical_unprotected?'<div class="so-callout-danger"><strong>Warning:</strong> '+data.critical_unprotected+' critical item(s) unprotected</div>':''}`;
-    }).catch(()=>{el('so-emp-analysis').innerHTML='<div class="so-meta-text">Couldn\'t load the protection analysis right now.</div>';});
+        </div>`);
+      safeSetHTML(container, html`<div style="margin-bottom:8px"><strong>Protection Coverage:</strong> <span style="--so-cov-tone:${tone};color:var(--so-cov-tone)">${protectedPct}%</span> of ${total} items protected</div>
+        <div class="so-gauge"><div class="so-gauge-fill so-bar-fill" style="--so-bar-w:${protectedPct}%;--so-tone:${tone}"></div><div class="so-gauge-text">${protectedPct}% Protected</div></div>
+        ${Object.keys(cats).length?html`<div style="margin-top:10px;font-size:.82rem">${trustedHTML(catRows.join(''))}</div>`:''}
+        ${data.critical_unprotected?html`<div class="so-callout-danger"><strong>Warning:</strong> ${data.critical_unprotected} critical item(s) unprotected</div>`:''}`);
+    }).catch(()=>{safeSetHTML(el('so-emp-analysis'), '<div class="so-meta-text">Couldn\'t load the protection analysis right now.</div>');});
   };
 
   /* ── Initial load when tab activates ── */

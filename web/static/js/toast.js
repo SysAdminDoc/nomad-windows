@@ -98,4 +98,5 @@ function toast(msg, type='info', action=null) {
 
 // Attach to window for backward compatibility
 window.toast = toast;
+window.showToast = toast;
 window.toastError = toastError;

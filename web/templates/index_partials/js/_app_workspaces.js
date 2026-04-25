@@ -114,7 +114,13 @@ async function downloadMapRegion(regionId) {
 }
 
 async function downloadAllMaps() {
-  if (!confirm('This will download ALL map regions. Each region is extracted from the Protomaps planet build and may be several GB. Continue?')) return;
+  const confirmed = await confirmChoice('Queue every map region that has not been downloaded yet.', {
+    title: 'Download all map regions?',
+    detail: 'Each region is extracted from the Protomaps planet build and may be several GB.',
+    confirmLabel: 'Queue Downloads',
+    tone: 'warning',
+  });
+  if (!confirmed) return;
   try {
     const regions = await _workspaceFetchJson('/api/maps/regions', {}, 'Could not load map regions');
     const toDownload = regions.filter(r => !r.downloaded);
@@ -373,13 +379,19 @@ function exportCurrentNote() {
 function openWikiLink(title) {
   // Switch to notes tab and open the linked note
   document.querySelector('[data-tab="notes"]')?.click();
-  setTimeout(() => {
+  setTimeout(async () => {
     const note = (typeof allNotes !== 'undefined' ? allNotes : []).find(n => n.title === title);
     if (note) {
       selectNote(note.id);
     } else {
       // Create a new note with this title
-      if (confirm('Note "' + title + '" does not exist. Create it?')) {
+      const confirmed = await confirmChoice('Create note "' + title + '".', {
+        title: 'Create linked note?',
+        detail: 'This keeps the wiki link connected instead of leaving it unresolved.',
+        confirmLabel: 'Create Note',
+        tone: 'default',
+      });
+      if (confirmed) {
         createNoteWithTitle(title);
       }
     }
@@ -427,9 +439,15 @@ async function applyNoteTemplateByIndex(idx) {
 }
 
 async function deleteNote() {
-  if (!confirm('Delete this note?')) return;
   if (!currentNoteId) return;
   const titleInput = document.getElementById('note-title');
+  const confirmed = await confirmChoice('Delete this note from the local notes workspace.', {
+    title: 'Delete note?',
+    detail: titleInput?.value ? 'Note: ' + titleInput.value : 'This note will be removed from the workspace.',
+    confirmLabel: 'Delete Note',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   const contentInput = document.getElementById('note-content');
   const tagsInput = document.getElementById('note-tags');
   if (!titleInput || !contentInput || !tagsInput) return;
@@ -1369,7 +1387,13 @@ function pollKBEmbed() {
 }
 
 async function deleteKBDoc(id) {
-  if (!confirm('Delete this document?')) return;
+  const confirmed = await confirmChoice('Delete this knowledge-base document.', {
+    title: 'Delete document?',
+    detail: 'Embeddings and analysis results for this document will be removed.',
+    confirmLabel: 'Delete Document',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await _workspaceFetchOk(`/api/kb/documents/${id}`, {method:'DELETE'}, 'Delete failed');
     toast('Document deleted', 'warning');

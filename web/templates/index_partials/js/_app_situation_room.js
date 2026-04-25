@@ -3036,7 +3036,13 @@ async function addSitroomFeed() {
 }
 
 async function deleteSitroomFeed(id) {
-  if (!confirm('Remove this custom feed?')) return;
+  const confirmed = await confirmChoice('Remove this custom Situation Room feed.', {
+    title: 'Remove custom feed?',
+    detail: 'The feed can be added again later if the source is still available.',
+    confirmLabel: 'Remove Feed',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/sitroom/feeds/' + id);
     toast('Feed removed', 'success'); loadSitroomFeeds();

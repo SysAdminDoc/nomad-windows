@@ -454,7 +454,14 @@ function updateBatchCount() {
 
 async function batchDeleteMedia() {
   if (!_mediaSelected.size) return;
-  if (!confirm('Delete ' + _mediaSelected.size + ' selected item' + (_mediaSelected.size > 1 ? 's' : '') + '? This cannot be undone.')) return;
+  const count = _mediaSelected.size;
+  const confirmed = await confirmChoice('Delete ' + count + ' selected media item' + (count > 1 ? 's' : '') + '.', {
+    title: 'Delete selected media?',
+    detail: 'This cannot be undone. Files are removed from the local media library.',
+    confirmLabel: 'Delete Items',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     const d = await apiPost('/api/media/batch-delete', {type: _mediaSub, ids: [..._mediaSelected]});
     toast('Deleted ' + d.count + ' items', 'warning');
@@ -1550,7 +1557,13 @@ async function torrentResume(hash) {
   } catch(e) { toast('Failed to resume torrent', 'error'); }
 }
 async function torrentRemove(hash, deleteFiles) {
-  if (!confirm('Remove this torrent?' + (deleteFiles ? ' Downloaded files will be deleted.' : ''))) return;
+  const confirmed = await confirmChoice('Remove this torrent from the download queue.', {
+    title: 'Remove torrent?',
+    detail: deleteFiles ? 'Downloaded files will also be deleted.' : 'Downloaded files are kept on disk.',
+    confirmLabel: 'Remove Torrent',
+    tone: deleteFiles ? 'danger' : 'warning',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/torrent/remove/' + hash + '?delete_files=' + deleteFiles);
     delete _torrentStatuses[hash];
@@ -2236,7 +2249,13 @@ function bookReaderNext() { if (_mediaBookRendition) _mediaBookRendition.next();
 
 // ── CRUD ──
 async function deleteMediaItem(id, type) {
-  if (!confirm('Delete this item? This cannot be undone.')) return;
+  const confirmed = await confirmChoice('Delete this media item from the local library.', {
+    title: 'Delete media item?',
+    detail: 'This cannot be undone.',
+    confirmLabel: 'Delete Item',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   const apiMap = {videos:'/api/videos', audio:'/api/audio', books:'/api/books'};
   try {
     await apiDelete(apiMap[type] + '/' + id);
@@ -2375,7 +2394,13 @@ async function subscribeChannel(url, name, category) {
 }
 
 async function unsubscribeChannel(id, name) {
-  if (!confirm('Unsubscribe from ' + (name || 'this channel') + '?')) return;
+  const confirmed = await confirmChoice('Unsubscribe from ' + (name || 'this channel') + '.', {
+    title: 'Unsubscribe from channel?',
+    detail: 'New videos from this channel will no longer appear in the subscription list.',
+    confirmLabel: 'Unsubscribe',
+    tone: 'warning',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/subscriptions/' + id);
     toast('Unsubscribed from ' + (name || 'channel'), 'info');
@@ -3486,7 +3511,13 @@ async function createPerimeterZone() {
 }
 
 async function deletePerimeterZone(zid) {
-  if (!confirm('Delete this perimeter zone?')) return;
+  const confirmed = await confirmChoice('Delete this perimeter zone.', {
+    title: 'Delete perimeter zone?',
+    detail: 'Threat status and camera associations for this zone will be removed.',
+    confirmLabel: 'Delete Zone',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/security/zones/' + zid);
     toast('Zone deleted', 'success');
@@ -3691,7 +3722,13 @@ function closePDFViewer() {
   document.getElementById('pdf-iframe').src = '';
 }
 async function deletePDF(filename) {
-  if (!confirm('Delete this document?')) return;
+  const confirmed = await confirmChoice('Delete this document from the local library.', {
+    title: 'Delete document?',
+    detail: filename ? 'Document: ' + filename : 'This document will be removed from the library.',
+    confirmLabel: 'Delete Document',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/library/delete/' + encodeURIComponent(filename));
     toast('Document deleted', 'warning');
@@ -3772,7 +3809,13 @@ async function loadCommsLog() {
 }
 
 async function deleteCommsLog(id) {
-  if (!confirm('Delete this comms log entry?')) return;
+  const confirmed = await confirmChoice('Delete this communications log entry.', {
+    title: 'Delete comms log?',
+    detail: 'The logged transmission or reception record will be removed.',
+    confirmLabel: 'Delete Log',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/comms-log/' + id);
     loadCommsLog();

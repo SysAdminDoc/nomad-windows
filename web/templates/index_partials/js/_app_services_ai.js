@@ -502,7 +502,14 @@ async function tagConversation(cid) {
   const convo = allConvos.find(c => c.id === cid);
   if (!convo) return;
   const current = Array.isArray(convo.tags) ? convo.tags.join(', ') : '';
-  const input = prompt('Tags (comma-separated):\nExamples: medical, inventory, planning, security', current);
+  const input = await promptChoice('Tags', {
+    title: 'Edit conversation tags',
+    message: 'Use comma-separated tags to organize this conversation.',
+    detail: 'Examples: medical, inventory, planning, security',
+    confirmLabel: 'Save Tags',
+    value: current,
+    field: {placeholder: 'medical, inventory, planning'},
+  });
   if (input === null) return;
   const tags = input.split(',').map(t => t.trim()).filter(Boolean);
   try {

@@ -766,6 +766,16 @@ textarea:disabled,
   box-shadow: var(--focus-shadow, 0 0 0 3px var(--accent-dim));
 }
 
+.nomad-confirm-textarea {
+  min-height: 84px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+select.nomad-confirm-input {
+  cursor: pointer;
+}
+
 .nomad-confirm-actions {
   display: flex;
   justify-content: flex-end;

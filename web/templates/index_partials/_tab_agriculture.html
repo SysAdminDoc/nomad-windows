@@ -438,7 +438,12 @@
   const recTypeClass = {compost:'rec-compost', greywater:'rec-greywater', biogas:'rec-biogas', rainwater:'rec-rainwater', material_reuse:'rec-material_reuse'};
   const soilTypeClass = {hugelkultur:'soil-hugelkultur', swale:'soil-swale', sheet_mulch:'soil-sheet_mulch', biochar:'soil-biochar', cover_crop:'soil-cover_crop', compost:'soil-compost'};
   const agEmpty = (title, body) => `<div class="ag-empty"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
-  const agConfirmDelete = label => window.confirm(`Remove this ${label}? This can't be undone.`);
+  const agConfirmDelete = label => confirmDestructiveChoice(`this ${label}`, {
+    action: 'Remove',
+    title: 'Remove item?',
+    detail: "This can't be undone.",
+    confirmLabel: 'Remove',
+  });
 
   function gaugeColor(pct) { return pct >= 75 ? '#22c55e' : pct >= 50 ? '#f59e0b' : pct >= 25 ? '#fb923c' : '#ef4444'; }
   function wqClass(param, v) {
@@ -524,8 +529,8 @@
     }).then(() => { el('ag-guild-name').value = ''; el('ag-guild-central').value = ''; el('ag-guild-notes').value = ''; agLoadGuilds(); toast('Guild created'); });
   };
 
-  window.agDeleteGuild = function(id) {
-    if (!agConfirmDelete('guild')) return;
+  window.agDeleteGuild = async function(id) {
+    if (!(await agConfirmDelete('guild'))) return;
     api(API + '/food-forest/guilds/' + id, {method:'DELETE'}).then(() => { agLoadGuilds(); toast('Guild deleted'); });
   };
 
@@ -558,8 +563,8 @@
     }).then(() => { el('ag-layer-species').value = ''; el('ag-layer-role').value = ''; agLoadLayers(); agLoadGuilds(); toast('Layer added'); });
   };
 
-  window.agDeleteLayer = function(id) {
-    if (!agConfirmDelete('layer')) return;
+  window.agDeleteLayer = async function(id) {
+    if (!(await agConfirmDelete('layer'))) return;
     api(API + '/food-forest/layers/' + id, {method:'DELETE'}).then(() => { agLoadLayers(); agLoadGuilds(); });
   };
 
@@ -624,8 +629,8 @@
     });
   };
 
-  window.agDeleteSoil = function(id) {
-    if (!agConfirmDelete('soil project')) return;
+  window.agDeleteSoil = async function(id) {
+    if (!(await agConfirmDelete('soil project'))) return;
     api(API + '/soil/' + id, {method:'DELETE'}).then(() => { agLoadSoil(); toast('Soil project deleted'); });
   };
 
@@ -662,8 +667,8 @@
     }).then(() => { el('ag-plant-name').value = ''; el('ag-plant-species').value = ''; el('ag-plant-location').value = ''; agLoadPlants(); toast('Plant registered'); });
   };
 
-  window.agDeletePlant = function(id) {
-    if (!agConfirmDelete('plant')) return;
+  window.agDeletePlant = async function(id) {
+    if (!(await agConfirmDelete('plant'))) return;
     api(API + '/perennials/' + id, {method:'DELETE'}).then(() => { agLoadPlants(); toast('Plant removed'); });
   };
 
@@ -706,8 +711,8 @@
     }).then(() => { el('ag-breed-name').value = ''; el('ag-breed-notes').value = ''; agLoadBreeding(); toast('Breeding record added'); });
   };
 
-  window.agDeleteBreeding = function(id) {
-    if (!agConfirmDelete('breeding record')) return;
+  window.agDeleteBreeding = async function(id) {
+    if (!(await agConfirmDelete('breeding record'))) return;
     api(API + '/breeding/' + id, {method:'DELETE'}).then(() => { agLoadBreeding(); toast('Record deleted'); });
   };
 
@@ -742,8 +747,8 @@
     }).then(() => { el('ag-feed-type').value = ''; el('ag-feed-notes').value = ''; agLoadFeed(); toast('Feed entry added'); });
   };
 
-  window.agDeleteFeed = function(id) {
-    if (!agConfirmDelete('feed entry')) return;
+  window.agDeleteFeed = async function(id) {
+    if (!(await agConfirmDelete('feed entry'))) return;
     api(API + '/feed/' + id, {method:'DELETE'}).then(() => { agLoadFeed(); toast('Feed entry deleted'); });
   };
 
@@ -803,8 +808,8 @@
     }).then(() => { el('ag-sys-name').value = ''; el('ag-sys-notes').value = ''; agLoadSystems(); toast('System added'); });
   };
 
-  window.agDeleteSystem = function(id) {
-    if (!agConfirmDelete('system')) return;
+  window.agDeleteSystem = async function(id) {
+    if (!(await agConfirmDelete('system'))) return;
     api(API + '/homestead/' + id, {method:'DELETE'}).then(() => { agLoadSystems(); toast('System removed'); });
   };
 
@@ -835,8 +840,8 @@
     }).then(() => { el('ag-aqua-name').value = ''; agLoadAquaponics(); toast('Reading recorded'); });
   };
 
-  window.agDeleteAquaponics = function(id) {
-    if (!agConfirmDelete('aquaponics reading')) return;
+  window.agDeleteAquaponics = async function(id) {
+    if (!(await agConfirmDelete('aquaponics reading'))) return;
     api(API + '/aquaponics/' + id, {method:'DELETE'}).then(() => { agLoadAquaponics(); toast('Reading deleted'); });
   };
 
@@ -913,8 +918,8 @@
     }).then(() => { el('ag-rec-name').value = ''; el('ag-rec-input').value = ''; el('ag-rec-output').value = ''; el('ag-rec-notes').value = ''; agLoadRecycling(); toast('Recycling system added'); });
   };
 
-  window.agDeleteRecycling = function(id) {
-    if (!agConfirmDelete('recycling system')) return;
+  window.agDeleteRecycling = async function(id) {
+    if (!(await agConfirmDelete('recycling system'))) return;
     api(API + '/recycling/' + id, {method:'DELETE'}).then(() => { agLoadRecycling(); toast('System removed'); });
   };
 

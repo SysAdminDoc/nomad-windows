@@ -113,7 +113,11 @@ function editContact(id) {
 }
 
 async function deleteContact(id) {
-  if (!confirm('Delete this contact?')) return;
+  const confirmed = await confirmDestructiveChoice('this contact', {
+    title: 'Delete contact?',
+    detail: 'This removes the contact from emergency and communication lists.',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/contacts/${id}`);
     toast('Contact deleted', 'warning');

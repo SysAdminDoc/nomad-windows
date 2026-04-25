@@ -671,7 +671,14 @@
   function methodIcon(m) { return methodIcons[m] || ''; }
   function dlEmpty(title, body) { return '<div class="dl-empty"><strong>' + esc(title) + '</strong><span>' + esc(body) + '</span></div>'; }
   function dlDeleteButton(action, label) { return '<button type="button" class="dl-btn dl-btn-icon dl-btn-danger-quiet" onclick="' + action + '" aria-label="Remove ' + esc(label) + '" title="Remove ' + esc(label) + '">&times;</button>'; }
-  function dlConfirmDelete(label) { return window.confirm("Remove this " + label + "? This can't be undone."); }
+  function dlConfirmDelete(label) {
+    return confirmDestructiveChoice('this ' + label, {
+      action: 'Remove',
+      title: 'Remove item?',
+      detail: "This can't be undone.",
+      confirmLabel: 'Remove',
+    });
+  }
 
   /* ── Slider live-update wiring ───────────────────────── */
   ['dl-morale-score','dl-morale-stress','dl-morale-sleep','dl-morale-physical','dl-morale-social',
@@ -732,8 +739,8 @@
     });
   };
 
-  window.dlDeleteSchedule = function(id) {
-    if (!dlConfirmDelete('schedule')) return;
+  window.dlDeleteSchedule = async function(id) {
+    if (!(await dlConfirmDelete('schedule'))) return;
     del('/api/daily-living/schedules/' + id).then(function() { toast('Schedule deleted'); dlLoadSchedules(); });
   };
 
@@ -793,8 +800,8 @@
     });
   };
 
-  window.dlDeleteChore = function(id) {
-    if (!dlConfirmDelete('chore')) return;
+  window.dlDeleteChore = async function(id) {
+    if (!(await dlConfirmDelete('chore'))) return;
     del('/api/daily-living/chores/' + id).then(function() { toast('Chore deleted'); dlLoadChores(); });
   };
 
@@ -864,8 +871,8 @@
     });
   };
 
-  window.dlDeleteClothing = function(id) {
-    if (!dlConfirmDelete('clothing item')) return;
+  window.dlDeleteClothing = async function(id) {
+    if (!(await dlConfirmDelete('clothing item'))) return;
     del('/api/daily-living/clothing/' + id).then(function() { toast('Item removed'); dlLoadClothing(); });
   };
 
@@ -955,8 +962,8 @@
     });
   };
 
-  window.dlDeleteSanitation = function(id) {
-    if (!dlConfirmDelete('sanitation supply')) return;
+  window.dlDeleteSanitation = async function(id) {
+    if (!(await dlConfirmDelete('sanitation supply'))) return;
     del('/api/daily-living/sanitation/' + id).then(function() { toast('Supply removed'); dlLoadSanitation(); });
   };
 
@@ -1016,8 +1023,8 @@
     });
   };
 
-  window.dlDeleteMorale = function(id) {
-    if (!dlConfirmDelete('morale entry')) return;
+  window.dlDeleteMorale = async function(id) {
+    if (!(await dlConfirmDelete('morale entry'))) return;
     del('/api/daily-living/morale/' + id).then(function() { toast('Entry removed'); dlLoadMorale(); });
   };
 
@@ -1059,8 +1066,8 @@
     });
   };
 
-  window.dlDeleteSleep = function(id) {
-    if (!dlConfirmDelete('sleep entry')) return;
+  window.dlDeleteSleep = async function(id) {
+    if (!(await dlConfirmDelete('sleep entry'))) return;
     del('/api/daily-living/sleep/' + id).then(function() { toast('Entry removed'); dlLoadSleep(); });
   };
 
@@ -1126,8 +1133,8 @@
     });
   };
 
-  window.dlDeletePerformance = function(id) {
-    if (!dlConfirmDelete('performance check')) return;
+  window.dlDeletePerformance = async function(id) {
+    if (!(await dlConfirmDelete('performance check'))) return;
     del('/api/daily-living/performance/' + id).then(function() { toast('Check removed'); dlLoadPerformance(); });
   };
 
@@ -1250,8 +1257,8 @@
     });
   };
 
-  window.dlDeleteRecipe = function(id) {
-    if (!dlConfirmDelete('recipe')) return;
+  window.dlDeleteRecipe = async function(id) {
+    if (!(await dlConfirmDelete('recipe'))) return;
     del('/api/daily-living/recipes/' + id).then(function() { toast('Recipe removed'); dlLoadRecipes(); });
   };
 

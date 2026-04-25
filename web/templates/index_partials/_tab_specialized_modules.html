@@ -736,7 +736,10 @@
   const smEmpty = (title, body) => '<div class="sm-empty"><strong>' + esc(title) + '</strong><span>' + esc(body) + '</span></div>';
   const smDeleteButton = (action, label) => '<button type="button" class="sm-btn sm-btn-icon sm-btn-danger-quiet" onclick="' + action + '" data-item-label="' + esc(label) + '" title="Delete ' + esc(label) + '" aria-label="Delete ' + esc(label) + '">&times;</button>';
   const smDeleteLabel = (action, fallback) => root.querySelector('[onclick="' + action + '"]')?.getAttribute('data-item-label') || fallback;
-  const smConfirmDelete = label => window.confirm('Delete ' + label + '? This removes it from the specialized modules workspace.');
+  const smConfirmDelete = label => confirmDestructiveChoice(label, {
+    title: 'Delete specialized record?',
+    detail: 'This removes it from the specialized modules workspace.',
+  });
 
   function activatePanel(panelName, focusPanel){
     root.querySelectorAll('.sm-sub-tab').forEach(btn => {
@@ -804,9 +807,9 @@
     }).then(() => { el('sm-cache-name').value=''; el('sm-cache-location').value=''; el('sm-cache-notes').value=''; smLoadCaches(); toast('Cache added'); });
   };
 
-  window.smDeleteCache = function(id){
+  window.smDeleteCache = async function(id){
     const label = smDeleteLabel('smDeleteCache(' + id + ')', 'supply cache');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/caches/' + id, {method:'DELETE'}).then(() => { smLoadCaches(); toast('Cache removed'); });
   };
 
@@ -861,9 +864,9 @@
     }).then(() => { el('sm-procure-name').value=''; el('sm-procure-items').value=''; el('sm-procure-budget-amt').value=''; smLoadProcurement(); toast('Procurement list created'); });
   };
 
-  window.smDeleteProcurement = function(id){
+  window.smDeleteProcurement = async function(id){
     const label = smDeleteLabel('smDeleteProcurement(' + id + ')', 'procurement list');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/procurement/' + id, {method:'DELETE'}).then(() => { smLoadProcurement(); toast('List removed'); });
   };
 
@@ -906,9 +909,9 @@
     }).then(() => { el('sm-pet-name').value=''; el('sm-pet-breed').value=''; el('sm-pet-notes').value=''; smLoadPets(); toast('Pet added'); });
   };
 
-  window.smDeletePet = function(id){
+  window.smDeletePet = async function(id){
     const label = smDeleteLabel('smDeletePet(' + id + ')', 'pet record');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/pets/' + id, {method:'DELETE'}).then(() => { smLoadPets(); toast('Pet removed'); });
   };
 
@@ -943,9 +946,9 @@
     }).then(() => { el('sm-youth-name').value=''; el('sm-youth-instructor').value=''; smLoadYouthPrograms(); toast('Program added'); });
   };
 
-  window.smDeleteYouthProgram = function(id){
+  window.smDeleteYouthProgram = async function(id){
     const label = smDeleteLabel('smDeleteYouthProgram(' + id + ')', 'youth program');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/youth-programs/' + id, {method:'DELETE'}).then(() => { smLoadYouthPrograms(); toast('Program removed'); });
   };
 
@@ -979,9 +982,9 @@
     }).then(() => { el('sm-eol-person').value=''; el('sm-eol-wishes').value=''; smLoadEOLPlans(); toast('Plan added'); });
   };
 
-  window.smDeleteEOLPlan = function(id){
+  window.smDeleteEOLPlan = async function(id){
     const label = smDeleteLabel('smDeleteEOLPlan(' + id + ')', 'end-of-life plan');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/eol-plans/' + id, {method:'DELETE'}).then(() => { smLoadEOLPlans(); toast('Plan removed'); });
   };
 
@@ -1050,9 +1053,9 @@
     });
   };
 
-  window.smDeleteIntel = function(id){
+  window.smDeleteIntel = async function(id){
     const label = smDeleteLabel('smDeleteIntel(' + id + ')', 'intelligence report');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/intel/' + id, {method:'DELETE'}).then(() => { smLoadIntel(); toast('Report removed'); });
   };
 
@@ -1092,9 +1095,9 @@
     }).then(() => { el('sm-fab-name').value=''; el('sm-fab-material').value=''; el('sm-fab-notes').value=''; smLoadFabProjects(); toast('Project added'); });
   };
 
-  window.smDeleteFabProject = function(id){
+  window.smDeleteFabProject = async function(id){
     const label = smDeleteLabel('smDeleteFabProject(' + id + ')', 'fabrication project');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/fabrication/' + id, {method:'DELETE'}).then(() => { smLoadFabProjects(); toast('Project removed'); });
   };
 
@@ -1235,9 +1238,9 @@
     }).then(() => { el('sm-cal-name').value=''; el('sm-cal-desc').value=''; el('sm-cal-tasks').value=''; smLoadEvents(); toast('Event added'); });
   };
 
-  window.smDeleteEvent = function(id){
+  window.smDeleteEvent = async function(id){
     const label = smDeleteLabel('smDeleteEvent(' + id + ')', 'event');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/events/' + id, {method:'DELETE'}).then(() => { smLoadEvents(); toast('Event removed'); });
   };
 
@@ -1302,9 +1305,9 @@
     }).then(() => { el('sm-legal-title').value=''; el('sm-legal-person').value=''; el('sm-legal-notes').value=''; smLoadLegalDocs(); toast('Document added'); });
   };
 
-  window.smDeleteLegalDoc = function(id){
+  window.smDeleteLegalDoc = async function(id){
     const label = smDeleteLabel('smDeleteLegalDoc(' + id + ')', 'legal document');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/legal/' + id, {method:'DELETE'}).then(() => { smLoadLegalDocs(); toast('Document removed'); });
   };
 
@@ -1347,9 +1350,9 @@
     }).then(() => { el('sm-drone-name').value=''; el('sm-drone-mfg').value=''; el('sm-drone-model').value=''; el('sm-drone-notes').value=''; smLoadDrones(); toast('Drone added'); });
   };
 
-  window.smDeleteDrone = function(id){
+  window.smDeleteDrone = async function(id){
     const label = smDeleteLabel('smDeleteDrone(' + id + ')', 'drone');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/drones/' + id, {method:'DELETE'}).then(() => { smLoadDrones(); toast('Drone removed'); });
   };
 
@@ -1382,10 +1385,10 @@
     }).then(() => { el('sm-flight-mission').value=''; el('sm-flight-duration').value=''; el('sm-flight-altitude').value=''; smLoadFlights(); smLoadDrones(); toast('Flight logged'); });
   };
 
-  window.smDeleteFlight = function(id){
+  window.smDeleteFlight = async function(id){
     const droneId = val('sm-flight-drone');
     const label = smDeleteLabel('smDeleteFlight(' + id + ')', 'flight log');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/flights/' + id, {method:'DELETE'}).then(() => { smLoadFlights(); if(droneId) smLoadDrones(); toast('Flight removed'); });
   };
 
@@ -1446,9 +1449,9 @@
     });
   };
 
-  window.smDeleteWorkout = function(id){
+  window.smDeleteWorkout = async function(id){
     const label = smDeleteLabel('smDeleteWorkout(' + id + ')', 'workout');
-    if(!smConfirmDelete(label)) return;
+    if(!(await smConfirmDelete(label))) return;
     api(API + '/fitness/' + id, {method:'DELETE'}).then(() => { smLoadFitness(); toast('Workout removed'); });
   };
 

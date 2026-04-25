@@ -657,7 +657,10 @@
   const soEmptyRow=(colspan,title,body)=>'<tr><td colspan="'+colspan+'" class="so-empty-cell">'+soEmpty(title,body)+'</td></tr>';
   const soDeleteButton=(action,label)=>'<button type="button" class="so-btn so-btn-icon so-btn-danger-quiet" onclick="'+action+'" data-item-label="'+esc(label)+'" title="Delete '+esc(label)+'" aria-label="Delete '+esc(label)+'">&times;</button>';
   const soDeleteLabel=(action,fallback)=>root.querySelector('[onclick="'+action+'"]')?.getAttribute('data-item-label')||fallback;
-  const soConfirmDelete=label=>window.confirm('Delete '+label+'? This removes it from the security workspace.');
+  const soConfirmDelete=label=>confirmDestructiveChoice(label, {
+    title: 'Delete security record?',
+    detail: 'This removes it from the security workspace.',
+  });
 
   const classificationBadge=c=>html`<span class="so-badge so-badge-${c}">${String(c||'').replace(/_/g,' ').toUpperCase()}</span>`;
   const categoryBadge=c=>html`<span class="so-badge so-badge-${c}">${c}</span>`;
@@ -694,9 +697,9 @@
         members:val('so-compartment-members'),description:val('so-compartment-desc')})
     }).then(()=>{el('so-compartment-name').value='';el('so-compartment-desc').value='';toast('Compartment created');soLoadCompartments();});
   };
-  window.soDeleteCompartment=function(id){
+  window.soDeleteCompartment=async function(id){
     const label=soDeleteLabel('soDeleteCompartment(' + id + ')','compartment');
-    if(!soConfirmDelete(label)) return;
+    if(!(await soConfirmDelete(label))) return;
     api('/api/security-ops/opsec/compartments/'+id,{method:'DELETE'}).then(()=>{toast('Compartment deleted');soLoadCompartments();});
   };
 
@@ -798,9 +801,9 @@
         mitigation:val('so-threat-mitigation')})
     }).then(()=>{el('so-threat-name').value='';el('so-threat-mitigation').value='';toast('Threat added');soLoadThreats();});
   };
-  window.soDeleteThreat=function(id){
+  window.soDeleteThreat=async function(id){
     const label=soDeleteLabel('soDeleteThreat(' + id + ')','threat');
-    if(!soConfirmDelete(label)) return;
+    if(!(await soConfirmDelete(label))) return;
     api('/api/security-ops/threat-matrix/'+id,{method:'DELETE'}).then(()=>{toast('Threat removed');soLoadThreats();});
   };
 
@@ -940,9 +943,9 @@
       body:JSON.stringify({category,source,intensity:numVal('so-'+p+'-intensity',5),mitigation:val('so-'+p+'-mitigation')})
     }).then(()=>{el('so-'+p+'-source').value='';el('so-'+p+'-mitigation').value='';toast('Signature added');soLoadSignatures();});
   };
-  window.soDeleteSignature=function(id){
+  window.soDeleteSignature=async function(id){
     const label=soDeleteLabel('soDeleteSignature(' + id + ')','signature item');
-    if(!soConfirmDelete(label)) return;
+    if(!(await soConfirmDelete(label))) return;
     api('/api/security-ops/signatures/'+id,{method:'DELETE'}).then(()=>{toast('Signature removed');soLoadSignatures();});
   };
   window.soLoadSigGuide=function(){
@@ -1143,9 +1146,9 @@
       body:JSON.stringify({name,category:val('so-emp-category'),protection:val('so-emp-protection'),priority:val('so-emp-priority')})
     }).then(()=>{el('so-emp-item').value='';toast('EMP item added');soLoadEMPInventory();});
   };
-  window.soDeleteEMPItem=function(id){
+  window.soDeleteEMPItem=async function(id){
     const label=soDeleteLabel('soDeleteEMPItem(' + id + ')','EMP item');
-    if(!soConfirmDelete(label)) return;
+    if(!(await soConfirmDelete(label))) return;
     api('/api/security-ops/emp/inventory/'+id,{method:'DELETE'}).then(()=>{toast('Item removed');soLoadEMPInventory();});
   };
   window.soLoadEMPAnalysis=function(){

@@ -808,7 +808,11 @@
 
       // ── Delete Bag ──────────────────────────────────────────────
       async function deleteBag(id) {
-        if (!confirm('Delete this bag and all its items? This cannot be undone.')) return;
+        const confirmed = await confirmDestructiveChoice('this bag and all its items', {
+          title: 'Delete bag?',
+          detail: 'This cannot be undone. Items assigned to this bag are removed with it.',
+        });
+        if (!confirmed) return;
         try {
           await apiDelete('/api/loadout/bags/' + id);
           toast('Bag deleted', 'success');
@@ -1008,7 +1012,11 @@
 
       // ── Delete Item ─────────────────────────────────────────────
       async function deleteItem(itemId) {
-        if (!confirm('Delete this item?')) return;
+        const confirmed = await confirmDestructiveChoice('this item', {
+          title: 'Delete item?',
+          detail: 'This removes it from the active loadout.',
+        });
+        if (!confirmed) return;
         try {
           await apiDelete('/api/loadout/items/' + itemId);
           toast('Item deleted', 'success');
@@ -1034,7 +1042,12 @@
 
       // ── Clone Bag ───────────────────────────────────────────────
       async function cloneBag(id) {
-        const newName = prompt('Name for the cloned bag:');
+        const newName = await promptChoice('Bag name', {
+          title: 'Clone bag',
+          message: 'Name the cloned bag before it is added to your loadout.',
+          confirmLabel: 'Clone Bag',
+          field: {required: true, placeholder: 'Winter vehicle bag'},
+        });
         if (!newName || !newName.trim()) return;
         try {
           await apiPost('/api/loadout/bags/' + id + '/clone', { name: newName.trim() });

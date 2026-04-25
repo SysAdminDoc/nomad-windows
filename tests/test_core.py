@@ -487,8 +487,12 @@ class TestErrorHandler:
 
         assert 'function confirmAction' in runtime_text
         assert 'function confirmChoice' in runtime_text
+        assert 'function promptFields' in runtime_text
+        assert 'function promptChoice' in runtime_text
         assert re.search(r'(^|[^\w.])confirm\s*\(', runtime_text) is None
         assert re.search(r'\bwindow\.confirm\s*\(', runtime_text) is None
+        assert re.search(r'(^|[^\w.])prompt\s*\(', runtime_text) is None
+        assert re.search(r'\bwindow\.prompt\s*\(', runtime_text) is None
 
     def test_embedded_tool_pages_keep_zoom_enabled_and_status_regions(self):
         viptrack_text = (REPO_ROOT / 'web' / 'viptrack' / 'index.html').read_text(encoding='utf-8')

@@ -74,6 +74,36 @@ test('confirmAction renders an accessible app-native confirmation flow', async (
   await expect(page.locator('#confirm-trigger')).toBeFocused();
 });
 
+test('promptFields supports defaults, selects, and multiline input without native prompts', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => {
+    window.__promptResult = window.promptFields({
+      title: 'Create perimeter zone',
+      message: 'Define a monitored security zone.',
+      confirmLabel: 'Create Zone',
+      fields: [
+        { name: 'name', label: 'Zone name', value: 'North Perimeter', required: true },
+        { name: 'threat', label: 'Threat level', value: 'normal', options: ['normal', 'elevated', 'high'] },
+        { name: 'notes', label: 'Notes', type: 'textarea', value: 'Fence line' },
+      ],
+    });
+  });
+
+  const dialog = page.getByRole('dialog', { name: 'Create perimeter zone' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Zone name')).toHaveValue('North Perimeter');
+  await dialog.getByLabel('Threat level').selectOption('high');
+  await dialog.getByLabel('Notes').fill('North camera sweep');
+  await dialog.getByRole('button', { name: 'Create Zone' }).click();
+
+  const result = await page.evaluate(() => window.__promptResult);
+  expect(result).toEqual({
+    name: 'North Perimeter',
+    threat: 'high',
+    notes: 'North camera sweep',
+  });
+});
+
 test('aria-busy on a button hides the label and renders a spinner pseudo', async ({ page }) => {
   await boot(page);
   const probe = await page.evaluate(() => {

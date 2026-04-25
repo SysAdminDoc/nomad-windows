@@ -475,7 +475,13 @@ async function batchMoveMedia() {
   const foldersMap = {videos:'/api/videos/folders', audio:'/api/audio/folders', books:'/api/books/folders'};
   let folders = [];
   try { folders = await _fetchJson(foldersMap[_mediaSub]); } catch(e) {}
-  const name = prompt('Move to folder:\n\nExisting: ' + (folders.length ? folders.join(', ') : 'none'));
+  const name = await promptChoice('Folder name', {
+    title: 'Move selected media',
+    message: 'Move ' + _mediaSelected.size + ' selected item' + (_mediaSelected.size > 1 ? 's' : '') + ' to a folder.',
+    detail: 'Existing folders: ' + (folders.length ? folders.join(', ') : 'none'),
+    confirmLabel: 'Move Items',
+    field: {placeholder: 'Leave blank for Unsorted'},
+  });
   if (name === null) return;
   try {
     await apiPost('/api/media/batch-move', {type: _mediaSub, ids: [..._mediaSelected], folder: name});
@@ -2270,7 +2276,13 @@ async function moveMediaItem(id, type) {
   const apiMap = {videos:'/api/videos', audio:'/api/audio', books:'/api/books'};
   let folders = [];
   try { folders = await _fetchJson(foldersMap[type]); } catch(e) {}
-  const name = prompt('Move to folder:\n\nExisting: ' + (folders.length ? folders.join(', ') : 'none'));
+  const name = await promptChoice('Folder name', {
+    title: 'Move media item',
+    message: 'Choose the folder for this media item.',
+    detail: 'Existing folders: ' + (folders.length ? folders.join(', ') : 'none'),
+    confirmLabel: 'Move Item',
+    field: {placeholder: 'Leave blank for Unsorted'},
+  });
   if (name === null) return;
   try {
     await apiFetch(`${apiMap[type]}/${id}`, {method:'PATCH', body:JSON.stringify({folder:name})});
@@ -2282,8 +2294,13 @@ async function moveMediaItem(id, type) {
   loadMediaContent();
 }
 
-function createMediaFolder() {
-  const name = prompt('New folder name:');
+async function createMediaFolder() {
+  const name = await promptChoice('Folder name', {
+    title: 'Create media folder',
+    message: 'Name the folder you want to use for future media organization.',
+    confirmLabel: 'Create Folder',
+    field: {placeholder: 'Reference, training, medical'},
+  });
   if (!name) return;
   toast(`Folder "${name}" ready. Move or download content into it.`, 'info');
 }
@@ -3291,7 +3308,12 @@ async function importDeadDrop() {
     // Import to DB
     await apiPost('/api/deaddrop/import', {payload});
     // Try to decrypt
-    const secret = prompt('Enter the shared secret to decrypt this message:');
+    const secret = await promptChoice('Shared secret', {
+      title: 'Decrypt dead drop',
+      message: 'Enter the shared secret for this imported message.',
+      confirmLabel: 'Decrypt Message',
+      field: {type: 'password', autocomplete: 'current-password', required: true},
+    });
     if (!secret) { toast('Message imported but not decrypted', 'info'); return; }
     const r = await _fetchJson('/api/deaddrop/decrypt', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({payload, secret})});
@@ -3359,14 +3381,21 @@ async function loadGroupExercises() {
 }
 
 async function createGroupExercise() {
-  const title = prompt('Exercise title:', 'Group Training Exercise');
-  if (!title) return;
-  const desc = prompt('Description (optional):', '');
   const types = ['grid_down', 'medical_crisis', 'evacuation', 'winter_storm', 'custom'];
-  const type = prompt('Scenario type (' + types.join(', ') + '):', 'grid_down');
+  const values = await promptFields({
+    title: 'Create group exercise',
+    message: 'Set up a shared training exercise for federation peers.',
+    confirmLabel: 'Create Exercise',
+    fields: [
+      {name: 'title', label: 'Exercise title', value: 'Group Training Exercise', required: true},
+      {name: 'desc', label: 'Description', type: 'textarea', placeholder: 'Optional scenario context'},
+      {name: 'type', label: 'Scenario type', value: 'grid_down', options: types},
+    ],
+  });
+  if (!values || !values.title.trim()) return;
   try {
     const r = await _fetchJson('/api/group-exercises', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({title, description: desc, scenario_type: type || 'custom'})});
+      body:JSON.stringify({title: values.title.trim(), description: values.desc || '', scenario_type: values.type || 'custom'})});
     if (r.exercise_id) {
       toast(`Exercise created! Invited ${r.invited} peers.`, 'success');
       loadGroupExercises();
@@ -3383,7 +3412,12 @@ async function joinGroupExercise(exerciseId) {
 }
 
 async function advanceGroupExercise(exerciseId) {
-  const decision = prompt('Your decision/action for this phase:');
+  const decision = await promptChoice('Decision or action', {
+    title: 'Advance exercise phase',
+    message: 'Log the decision or action taken for this phase.',
+    confirmLabel: 'Advance Phase',
+    field: {type: 'textarea', rows: 4, required: true},
+  });
   if (!decision) return;
   try {
     await apiPost(`/api/group-exercises/${exerciseId}/update-state`, {decision, event: `Phase advanced with decision: ${decision}`,
@@ -3417,7 +3451,13 @@ async function loadTrainingDatasets() {
 }
 
 async function createTrainingDataset() {
-  const name = prompt('Dataset name:', 'NOMAD Custom Training');
+  const name = await promptChoice('Dataset name', {
+    title: 'Create training dataset',
+    message: 'Name the dataset generated from conversation history.',
+    confirmLabel: 'Create Dataset',
+    value: 'NOMAD Custom Training',
+    field: {required: true},
+  });
   if (!name) return;
   toast('Extracting training data from conversations...', 'info');
   try {
@@ -3456,13 +3496,19 @@ async function loadTrainingJobs() {
 async function createTrainingJob() {
   const ds = await _fetchJson('/api/ai/training/datasets');
   if (!ds.length) { toast('Create a training dataset first', 'warning'); return; }
-  const model = prompt('Base model name:', 'llama3.2');
-  if (!model) return;
-  const output = prompt('Output model name:', 'nomad-custom');
-  if (!output) return;
+  const values = await promptFields({
+    title: 'Create training job',
+    message: 'Choose the model inputs for the next LoRA training job.',
+    confirmLabel: 'Create Job',
+    fields: [
+      {name: 'model', label: 'Base model', value: 'llama3.2', required: true},
+      {name: 'output', label: 'Output model name', value: 'nomad-custom', required: true},
+    ],
+  });
+  if (!values || !values.model.trim() || !values.output.trim()) return;
   try {
     const r = await _fetchJson('/api/ai/training/jobs', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({dataset_id: ds[0].id, base_model: model, output_model: output})});
+      body:JSON.stringify({dataset_id: ds[0].id, base_model: values.model.trim(), output_model: values.output.trim()})});
     toast(`Training job created \u2014 Modelfile at ${r.modelfile}`, 'success');
     loadTrainingJobs();
   } catch(e) { toast('Failed', 'error'); }
@@ -3498,13 +3544,20 @@ async function loadPerimeterZones() {
 }
 
 async function createPerimeterZone() {
-  const name = prompt('Zone name:', 'North Perimeter');
-  if (!name) return;
-  const threat = prompt('Threat level (normal, elevated, high):', 'normal');
-  const color = prompt('Zone color (hex):', '#ff4444');
+  const values = await promptFields({
+    title: 'Create perimeter zone',
+    message: 'Define a monitored security zone.',
+    confirmLabel: 'Create Zone',
+    fields: [
+      {name: 'name', label: 'Zone name', value: 'North Perimeter', required: true},
+      {name: 'threat', label: 'Threat level', value: 'normal', options: ['normal', 'elevated', 'high']},
+      {name: 'color', label: 'Zone color', value: '#ff4444'},
+    ],
+  });
+  if (!values || !values.name.trim()) return;
   try {
     const r = await _fetchJson('/api/security/zones', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name, threat_level: threat || 'normal', color: color || '#ff4444', zone_type: 'perimeter'})});
+      body:JSON.stringify({name: values.name.trim(), threat_level: values.threat || 'normal', color: values.color || '#ff4444', zone_type: 'perimeter'})});
     if (r.id) { toast('Perimeter zone created', 'success'); loadPerimeterZones(); }
     else { toast(r.error || 'Failed', 'error'); }
   } catch(e) { toast('Failed', 'error'); }
@@ -3529,7 +3582,13 @@ async function deletePerimeterZone(zid) {
 async function generateMapAtlas() {
   const lat = _map ? _map.getCenter().lat : 0;
   const lng = _map ? _map.getCenter().lng : 0;
-  const title = prompt('Atlas title:', 'NOMAD Map Atlas');
+  const title = await promptChoice('Atlas title', {
+    title: 'Generate map atlas',
+    message: 'Name the printable atlas packet.',
+    confirmLabel: 'Generate Atlas',
+    value: 'NOMAD Map Atlas',
+    field: {required: true},
+  });
   if (!title) return;
   const w = window.openPendingPopup?.('Generating Map Atlas', 'Building the printable atlas packet. This can take a moment for larger grids.');
   if (!w) { toast('Pop-up blocked -- please allow pop-ups', 'warning'); return; }
@@ -4070,7 +4129,7 @@ async function quickAddInvItem(item, control) {
 
 /* ─── Custom Checklist Creator ─── */
 function createCustomChecklist() {
-  // Show inline name input instead of prompt()
+  // Show inline name input instead of a browser modal.
   const sidebar = document.querySelector('.prep-sidebar');
   let nameForm = document.getElementById('custom-cl-name-form');
   if (nameForm) { const inp = document.getElementById('custom-cl-name-input'); if (!inp) return; inp.focus(); return; }

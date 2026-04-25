@@ -4430,8 +4430,13 @@ async function loadSitroomMonitors() {
   _hydrateSitroomRuntimeVars(el);
 }
 
-function _promptAddMonitor() {
-  const keyword = prompt('Enter keyword to monitor:');
+async function _promptAddMonitor() {
+  const keyword = await promptChoice('Keyword or phrase', {
+    title: 'Add keyword monitor',
+    message: 'Track a person, place, phrase, or topic across incoming Situation Room feeds.',
+    confirmLabel: 'Add Monitor',
+    field: {placeholder: 'Port strike, wildfire, convoy', required: true},
+  });
   if (!keyword || !keyword.trim()) return;
   apiPost('/api/sitroom/monitors', {keyword: keyword.trim()})
     .then(() => loadSitroomMonitors())

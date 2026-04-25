@@ -1270,8 +1270,14 @@ function confirmAction({
     name: field && field.name ? String(field.name) : 'field' + index,
     label: field && field.label ? String(field.label) : 'Required detail',
     placeholder: field && field.placeholder ? String(field.placeholder) : '',
-    type: field && field.type === 'password' ? 'password' : 'text',
+    type: field && ['password', 'number', 'url', 'email', 'search'].includes(field.type) ? field.type : 'text',
+    control: field && field.options ? 'select' : field && field.type === 'textarea' ? 'textarea' : 'input',
     autocomplete: field && field.autocomplete ? String(field.autocomplete) : '',
+    value: field && field.value != null ? String(field.value) : field && field.defaultValue != null ? String(field.defaultValue) : '',
+    rows: field && field.rows ? Number(field.rows) : 3,
+    options: Array.isArray(field && field.options) ? field.options.map(option => (
+      typeof option === 'string' ? {value: option, label: option} : {value: String(option.value), label: String(option.label || option.value)}
+    )) : [],
     required: !!(field && field.required),
   })) : [];
   const toneClass = ['danger', 'warning', 'success'].includes(tone) ? tone : 'default';
@@ -1279,13 +1285,30 @@ function confirmAction({
   const triggerEl = document.activeElement;
   const fieldMarkup = normalizedFields.map(field => {
     const autocompleteAttr = field.autocomplete ? ' autocomplete="' + escapeAttr(field.autocomplete) + '"' : '';
+    let controlMarkup = '';
+    if (field.control === 'select') {
+      controlMarkup = '<select class="nomad-confirm-input" data-confirm-field="' + escapeAttr(field.name) + '"'
+        + (field.required ? ' required' : '')
+        + '>'
+        + field.options.map(option => '<option value="' + escapeAttr(option.value) + '"' + (option.value === field.value ? ' selected' : '') + '>' + escapeHtml(option.label) + '</option>').join('')
+        + '</select>';
+    } else if (field.control === 'textarea') {
+      controlMarkup = '<textarea class="nomad-confirm-input nomad-confirm-textarea" data-confirm-field="' + escapeAttr(field.name) + '" rows="' + escapeAttr(String(field.rows || 3)) + '"'
+        + (field.placeholder ? ' placeholder="' + escapeAttr(field.placeholder) + '"' : '')
+        + autocompleteAttr
+        + (field.required ? ' required' : '')
+        + '>' + escapeHtml(field.value) + '</textarea>';
+    } else {
+      controlMarkup = '<input class="nomad-confirm-input" data-confirm-field="' + escapeAttr(field.name) + '" type="' + escapeAttr(field.type) + '"'
+        + (field.placeholder ? ' placeholder="' + escapeAttr(field.placeholder) + '"' : '')
+        + (field.value ? ' value="' + escapeAttr(field.value) + '"' : '')
+        + autocompleteAttr
+        + (field.required ? ' required' : '')
+        + '>';
+    }
     return '<label class="nomad-confirm-field">'
       + '<span>' + escapeHtml(field.label) + (field.required ? ' <em>required</em>' : '') + '</span>'
-      + '<input class="nomad-confirm-input" data-confirm-field="' + escapeAttr(field.name) + '" type="' + escapeAttr(field.type) + '"'
-      + (field.placeholder ? ' placeholder="' + escapeAttr(field.placeholder) + '"' : '')
-      + autocompleteAttr
-      + (field.required ? ' required' : '')
-      + '>'
+      + controlMarkup
       + '</label>';
   }).join('');
   return new Promise(resolve => {
@@ -1343,8 +1366,9 @@ function confirmAction({
     });
     inputs.forEach(input => {
       input.addEventListener('input', updateConfirmState);
+      input.addEventListener('change', updateConfirmState);
       input.addEventListener('keydown', event => {
-        if (event.key === 'Enter' && confirmBtn && !confirmBtn.disabled) {
+        if (event.key === 'Enter' && input.tagName !== 'TEXTAREA' && confirmBtn && !confirmBtn.disabled) {
           event.preventDefault();
           confirmBtn.click();
         }
@@ -1363,6 +1387,25 @@ async function confirmChoice(message, options = {}) {
   return !!decision.confirmed;
 }
 window.confirmChoice = confirmChoice;
+async function promptFields(options = {}) {
+  const decision = await confirmAction(Object.assign({
+    title: 'Enter details',
+    confirmLabel: 'Save',
+    tone: 'default',
+  }, options));
+  return decision.confirmed ? decision.values : null;
+}
+window.promptFields = promptFields;
+async function promptChoice(label, options = {}) {
+  const name = options.name || 'value';
+  const value = options.value != null ? options.value : options.defaultValue != null ? options.defaultValue : '';
+  const values = await promptFields(Object.assign({}, options, {
+    message: options.message || label,
+    fields: [Object.assign({name, label, value}, options.field || {})],
+  }));
+  return values ? values[name] : null;
+}
+window.promptChoice = promptChoice;
 /** Safe fetch wrapper — returns parsed JSON or fallback on error. Includes 30s timeout. Usage: const data = await safeFetch('/api/foo', {}, []); */
 async function safeFetch(url, opts = {}, fallback = null) {
   let controller;

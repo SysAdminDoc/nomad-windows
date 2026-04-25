@@ -2624,24 +2624,42 @@ async function loadFederationMarketplace() {
 }
 
 async function postOffer() {
-  const type = prompt('What are you offering? (e.g., diesel, antibiotics, water)');
+  const values = await promptFields({
+    title: 'Post offer',
+    message: 'Share an item your node can offer through the federation marketplace.',
+    confirmLabel: 'Post Offer',
+    fields: [
+      {name: 'type', label: 'Item or resource', placeholder: 'Diesel, antibiotics, water', required: true},
+      {name: 'qty', label: 'Quantity', type: 'number', value: '0'},
+      {name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Optional details, condition, packaging, or timing'},
+    ],
+  });
+  if (!values) return;
+  const type = values.type.trim();
   if (!type) return;
-  const qty = prompt('Quantity?') || '0';
-  const notes = prompt('Notes (optional)') || '';
   try {
-    await apiPost('/api/federation/offers', {item_type: type, quantity: parseFloat(qty), notes});
+    await apiPost('/api/federation/offers', {item_type: type, quantity: parseFloat(values.qty) || 0, notes: values.notes || ''});
     loadFederationMarketplace();
     toast('Offer posted', 'success');
   } catch(e) { toast('Failed to post offer', 'error'); }
 }
 
 async function postRequest() {
-  const type = prompt('What do you need? (e.g., antibiotics, fuel, medical)');
+  const values = await promptFields({
+    title: 'Post request',
+    message: 'Ask federation peers for a needed resource.',
+    confirmLabel: 'Post Request',
+    fields: [
+      {name: 'type', label: 'Need', placeholder: 'Antibiotics, fuel, medical', required: true},
+      {name: 'desc', label: 'Description', type: 'textarea', placeholder: 'Optional context, quantity, or constraints'},
+      {name: 'urgency', label: 'Urgency', value: 'normal', options: ['normal', 'urgent', 'critical']},
+    ],
+  });
+  if (!values) return;
+  const type = values.type.trim();
   if (!type) return;
-  const desc = prompt('Description?') || '';
-  const urgency = prompt('Urgency? (normal/urgent/critical)') || 'normal';
   try {
-    await apiPost('/api/federation/requests', {item_type: type, description: desc, urgency});
+    await apiPost('/api/federation/requests', {item_type: type, description: values.desc || '', urgency: values.urgency || 'normal'});
     loadFederationMarketplace();
     toast('Request posted', 'success');
   } catch(e) { toast('Failed to post request', 'error'); }

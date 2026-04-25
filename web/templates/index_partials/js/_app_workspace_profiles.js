@@ -158,10 +158,16 @@ function _renderPromptPresetList() {
   </div>`).join('');
 }
 
-function savePromptPreset() {
+async function savePromptPreset() {
   const input = document.getElementById('chat-input');
   if (!input || !input.value.trim()) { toast('Type a prompt first, then save it as a template', 'warn'); return; }
-  const name = prompt('Template name:', input.value.trim().substring(0, 40));
+  const name = await promptChoice('Template name', {
+    title: 'Save prompt template',
+    message: 'Name this reusable prompt template.',
+    confirmLabel: 'Save Template',
+    value: input.value.trim().substring(0, 40),
+    field: {required: true},
+  });
   if (!name) return;
   const presets = _loadPromptPresets();
   presets.push({ name: name.trim(), text: input.value.trim() });

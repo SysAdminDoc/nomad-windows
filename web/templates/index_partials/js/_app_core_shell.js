@@ -1417,19 +1417,25 @@ async function promptChoice(label, options = {}) {
   return values ? values[name] : null;
 }
 window.promptChoice = promptChoice;
-/** Safe fetch wrapper — returns parsed JSON or fallback on error. Includes 30s timeout. Usage: const data = await safeFetch('/api/foo', {}, []); */
+/** Safe fetch wrapper - returns parsed JSON or fallback on error. Usage: const data = await safeFetch('/api/foo', {}, []); */
 async function safeFetch(url, opts = {}, fallback = null) {
   let controller;
+  let timeoutHandle;
   try {
+    if (typeof window.apiFetch === 'function') {
+      return await window.apiFetch(url, opts);
+    }
     if (!opts.signal) {
       controller = new AbortController();
-      setTimeout(() => controller.abort(), 30000);
+      timeoutHandle = setTimeout(() => controller.abort(), 30000);
       opts = Object.assign({}, opts, { signal: controller.signal });
     }
     const r = await fetch(url, opts);
+    if (timeoutHandle) { clearTimeout(timeoutHandle); timeoutHandle = null; }
     if (!r.ok) { console.warn(`Fetch ${url} failed: ${r.status}`); return fallback; }
     return await r.json();
   } catch(e) {
+    if (timeoutHandle) { clearTimeout(timeoutHandle); timeoutHandle = null; }
     if (e.name !== 'AbortError') console.warn(`Fetch ${url} error:`, e.message);
     return fallback;
   }

@@ -71,17 +71,35 @@ def _compile_brief(db):
     }
 
     # --- Weather ---
+    # Schema (db.py): weather_log has temp_f, pressure_hpa, wind_dir, wind_speed,
+    # clouds, precip, visibility, notes (no temp_c, humidity, conditions).
+    # Convert temp_f -> temp_c for the legacy field name; map pressure_hpa
+    # -> pressure; synthesize a `conditions` summary from clouds + precip
+    # so the printable brief still has something to render. Earlier
+    # versions used `if 'X' in row.keys()` guards which silently produced
+    # all-None fields because the queried columns never existed.
     try:
         row = db.execute(
             'SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 1'
         ).fetchone()
         if row:
+            keys = row.keys()
+            temp_f = row['temp_f'] if 'temp_f' in keys else None
+            temp_c = round((temp_f - 32) * 5 / 9, 1) if isinstance(temp_f, (int, float)) else None
+            cond_parts = []
+            if 'clouds' in keys and row['clouds']:
+                cond_parts.append(str(row['clouds']))
+            if 'precip' in keys and row['precip']:
+                cond_parts.append(str(row['precip']))
             brief['sections']['weather'] = {
-                'temp_c': row['temp_c'] if 'temp_c' in row.keys() else None,
-                'humidity': row['humidity'] if 'humidity' in row.keys() else None,
-                'pressure': row['pressure'] if 'pressure' in row.keys() else None,
-                'conditions': row['conditions'] if 'conditions' in row.keys() else '',
-                'notes': row['notes'] if 'notes' in row.keys() else '',
+                'temp_c': temp_c,
+                'temp_f': temp_f,
+                'pressure': row['pressure_hpa'] if 'pressure_hpa' in keys else None,
+                'wind_dir': row['wind_dir'] if 'wind_dir' in keys else '',
+                'wind_speed': row['wind_speed'] if 'wind_speed' in keys else '',
+                'visibility': row['visibility'] if 'visibility' in keys else '',
+                'conditions': ', '.join(cond_parts),
+                'notes': row['notes'] if 'notes' in keys else '',
                 'recorded_at': row['created_at'],
             }
     except Exception as e:
@@ -144,17 +162,43 @@ def _compile_brief(db):
         log.debug(f'inventory section failed: {e}')
 
     # --- Tasks due today ---
+    # Schema (db.py): scheduled_tasks has name / category / recurrence /
+    # next_due / assigned_to / notes / completed_count / last_completed.
+    # Earlier versions queried title / due_at / completed_at — none of
+    # which exist — so the section silently failed via per-section
+    # try/except log.debug and never appeared in any brief output.
+    # The new query uses actual columns and surfaces a stable
+    # `title` / `due_at` shape to the consumer (frontend stat cards
+    # + printable brief) so legacy templates keep working.
     try:
         rows = db.execute(
-            "SELECT id, title, priority, due_at FROM scheduled_tasks "
-            "WHERE completed_at IS NULL AND due_at IS NOT NULL "
-            "ORDER BY due_at LIMIT 25"
+            "SELECT id, name, category, next_due, assigned_to, last_completed "
+            "FROM scheduled_tasks "
+            "WHERE next_due IS NOT NULL "
+            "ORDER BY next_due LIMIT 25"
         ).fetchall()
         today_tasks = []
         for r in rows:
-            due = r['due_at'] or ''
-            if today_iso in due or due <= today_iso:
-                today_tasks.append(dict(r))
+            # last_completed is the canonical "this is done" signal —
+            # if it's set and >= today's date, the task has been
+            # completed today and shouldn't appear in due_today.
+            last_completed = r['last_completed'] or ''
+            if last_completed and last_completed[:10] >= today_iso:
+                continue
+            due = (r['next_due'] or '')[:10]  # ISO date prefix
+            if not due:
+                continue
+            if due <= today_iso:
+                today_tasks.append({
+                    'id': r['id'],
+                    'title': r['name'],          # legacy alias for renderers
+                    'name': r['name'],
+                    'priority': r['category'],   # category serves as priority hint
+                    'category': r['category'],
+                    'due_at': r['next_due'],     # legacy alias
+                    'next_due': r['next_due'],
+                    'assigned_to': r['assigned_to'] or '',
+                })
         brief['sections']['tasks'] = {'due_today': today_tasks}
     except Exception as e:
         log.debug(f'tasks section failed: {e}')

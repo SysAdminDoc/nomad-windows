@@ -161,6 +161,10 @@ def _sensor_int(val, default):
         return int(default)
 
 
+def _sqlite_utc_cutoff(hours):
+    return (datetime.utcnow() - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
+
+
 @hardware_sensors_bp.route('/sensors', methods=['POST'])
 def sensors_create():
     """Create a new IoT sensor."""
@@ -298,7 +302,7 @@ def sensors_readings(sid):
         limit = max(1, min(int(request.args.get('limit', 5000)), 50000))
     except (ValueError, TypeError):
         limit = 5000
-    cutoff = (datetime.utcnow() - timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    cutoff = _sqlite_utc_cutoff(hours)
     with db_session() as db:
         sensor = db.execute('SELECT id FROM iot_sensors WHERE id = ?', (sid,)).fetchone()
         if not sensor:
@@ -329,7 +333,7 @@ def sensors_dashboard():
         ).fetchall()
         recent_readings = db.execute(
             'SELECT COUNT(*) as c FROM iot_sensor_readings WHERE created_at >= ?',
-            ((datetime.utcnow() - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ'),)
+            (_sqlite_utc_cutoff(24),)
         ).fetchone()['c']
     return jsonify({
         'total_sensors': total,
@@ -883,8 +887,8 @@ def gps_delete(gid):
 def gps_record_fix(gid):
     """Record a new GPS fix (lat, lon, alt, accuracy, satellites)."""
     data = request.get_json() or {}
-    lat = data.get('lat') or data.get('latitude')
-    lon = data.get('lon') or data.get('longitude')
+    lat = data['lat'] if 'lat' in data else data.get('latitude')
+    lon = data['lon'] if 'lon' in data else data.get('longitude')
     if lat is None or lon is None:
         return jsonify({'error': 'lat and lon are required'}), 400
     try:

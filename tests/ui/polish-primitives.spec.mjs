@@ -134,6 +134,32 @@ test('toast stack uses a managed container for long notifications', async ({ pag
   expect(probe.overlaps).toBe(false);
 });
 
+test('toastError combines action, detail, and recovery copy', async ({ page }) => {
+  await boot(page);
+  const probe = await page.evaluate(async () => {
+    window.toastError(
+      'Could not queue video download.',
+      { data: { error: 'Downloader service is offline' } },
+      { recovery: 'Check the downloader service and try again.' },
+    );
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const toast = document.querySelector('#toast-container .toast-error');
+    return {
+      role: toast?.getAttribute('role'),
+      live: toast?.getAttribute('aria-live'),
+      title: toast?.querySelector('.toast-title')?.textContent?.trim(),
+      message: toast?.querySelector('.toast-message')?.textContent?.trim(),
+    };
+  });
+
+  expect(probe.role).toBe('alert');
+  expect(probe.live).toBe('assertive');
+  expect(probe.title).toBe('Action needed');
+  expect(probe.message).toContain('Could not queue video download.');
+  expect(probe.message).toContain('Downloader service is offline.');
+  expect(probe.message).toContain('Check the downloader service and try again.');
+});
+
 test('aria-busy on a button hides the label and renders a spinner pseudo', async ({ page }) => {
   await boot(page);
   const probe = await page.evaluate(() => {

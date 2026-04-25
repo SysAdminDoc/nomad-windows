@@ -282,7 +282,7 @@ async function installYtdlp() {
     toast('Installing downloader...', 'info');
     setMediaVisibility('ytdlp-install-progress', true);
     startMediaYtdlpInstallPolling();
-  } catch(e) { toast('Install failed', 'error'); }
+  } catch(e) { toastError('Could not install downloader.', e, {recovery: 'Check network access and try again.'}); }
 }
 
 async function loadMediaContent() {
@@ -467,7 +467,7 @@ async function batchDeleteMedia() {
     toast('Deleted ' + d.count + ' items', 'warning');
     _mediaSelected.clear(); toggleMediaSelect();
     loadMediaContent(); loadTotalMediaStats();
-  } catch(e) { toast('Failed to delete items', 'error'); }
+  } catch(e) { toastError('Could not delete selected media.', e, {recovery: 'Refresh the media library and try again.'}); }
 }
 
 async function batchMoveMedia() {
@@ -488,7 +488,7 @@ async function batchMoveMedia() {
     toast('Moved ' + _mediaSelected.size + ' items to ' + (name || 'Unsorted'), 'success');
     _mediaSelected.clear(); toggleMediaSelect();
     loadMediaContent();
-  } catch(e) { toast('Failed to move items', 'error'); }
+  } catch(e) { toastError('Could not move selected media.', e, {recovery: 'Check the destination folder and try again.'}); }
 }
 
 async function toggleFavorite(id) {
@@ -497,7 +497,7 @@ async function toggleFavorite(id) {
     const item = _mediaItems.find(i => i.id === id);
     if (item) item.favorited = item.favorited ? 0 : 1;
     renderMediaItems();
-  } catch(e) { toast('Failed to update favorite', 'error'); }
+  } catch(e) { toastError('Could not update favorite.', e, {recovery: 'Refresh the media library and try again.'}); }
 }
 
 // ── Channel Browser ──
@@ -1554,13 +1554,13 @@ async function torrentPause(hash) {
   try {
     await apiPost('/api/torrent/pause/' + hash);
     await pollTorrentStatus();
-  } catch(e) { toast('Failed to pause torrent', 'error'); }
+  } catch(e) { toastError('Could not pause torrent.', e, {recovery: 'Check the torrent service and try again.'}); }
 }
 async function torrentResume(hash) {
   try {
     await apiPost('/api/torrent/resume/' + hash);
     await pollTorrentStatus();
-  } catch(e) { toast('Failed to resume torrent', 'error'); }
+  } catch(e) { toastError('Could not resume torrent.', e, {recovery: 'Check the torrent service and try again.'}); }
 }
 async function torrentRemove(hash, deleteFiles) {
   const confirmed = await confirmChoice('Remove this torrent from the download queue.', {
@@ -1576,7 +1576,7 @@ async function torrentRemove(hash, deleteFiles) {
     for (const [k, v] of Object.entries(_torrentIdToHash)) { if (v === hash) delete _torrentIdToHash[k]; }
     updateActiveDownloadsPanel();
     refreshTorrentCardStates();
-  } catch(e) { toast('Failed to remove torrent', 'error'); }
+  } catch(e) { toastError('Could not remove torrent.', e, {recovery: 'Check the torrent service and try again.'}); }
 }
 async function torrentOpenFolder(hash) {
   try { await apiPost('/api/torrent/open-folder/' + hash); } catch(e) {}
@@ -1585,7 +1585,7 @@ async function openTorrentSaveDir() {
   try {
     const d = await _fetchJson('/api/torrent/dir');
     toast('Downloads folder: ' + (d.path || '?'), 'info');
-  } catch(e) { toast('Could not get downloads folder', 'error'); }
+  } catch(e) { toastError('Could not get downloads folder.', e, {recovery: 'Check the torrent service and try again.'}); }
 }
 
 // ── Download trigger ──────────────────────────────────────────────────────
@@ -1838,9 +1838,9 @@ async function downloadChannelVideo(channelUrl, channelName, category) {
       toast('Downloading from ' + escapeHtml(channelName) + '...', 'info');
       pollMediaDownloads(d.id);
     } else {
-      toast(d.error || 'Download failed', 'error');
+      toastError('Could not queue channel download.', d.error ? {message: d.error} : null, {recovery: 'Check the downloader service and try again.'});
     }
-  } catch(e) { toast('Download request failed', 'error'); }
+  } catch(e) { toastError('Could not queue channel download.', e, {recovery: 'Check the downloader service and try again.'}); }
 }
 
 // ── YouTube Search & Browse ──
@@ -1885,7 +1885,7 @@ async function loadMoreResults() {
   try {
     const videos = await _fetchJson(`/api/youtube/search?q=${encodeURIComponent(_lastYtSearch)}&limit=${_ytSearchLimit}`);
     if (!videos.error) renderVideoResults(videos, `Search: "${_lastYtSearch}"`);
-  } catch(e) { toast('Failed to load more results', 'error'); }
+  } catch(e) { toastError('Could not load more results.', e, {recovery: 'Check the search service and try again.'}); }
   finally { _ytSearching = false; }
 }
 
@@ -2081,8 +2081,8 @@ async function downloadYtVideo(url, title) {
   try {
     const d = await apiPost('/api/ytdlp/download', {url, folder: 'YouTube Downloads'});
     if (d.id) { toast('Downloading: ' + title.substring(0,50) + '...', 'info'); pollMediaDownloads(d.id); }
-    else { toast(d.error || 'Download failed', 'error'); }
-  } catch(e) { toast('Download failed', 'error'); }
+    else { toastError('Could not queue video download.', d.error ? {message: d.error} : null, {recovery: 'Check the downloader service and try again.'}); }
+  } catch(e) { toastError('Could not queue video download.', e, {recovery: 'Check the downloader service and try again.'}); }
 }
 
 async function downloadYtAudio(url, title) {
@@ -2091,8 +2091,8 @@ async function downloadYtAudio(url, title) {
   try {
     const d = await apiPost('/api/ytdlp/download-audio', {url, folder: 'YouTube Audio'});
     if (d.id) { toast('Downloading audio: ' + title.substring(0,50) + '...', 'info'); pollMediaDownloads(d.id); }
-    else { toast(d.error || 'Download failed', 'error'); }
-  } catch(e) { toast('Download failed', 'error'); }
+    else { toastError('Could not queue audio download.', d.error ? {message: d.error} : null, {recovery: 'Check the downloader service and try again.'}); }
+  } catch(e) { toastError('Could not queue audio download.', e, {recovery: 'Check the downloader service and try again.'}); }
 }
 
 // ── Playback ──
@@ -2268,7 +2268,7 @@ async function deleteMediaItem(id, type) {
     toast('Deleted', 'warning');
     closeMediaPlayer();
     loadMediaContent(); loadTotalMediaStats();
-  } catch(e) { toast('Failed to delete item', 'error'); }
+  } catch(e) { toastError('Could not delete media item.', e, {recovery: 'Refresh the media library and try again.'}); }
 }
 
 async function moveMediaItem(id, type) {
@@ -2287,7 +2287,7 @@ async function moveMediaItem(id, type) {
   try {
     await apiFetch(`${apiMap[type]}/${id}`, {method:'PATCH', body:JSON.stringify({folder:name})});
   } catch(e) {
-    toast(e?.data?.error || 'Failed to move item', 'error');
+    toastError('Could not move media item.', e, {recovery: 'Check the destination folder and try again.'});
     return;
   }
   toast('Moved to ' + (name || 'Unsorted'), 'success');
@@ -2313,12 +2313,12 @@ async function downloadMediaURL() {
   const s = await _fetchJson('/api/ytdlp/status');
   if (!s.installed) {
     toast('Installing downloader first...', 'info');
-    try { await apiPost('/api/ytdlp/install'); } catch(e) { toast('Install failed', 'error'); return; }
+    try { await apiPost('/api/ytdlp/install'); } catch(e) { toastError('Could not install downloader.', e, {recovery: 'Check network access and try again.'}); return; }
     for (let i = 0; i < 60; i++) {
       await new Promise(r => setTimeout(r, 2000));
       const p = await _fetchJson('/api/ytdlp/install-progress');
       if (p.status === 'complete') break;
-      if (p.status === 'error') { toast('Install failed: ' + p.error, 'error'); return; }
+      if (p.status === 'error') { toastError('Could not install downloader.', {message: p.error}, {recovery: 'Check network access and try again.'}); return; }
     }
     checkYtdlpStatus();
   }
@@ -2407,7 +2407,7 @@ async function subscribeChannel(url, name, category) {
     const d = await apiPost('/api/subscriptions', {name, url, category});
     if (d.status === 'subscribed') toast('Subscribed to ' + name, 'success');
     else toast(d.error || 'Already subscribed', 'info');
-  } catch(e) { toast('Failed to subscribe', 'error'); }
+  } catch(e) { toastError('Could not subscribe to channel.', e, {recovery: 'Check the channel URL and try again.'}); }
 }
 
 async function unsubscribeChannel(id, name) {
@@ -2422,7 +2422,7 @@ async function unsubscribeChannel(id, name) {
     await apiDelete('/api/subscriptions/' + id);
     toast('Unsubscribed from ' + (name || 'channel'), 'info');
     loadSubscriptions();
-  } catch(e) { toast('Failed to unsubscribe', 'error'); }
+  } catch(e) { toastError('Could not unsubscribe from channel.', e, {recovery: 'Refresh subscriptions and try again.'}); }
 }
 
 async function loadSubscriptions() {
@@ -2478,7 +2478,7 @@ async function uploadMediaFiles() {
     toast(`Uploading ${file.name} (${sizeMB} MB)...`, 'info');
     return apiUpload(uploadMap[_mediaSub], formData)
       .then(() => { toast('Uploaded: ' + file.name, 'success'); })
-      .catch(e => toast(`Upload failed: ${e?.data?.error || file.name}`, 'error'));
+      .catch(e => toastError(`Could not upload ${file.name}.`, e, {recovery: 'Check the selected file and try again.'}));
   });
   await Promise.all(uploads);
   input.value = '';
@@ -2519,7 +2519,7 @@ async function loadActiveCatalog() {
       }
     }
     el.innerHTML = html;
-  } catch(e) { toast('Failed to load catalog', 'error'); }
+  } catch(e) { toastError(`Could not load ${isAudio ? 'audio' : 'video'} catalog.`, e, {recovery: 'Check the catalog service and try again.'}); }
 }
 
 async function loadBookCatalog() {
@@ -2547,7 +2547,7 @@ async function loadBookCatalog() {
       }
     }
     el.innerHTML = html;
-  } catch(e) { toast('Failed to load catalog', 'error'); }
+  } catch(e) { toastError('Could not load reference catalog.', e, {recovery: 'Check the catalog service and try again.'}); }
 }
 
 async function downloadCatalogItem(btn, url, folder, category) {
@@ -2555,9 +2555,9 @@ async function downloadCatalogItem(btn, url, folder, category) {
   try {
     const d = await apiPost('/api/ytdlp/download', {url, folder, category});
     btn.removeAttribute('aria-busy');
-    if (d.error) { toast(d.error, 'error'); btn.disabled = false; return; }
+    if (d.error) { toastError('Could not queue video download.', {message: d.error}, {recovery: 'Check the downloader service and try again.'}); btn.disabled = false; return; }
     btn.textContent = 'Queued'; pollMediaDownloads(d.id);
-  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toast('Failed', 'error'); }
+  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toastError('Could not queue video download.', e, {recovery: 'Check the downloader service and try again.'}); }
 }
 
 async function downloadCatalogAudio(btn, url, folder, category) {
@@ -2565,9 +2565,9 @@ async function downloadCatalogAudio(btn, url, folder, category) {
   try {
     const d = await apiPost('/api/ytdlp/download-audio', {url, folder, category});
     btn.removeAttribute('aria-busy');
-    if (d.error) { toast(d.error, 'error'); btn.disabled = false; return; }
+    if (d.error) { toastError('Could not queue audio download.', {message: d.error}, {recovery: 'Check the downloader service and try again.'}); btn.disabled = false; return; }
     btn.textContent = 'Queued'; pollMediaDownloads(d.id);
-  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toast('Failed', 'error'); }
+  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toastError('Could not queue audio download.', e, {recovery: 'Check the downloader service and try again.'}); }
 }
 
 async function downloadRefBook(btn, item) {
@@ -2576,9 +2576,9 @@ async function downloadRefBook(btn, item) {
     const d = await apiPost('/api/books/download-ref', item);
     btn.removeAttribute('aria-busy');
     if (d.status === 'already_downloaded') { toast('Already downloaded', 'info'); btn.textContent = 'Downloaded'; btn.classList.add('tone-success'); return; }
-    if (d.error) { toast(d.error, 'error'); btn.disabled = false; return; }
+    if (d.error) { toastError('Could not queue reference download.', {message: d.error}, {recovery: 'Check storage access and try again.'}); btn.disabled = false; return; }
     btn.textContent = 'Downloading...'; pollMediaDownloads(d.id);
-  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toast('Failed', 'error'); }
+  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toastError('Could not queue reference download.', e, {recovery: 'Check storage access and try again.'}); }
 }
 
 async function downloadAllCatalog() {
@@ -2587,10 +2587,10 @@ async function downloadAllCatalog() {
   try {
     const catalog = await _fetchJson('/api/videos/catalog');
     const d = await apiPost('/api/ytdlp/download-catalog', {items: catalog});
-    if (d.error) { toast(d.error, 'error'); return; }
-    if (d.status === 'all_downloaded') { toast('All catalog content already downloaded!', 'success'); return; }
+    if (d.error) { toastError('Could not queue catalog downloads.', {message: d.error}, {recovery: 'Check the downloader service and try again.'}); return; }
+    if (d.status === 'all_downloaded') { toast('All catalog content is already downloaded', 'success'); return; }
     toast('Queued ' + d.count + ' items for download', 'info'); pollMediaDownloads(d.id);
-  } catch(e) { toast('Failed', 'error'); }
+  } catch(e) { toastError('Could not queue catalog downloads.', e, {recovery: 'Check the downloader service and try again.'}); }
 }
 
 async function downloadAllAudioCatalog() {
@@ -2600,25 +2600,25 @@ async function downloadAllAudioCatalog() {
     const catalog = await _fetchJson('/api/audio/catalog');
     // Download each one as audio
     const toDownload = catalog.filter(item => !_mediaItems.find(a => a.url === item.url));
-    if (!toDownload.length) { toast('All audio catalog items already downloaded!', 'success'); return; }
+    if (!toDownload.length) { toast('All audio catalog items are already downloaded', 'success'); return; }
     const results = await Promise.all(toDownload.map(item =>
       apiPost('/api/ytdlp/download-audio', {url:item.url, folder:item.folder, category:item.category})
         .catch(e => ({error: e.message}))
     ));
     let queued = 0;
     results.forEach(d => { if (d.id) { queued++; pollMediaDownloads(d.id); } });
-    if (queued === 0) toast('All audio catalog items already downloaded!', 'success');
+    if (queued === 0) toastError('Could not queue audio catalog downloads.', {message: 'No downloads were accepted by the downloader.'}, {recovery: 'Check the downloader service and try again.'});
     else toast(`Queued ${queued} audio downloads`, 'info');
-  } catch(e) { toast('Failed', 'error'); }
+  } catch(e) { toastError('Could not queue audio catalog downloads.', e, {recovery: 'Check the downloader service and try again.'}); }
 }
 
 async function downloadAllBooks() {
   try {
     const d = await apiPost('/api/books/download-all-refs');
-    if (d.status === 'all_downloaded') { toast('All reference books already downloaded!', 'success'); return; }
-    if (d.error) { toast(d.error, 'error'); return; }
+    if (d.status === 'all_downloaded') { toast('All reference books are already downloaded', 'success'); return; }
+    if (d.error) { toastError('Could not queue reference library downloads.', {message: d.error}, {recovery: 'Check storage access and try again.'}); return; }
     toast('Downloading ' + d.count + ' reference books...', 'info'); pollMediaDownloads(d.id);
-  } catch(e) { toast('Failed', 'error'); }
+  } catch(e) { toastError('Could not queue reference library downloads.', e, {recovery: 'Check storage access and try again.'}); }
 }
 
 /* ─── Guided Drills ─── */
@@ -2743,7 +2743,7 @@ function completeDrill() {
   sendNotification('Drill Complete', `${title}: ${checked}/${total} tasks in ${durationLabel}`);
   // Save to history
   apiPost('/api/drills/history', {drill_type: _currentDrillType || '', title, duration_sec: elapsed, tasks_total: total, tasks_completed: checked})
-    .catch(() => toast('Failed to save drill history', 'error'));
+    .catch(e => toastError('Could not save drill history.', e, {recovery: 'Your completed drill remains visible for this session.'}));
   document.getElementById('drill-active').style.display = 'none';
   document.getElementById('drill-active').classList.add('is-hidden');
   document.getElementById('drill-summary').hidden = true;
@@ -3053,7 +3053,7 @@ async function saveNodeName() {
     await apiPut('/api/node/identity', {name});
     toast('Node name set to "' + name + '"', 'success');
     loadNodeIdentity();
-  } catch(e) { toast('Failed to set node name', 'error'); }
+  } catch(e) { toastError('Could not set node name.', e, {recovery: 'Check the node name and try again.'}); }
 }
 
 async function discoverPeers() {
@@ -3179,11 +3179,11 @@ async function resolveConflict(id, resolution, mergedData) {
     const body = { resolution };
     if (mergedData) body.merged_data = mergedData;
     const d = await apiPost(`/api/node/conflicts/${id}/resolve`, body);
-    if (d.error) { toast(d.error, 'error'); return; }
+    if (d.error) { toastError('Could not resolve conflict.', {message: d.error}, {recovery: 'Review the selected resolution and try again.'}); return; }
     toast(`Conflict #${id} resolved as ${resolution}`, 'success');
     loadConflicts();
     loadSyncLog();
-  } catch(e) { toast('Failed to resolve conflict', 'error'); }
+  } catch(e) { toastError('Could not resolve conflict.', e, {recovery: 'Review the selected resolution and try again.'}); }
 }
 
 function showMergeEditor(conflictId, conflictDetailJson) {
@@ -3235,16 +3235,16 @@ async function downloadPdf(url, filename) {
     if (!resp.ok) {
       const data = await resp.json().catch(() => ({}));
       if (data.error && data.hint) {
-        toast(`${data.error}. Run: ${data.hint}`, 'error');
+        toastError('Could not generate PDF.', {message: data.error}, {recovery: `Run: ${data.hint}`});
       } else {
-        toast(data.error || 'PDF generation failed', 'error');
+        toastError('Could not generate PDF.', data.error ? {message: data.error} : null, {recovery: 'Check the document source and try again.'});
       }
       return;
     }
     const blob = await resp.blob();
     window.downloadBlobFile(blob, filename || 'nomad-document.pdf');
     toast('PDF downloaded', 'success');
-  } catch(e) { toast('PDF download failed: ' + e.message, 'error'); }
+  } catch(e) { toastError('Could not download PDF.', e, {recovery: 'Check the document source and try again.'}); }
 }
 
 /* ─── Sneakernet Sync ─── */
@@ -3254,13 +3254,13 @@ async function exportSyncPack() {
       body:JSON.stringify({include:['inventory','contacts','checklists','notes','incidents','waypoints']})});
     if (!resp.ok) {
       const data = await resp.json().catch(() => ({}));
-      toast(data.error || 'Export failed', 'error');
+      toastError('Could not export content pack.', data.error ? {message: data.error} : null, {recovery: 'Check local storage and try again.'});
       return;
     }
     const blob = await resp.blob();
     window.downloadBlobFile(blob, `nomad-sync-${new Date().toISOString().slice(0,10)}.zip`);
     toast('Content pack exported', 'success');
-  } catch(e) { toast('Export failed', 'error'); }
+  } catch(e) { toastError('Could not export content pack.', e, {recovery: 'Check local storage and try again.'}); }
 }
 
 async function importSyncPack() {
@@ -3274,8 +3274,8 @@ async function importSyncPack() {
     if (r.tables) {
       const summary = Object.entries(r.tables).map(([t,c]) => `${t}: ${c}`).join(', ');
       toast(`Imported: ${summary}`, 'success');
-    } else { toast(r.error || 'Import failed', 'error'); }
-  } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+    } else { toastError('Could not import content pack.', r.error ? {message: r.error} : null, {recovery: 'Choose a valid NOMAD sync pack and try again.'}); }
+  } catch(e) { toastError('Could not import content pack.', e, {recovery: 'Choose a valid NOMAD sync pack and try again.'}); input.value = ''; }
 }
 
 /* ─── Dead Drop Encrypted Messaging ─── */
@@ -3287,14 +3287,14 @@ async function composeDeadDrop() {
   try {
     const r = await _fetchJson('/api/deaddrop/compose', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({message, recipient, secret})});
-    if (r.error) { toast(r.error, 'error'); return; }
+    if (r.error) { toastError('Could not encrypt dead drop message.', {message: r.error}, {recovery: 'Check the shared secret and try again.'}); return; }
     // Download as JSON file
     const blob = new Blob([JSON.stringify(r.payload, null, 2)], {type:'application/json'});
     window.downloadBlobFile(blob, r.filename);
     document.getElementById('dd-message').value = '';
     document.getElementById('dd-secret').value = '';
     toast('Dead drop message encrypted and downloaded — copy to USB drive', 'success');
-  } catch(e) { toast('Encryption failed', 'error'); }
+  } catch(e) { toastError('Could not encrypt dead drop message.', e, {recovery: 'Check the shared secret and try again.'}); }
 }
 
 async function importDeadDrop() {
@@ -3399,8 +3399,8 @@ async function createGroupExercise() {
     if (r.exercise_id) {
       toast(`Exercise created! Invited ${r.invited} peers.`, 'success');
       loadGroupExercises();
-    } else { toast(r.error || 'Failed', 'error'); }
-  } catch(e) { toast('Failed to create exercise', 'error'); }
+    } else { toastError('Could not create group exercise.', r.error ? {message: r.error} : null, {recovery: 'Check the exercise details and try again.'}); }
+  } catch(e) { toastError('Could not create group exercise.', e, {recovery: 'Check the exercise details and try again.'}); }
 }
 
 async function joinGroupExercise(exerciseId) {
@@ -3408,7 +3408,7 @@ async function joinGroupExercise(exerciseId) {
     const r = await _fetchJson(`/api/group-exercises/${exerciseId}/join`, {method:'POST'});
     toast(`Joined exercise! ${r.participants} participants now.`, 'success');
     loadGroupExercises();
-  } catch(e) { toast('Join failed', 'error'); }
+  } catch(e) { toastError('Could not join exercise.', e, {recovery: 'Refresh group exercises and try again.'}); }
 }
 
 async function advanceGroupExercise(exerciseId) {
@@ -3424,7 +3424,7 @@ async function advanceGroupExercise(exerciseId) {
       phase: (await _fetchJson('/api/group-exercises')).find(e => e.exercise_id === exerciseId)?.current_phase + 1 || 1});
     toast('Phase advanced', 'success');
     loadGroupExercises();
-  } catch(e) { toast(e?.data?.error || 'Failed', 'error'); }
+  } catch(e) { toastError('Could not advance exercise phase.', e, {recovery: 'Review the decision text and try again.'}); }
 }
 
 async function completeGroupExercise(exerciseId) {
@@ -3432,7 +3432,7 @@ async function completeGroupExercise(exerciseId) {
     await apiPost(`/api/group-exercises/${exerciseId}/update-state`, {status: 'completed', event: 'Exercise completed'});
     toast('Exercise completed!', 'success');
     loadGroupExercises();
-  } catch(e) { toast(e?.data?.error || 'Failed', 'error'); }
+  } catch(e) { toastError('Could not complete exercise.', e, {recovery: 'Refresh group exercises and try again.'}); }
 }
 
 /* ─── LoRA Fine-Tuning Pipeline ─── */
@@ -3466,7 +3466,7 @@ async function createTrainingDataset() {
     toast(`Dataset created with ${r.records} training records`, 'success');
     loadTrainingDatasets();
     loadTrainingJobs();
-  } catch(e) { toast('Failed to create dataset', 'error'); }
+  } catch(e) { toastError('Could not create training dataset.', e, {recovery: 'Check conversation history access and try again.'}); }
 }
 
 async function loadTrainingJobs() {
@@ -3511,7 +3511,7 @@ async function createTrainingJob() {
       body:JSON.stringify({dataset_id: ds[0].id, base_model: values.model.trim(), output_model: values.output.trim()})});
     toast(`Training job created \u2014 Modelfile at ${r.modelfile}`, 'success');
     loadTrainingJobs();
-  } catch(e) { toast('Failed', 'error'); }
+  } catch(e) { toastError('Could not create training job.', e, {recovery: 'Verify the selected base model and dataset, then try again.'}); }
 }
 
 async function runTrainingJob(jid) {
@@ -3559,8 +3559,8 @@ async function createPerimeterZone() {
     const r = await _fetchJson('/api/security/zones', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({name: values.name.trim(), threat_level: values.threat || 'normal', color: values.color || '#ff4444', zone_type: 'perimeter'})});
     if (r.id) { toast('Perimeter zone created', 'success'); loadPerimeterZones(); }
-    else { toast(r.error || 'Failed', 'error'); }
-  } catch(e) { toast('Failed', 'error'); }
+    else { toastError('Could not create perimeter zone.', r.error ? {message: r.error} : null, {recovery: 'Check the zone details and try again.'}); }
+  } catch(e) { toastError('Could not create perimeter zone.', e, {recovery: 'Check the zone details and try again.'}); }
 }
 
 async function deletePerimeterZone(zid) {
@@ -3575,7 +3575,7 @@ async function deletePerimeterZone(zid) {
     await apiDelete('/api/security/zones/' + zid);
     toast('Zone deleted', 'success');
     loadPerimeterZones();
-  } catch(e) { toast('Delete failed', 'error'); }
+  } catch(e) { toastError('Could not delete perimeter zone.', e, {recovery: 'Refresh perimeter zones and try again.'}); }
 }
 
 /* ─── Map Atlas ─── */
@@ -3599,7 +3599,7 @@ async function generateMapAtlas() {
     if (!resp.ok) {
       const data = await resp.json().catch(() => ({}));
       window.renderPopupStatus?.(w, 'Map Atlas Unavailable', data.error || 'Atlas generation failed. Close this window and try again.', 'error');
-      toast(data.error || 'Atlas generation failed', 'error');
+      toastError('Could not generate map atlas.', data.error ? {message: data.error} : null, {recovery: 'Close the atlas window and try again.'});
       return;
     }
     const html = await resp.text();
@@ -3610,7 +3610,7 @@ async function generateMapAtlas() {
     toast('Map atlas generated — print from the new window', 'success');
   } catch(e) {
     window.renderPopupStatus?.(w, 'Map Atlas Unavailable', 'Atlas generation failed. Close this window and try again.', 'error');
-    toast('Atlas generation failed', 'error');
+    toastError('Could not generate map atlas.', e, {recovery: 'Close the atlas window and try again.'});
   }
 }
 
@@ -3629,9 +3629,9 @@ async function importChecklistJSON() {
   try {
     const r = await _fetchJson('/api/checklists/import-json', {method:'POST', body:formData});
     input.value = '';
-    if (r.id) { toast('Checklist imported!', 'success'); loadChecklists(); selectChecklist(r.id); }
-    else { toast(r.error || 'Import failed', 'error'); }
-  } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+    if (r.id) { toast('Checklist imported', 'success'); loadChecklists(); selectChecklist(r.id); }
+    else { toastError('Could not import checklist.', r.error ? {message: r.error} : null, {recovery: 'Choose a valid checklist JSON file and try again.'}); }
+  } catch(e) { toastError('Could not import checklist.', e, {recovery: 'Choose a valid checklist JSON file and try again.'}); input.value = ''; }
 }
 
 /* ─── Notifications ─── */
@@ -3680,7 +3680,7 @@ async function saveOllamaHost() {
   try {
     await apiPut('/api/settings/ollama-host', {host});
     toast(host ? 'Ollama host set to ' + host : 'Using local Ollama', 'success');
-  } catch(e) { toast('Failed to save Ollama host', 'error'); }
+  } catch(e) { toastError('Could not save Ollama host.', e, {recovery: 'Check the host URL and try again.'}); }
 }
 
 /* ─── Auth Password ─── */
@@ -3691,13 +3691,13 @@ async function setAuthPassword() {
     await apiPost('/api/auth/set-password', {password: pw});
     document.getElementById('auth-pw-input').value = '';
     toast('Dashboard password set', 'success');
-  } catch(e) { toast('Failed to set password', 'error'); }
+  } catch(e) { toastError('Could not set dashboard password.', e, {recovery: 'Check the password and try again.'}); }
 }
 async function clearAuthPassword() {
   try {
     await apiPost('/api/auth/set-password', {password: ''});
     toast('Dashboard password cleared', 'info');
-  } catch(e) { toast('Failed to clear password', 'error'); }
+  } catch(e) { toastError('Could not clear dashboard password.', e, {recovery: 'Refresh settings and try again.'}); }
 }
 
 /* ─── Host Power ─── */
@@ -3715,7 +3715,7 @@ async function hostPower(action) {
   try {
     await apiPost('/api/system/shutdown', {action});
     toast(action + ' initiated — computer will ' + action + ' in 5 seconds', 'warning');
-  } catch(e) { toast('Failed to initiate ' + action, 'error'); }
+  } catch(e) { toastError('Could not initiate ' + action + '.', e, {recovery: 'Check host power permissions and try again.'}); }
 }
 
 /* ─── PDF Library ─── */
@@ -3793,7 +3793,7 @@ async function deletePDF(filename) {
     toast('Document deleted', 'warning');
     loadPDFList();
     closePDFViewer();
-  } catch(e) { toast('Failed to delete document', 'error'); }
+  } catch(e) { toastError('Could not delete document.', e, {recovery: 'Refresh the PDF library and try again.'}); }
 }
 
 /* ─── AI Chat File Drag/Drop ─── */
@@ -3813,12 +3813,12 @@ async function uploadChatFile(file) {
   toast(`Reading ${file.name}...`, 'info');
   try {
     const r = await _fetchJson('/api/ai/upload-context', {method:'POST', body:formData});
-    if (r.error) { toast(r.error, 'error'); return; }
+    if (r.error) { toastError('Could not attach file to chat.', {message: r.error}, {recovery: 'Choose a readable text or document file and try again.'}); return; }
     _chatFileContext = r.content;
     document.getElementById('chat-file-context').style.display = 'block';
     document.getElementById('chat-file-name').textContent = `${r.filename} (${r.words} words attached)`;
     toast(`File attached — ${r.words} words will be included in your next message`, 'success');
-  } catch(e) { toast('File read failed', 'error'); }
+  } catch(e) { toastError('Could not attach file to chat.', e, {recovery: 'Choose a readable text or document file and try again.'}); }
 }
 function clearChatFile() {
   _chatFileContext = '';
@@ -3841,7 +3841,7 @@ async function logComms() {
     document.getElementById('comms-msg').value = '';
     toast('Communication logged', 'success');
     loadCommsLog();
-  } catch(e) { toast('Failed to log communication', 'error'); }
+  } catch(e) { toastError('Could not log communication.', e, {recovery: 'Check the callsign or message and try again.'}); }
 }
 
 async function loadCommsLog() {
@@ -3878,7 +3878,7 @@ async function deleteCommsLog(id) {
   try {
     await apiDelete('/api/comms-log/' + id);
     loadCommsLog();
-  } catch(e) { toast('Failed to delete log entry', 'error'); }
+  } catch(e) { toastError('Could not delete log entry.', e, {recovery: 'Refresh the comms log and try again.'}); }
 }
 
 /* ─── Shopping List ─── */
@@ -3899,7 +3899,7 @@ async function showShoppingList() {
     body += `<div class="modal-footer"><button type="button" class="btn btn-sm btn-primary" data-shell-action="copy-text" data-copy-text="${escapeAttr(items.map(i => `${i.name}: ${i.need > 0 ? '+'+i.need : ''} ${i.unit} (${i.reason})`).join('\n'))}">Copy List</button>`;
     body += '<button type="button" class="btn btn-sm" data-shell-action="close-modal-overlay">Close</button></div>';
     showModal(body, {title: 'Shopping List', size: 'sm'});
-  } catch(e) { toast('Failed to generate shopping list', 'error'); }
+  } catch(e) { toastError('Could not generate shopping list.', e, {recovery: 'Refresh inventory and try again.'}); }
 }
 
 /* ─── Status Report ─── */
@@ -3909,7 +3909,7 @@ async function generateStatusReport() {
     const palette = getThemePalette();
 const html = `<html><head><title>NOMAD Status Report</title><style>:root{color-scheme:${document.documentElement.getAttribute('data-theme') === 'nomad' || document.documentElement.getAttribute('data-theme') === 'eink' ? 'light' : 'dark'};}body{font-family:var(--font-data,monospace);background:${palette.bg};color:${palette.text};padding:20px;font-size:13px;white-space:pre-wrap;line-height:1.6;}.status-report-copy{background:${palette.accent};color:${palette.textInverse};border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:8px;font-size:12px;}.status-report-rule{border:0;border-top:1px solid ${palette.border};margin:12px 0;}.status-report-shell{min-height:120px;}</style></head><body><button id="copy-report-btn" class="status-report-copy">Copy to Clipboard</button><hr class="status-report-rule"><div id="rpt" class="status-report-shell">${escapeHtml(r.text)}</div><script>document.getElementById('copy-report-btn').addEventListener('click',function(){navigator.clipboard.writeText(document.getElementById('rpt').textContent);});<\/script></body></html>`;
     openAppFrameHTML('Status Report', html);
-  } catch(e) { toast('Failed to generate report', 'error'); }
+  } catch(e) { toastError('Could not generate status report.', e, {recovery: 'Refresh dashboard data and try again.'}); }
 }
 
 /* ─── Drill History ─── */
@@ -4118,7 +4118,7 @@ function showInvQuickAdd() {
 async function quickAddInvItem(item, control) {
   try {
     await apiPost('/api/inventory', {name:item.name, category:item.cat, unit:item.unit, quantity:item.qty, daily_usage:item.daily||0});
-  } catch(e) { toast('Failed to add item', 'error'); return; }
+  } catch(e) { toastError('Could not add supply item.', e, {recovery: 'Check inventory access and try again.'}); return; }
   if (control) {
     control.classList.add('is-added');
     control.textContent = 'Added!';

@@ -658,3 +658,156 @@ textarea:disabled,
     animation: none;
   }
 }
+
+/* 20. Trust dialogs: replace native confirms with app-native, keyboard-safe choices */
+.nomad-confirm-overlay .modal-card-sm {
+  width: min(480px, calc(100vw - 32px));
+  max-width: 480px;
+}
+
+.nomad-confirm-overlay .modal-header {
+  margin-bottom: 0;
+}
+
+.nomad-confirm-overlay .modal-header h3 {
+  letter-spacing: 0;
+}
+
+.nomad-confirm-body {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.nomad-confirm-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: var(--radius-full, 999px);
+  background: color-mix(in srgb, var(--accent-dim) 62%, var(--surface-solid));
+  color: var(--accent);
+  font-size: var(--text-md, 14px);
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 var(--panel-highlight);
+}
+
+.nomad-confirm-tone-warning .nomad-confirm-icon {
+  border-color: color-mix(in srgb, var(--amber, #f4b860) 44%, var(--border));
+  background: color-mix(in srgb, var(--amber, #f4b860) 13%, var(--surface-solid));
+  color: color-mix(in srgb, var(--amber, #f4b860) 82%, var(--text));
+}
+
+.nomad-confirm-tone-danger .nomad-confirm-icon {
+  border-color: color-mix(in srgb, var(--red, #f06b6b) 44%, var(--border));
+  background: color-mix(in srgb, var(--red, #f06b6b) 13%, var(--surface-solid));
+  color: color-mix(in srgb, var(--red, #f06b6b) 82%, var(--text));
+}
+
+.nomad-confirm-copy {
+  min-width: 0;
+}
+
+.nomad-confirm-message {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-md, 14px);
+  font-weight: 700;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.nomad-confirm-detail {
+  margin: 7px 0 0;
+  color: var(--text-dim);
+  font-size: var(--text-base, 13px);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.nomad-confirm-field {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: var(--text-sm-md, 12px);
+  font-weight: 700;
+}
+
+.nomad-confirm-field em {
+  color: var(--text-muted);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.nomad-confirm-input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: var(--radius-sm, 10px);
+  background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+  color: var(--text);
+  font: inherit;
+  padding: 9px 11px;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    border-color var(--duration-snappy, 120ms) var(--ease-out-standard, ease),
+    box-shadow var(--duration-snappy, 120ms) var(--ease-out-standard, ease),
+    background-color var(--duration-snappy, 120ms) var(--ease-out-standard, ease);
+}
+
+.nomad-confirm-input:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  box-shadow: var(--focus-shadow, 0 0 0 3px var(--accent-dim));
+}
+
+.nomad-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+
+.nomad-confirm-actions .btn {
+  min-height: 38px;
+}
+
+.nomad-confirm-actions .btn-danger {
+  border-color: color-mix(in srgb, var(--red, #f06b6b) 72%, var(--border));
+  background: color-mix(in srgb, var(--red, #f06b6b) 86%, #160b0d);
+  color: var(--text-inverse, #fff);
+}
+
+.nomad-confirm-actions .btn-danger:hover {
+  border-color: var(--red, #f06b6b);
+  background: var(--red, #f06b6b);
+  color: var(--text-inverse, #fff);
+}
+
+.nomad-confirm-actions .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+@media (max-width: 520px) {
+  .nomad-confirm-body {
+    grid-template-columns: 1fr;
+  }
+
+  .nomad-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .nomad-confirm-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

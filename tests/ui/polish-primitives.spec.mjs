@@ -34,6 +34,46 @@ test('btn focus-visible draws an accent ring instead of native outline', async (
   expect(hasShadowRing || hasOutlineRing).toBeTruthy();
 });
 
+test('confirmAction renders an accessible app-native confirmation flow', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => {
+    const trigger = document.createElement('button');
+    trigger.id = 'confirm-trigger';
+    trigger.textContent = 'Restore';
+    document.body.appendChild(trigger);
+    trigger.focus();
+    window.__confirmResult = window.confirmAction({
+      title: 'Restore scheduled backup?',
+      message: 'Restore database from nomad-test.zip.',
+      detail: 'Enter the decryption password. A safety backup will be created first.',
+      confirmLabel: 'Restore Backup',
+      tone: 'warning',
+      fields: [{
+        name: 'password',
+        label: 'Decryption password',
+        type: 'password',
+        required: true,
+      }],
+    });
+  });
+
+  const dialog = page.locator('.nomad-confirm-overlay[role="alertdialog"]');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute('aria-describedby', /confirm-desc-/);
+  await expect(page.getByLabel(/Decryption password/)).toBeFocused();
+
+  const confirm = page.getByRole('button', { name: 'Restore Backup' });
+  await expect(confirm).toBeDisabled();
+  await page.getByLabel(/Decryption password/).fill('correct-horse');
+  await expect(confirm).toBeEnabled();
+  await confirm.click();
+
+  await expect(dialog).toHaveCount(0);
+  const result = await page.evaluate(() => window.__confirmResult);
+  expect(result).toEqual({ confirmed: true, values: { password: 'correct-horse' } });
+  await expect(page.locator('#confirm-trigger')).toBeFocused();
+});
+
 test('aria-busy on a button hides the label and renders a spinner pseudo', async ({ page }) => {
   await boot(page);
   const probe = await page.evaluate(() => {

@@ -2606,7 +2606,14 @@ async function showBackupList() {
   } catch(e) { toast('Failed to load backups', 'error'); }
 }
 async function restoreBackup(filename) {
-  if (!confirm('Restore database from ' + filename + '? Current data will be backed up first.')) return;
+  const decision = await confirmAction({
+    title: 'Restore backup?',
+    message: 'Restore database from ' + filename + '.',
+    detail: 'Current data will be backed up first. Restart the app after restoring.',
+    confirmLabel: 'Restore Backup',
+    tone: 'warning',
+  });
+  if (!decision.confirmed) return;
   try {
     const d = await apiPost('/api/backups/restore', {filename});
     toast(d.message || 'Database restored', 'success');

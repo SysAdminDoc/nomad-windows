@@ -16,19 +16,19 @@
       <span class="sidebar-group-copy">Orient, assess, decide.</span>
     </div>
     <!-- Situation Room -->
-    <button class="tab{% if active_tab == 'situation-room' %} active{% endif %}"{%- if active_tab == "situation-room" %} id="tab-situation-room"{%- endif %} data-tab="situation-room">
+    <button class="tab{% if active_tab == 'situation-room' %} active{% endif %}" data-tab="situation-room">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
       <span>Situation Room</span>
     </button>
 
     <!-- Home -->
-    <button class="tab{% if active_tab == 'services' %} active{% endif %}"{%- if active_tab == "services" %} id="tab-services"{%- endif %} data-tab="services">
+    <button class="tab{% if active_tab == 'services' %} active{% endif %}" data-tab="services">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
       <span data-i18n="nav.home">{{ tr('nav.home', 'Home') }}</span>
     </button>
 
     <!-- Readiness -->
-    <button class="tab{% if active_tab == 'readiness' %} active{% endif %}"{%- if active_tab == "readiness" %} id="tab-readiness"{%- endif %} data-tab="readiness">
+    <button class="tab{% if active_tab == 'readiness' %} active{% endif %}" data-tab="readiness">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
       <span data-i18n="nav.readiness">{{ tr('nav.readiness', 'Readiness') }}</span>
     </button>
@@ -39,158 +39,158 @@
     </div>
 
     <!-- Preparedness -->
-    <button class="tab{% if active_tab == 'preparedness' %} active{% endif %}"{%- if active_tab == "preparedness" %} id="tab-preparedness"{%- endif %} data-tab="preparedness">
+    <button class="tab{% if active_tab == 'preparedness' %} active{% endif %}" data-tab="preparedness">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
       <span data-i18n="nav.preparedness">{{ tr('nav.preparedness', 'Preparedness') }}</span>
       <span id="badge-preparedness" class="tab-badge is-hidden"></span>
     </button>
     <!-- Maps -->
-    <button class="tab{% if active_tab == 'maps' %} active{% endif %}"{%- if active_tab == "maps" %} id="tab-maps"{%- endif %} data-tab="maps">
+    <button class="tab{% if active_tab == 'maps' %} active{% endif %}" data-tab="maps">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg></span>
       <span data-i18n="nav.maps">{{ tr('nav.maps', 'Maps') }}</span>
       <span id="badge-maps" class="tab-badge green is-hidden"></span>
     </button>
 
     <!-- Tools -->
-    <button class="tab{% if active_tab == 'tools' %} active{% endif %}"{%- if active_tab == "tools" %} id="tab-tools"{%- endif %} data-tab="tools">
+    <button class="tab{% if active_tab == 'tools' %} active{% endif %}" data-tab="tools">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
       <span data-i18n="nav.tools">{{ tr('nav.tools', 'Tools') }}</span>
     </button>
 
     <!-- NukeMap -->
-    <button class="tab{% if active_tab == 'nukemap' %} active{% endif %}"{%- if active_tab == "nukemap" %} id="tab-nukemap"{%- endif %} data-tab="nukemap">
+    <button class="tab{% if active_tab == 'nukemap' %} active{% endif %}" data-tab="nukemap">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v10l7 4"/></svg></span>
       <span>NukeMap</span>
     </button>
 
     <!-- VIPTrack -->
-    <button class="tab{% if active_tab == 'viptrack' %} active{% endif %}"{%- if active_tab == "viptrack" %} id="tab-viptrack"{%- endif %} data-tab="viptrack">
+    <button class="tab{% if active_tab == 'viptrack' %} active{% endif %}" data-tab="viptrack">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg></span>
       <span>VIPTrack</span>
     </button>
 
     <!-- Water Management -->
-    <button class="tab{% if active_tab == 'water-mgmt' %} active{% endif %}"{%- if active_tab == "water-mgmt" %} id="tab-water-mgmt"{%- endif %} data-tab="water-mgmt">
+    <button class="tab{% if active_tab == 'water-mgmt' %} active{% endif %}" data-tab="water-mgmt">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span>
       <span>Water</span>
     </button>
 
     <!-- Financial Preparedness -->
-    <button class="tab{% if active_tab == 'financial' %} active{% endif %}"{%- if active_tab == "financial" %} id="tab-financial"{%- endif %} data-tab="financial">
+    <button class="tab{% if active_tab == 'financial' %} active{% endif %}" data-tab="financial">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
       <span>Financial</span>
     </button>
 
     <!-- Vehicles -->
-    <button class="tab{% if active_tab == 'vehicles' %} active{% endif %}"{%- if active_tab == "vehicles" %} id="tab-vehicles"{%- endif %} data-tab="vehicles">
+    <button class="tab{% if active_tab == 'vehicles' %} active{% endif %}" data-tab="vehicles">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14v-5H5zm0 0v2m14-2v2"/><path d="M5 12l2-5h10l2 5"/><circle cx="7.5" cy="17" r="1"/><circle cx="16.5" cy="17" r="1"/></svg></span>
       <span>Vehicles</span>
     </button>
 
     <!-- Loadout / Bug-Out Bags -->
-    <button class="tab{% if active_tab == 'loadout' %} active{% endif %}"{%- if active_tab == "loadout" %} id="tab-loadout"{%- endif %} data-tab="loadout">
+    <button class="tab{% if active_tab == 'loadout' %} active{% endif %}" data-tab="loadout">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
       <span>Loadout</span>
     </button>
 
     <!-- Movement & Route Planning -->
-    <button class="tab{% if active_tab == 'movement-ops' %} active{% endif %}"{%- if active_tab == "movement-ops" %} id="tab-movement-ops"{%- endif %} data-tab="movement-ops">
+    <button class="tab{% if active_tab == 'movement-ops' %} active{% endif %}" data-tab="movement-ops">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 2 4 6 4 10c0 5.25 7 11.5 7.68 12.07a.5.5 0 0 0 .64 0C13 21.5 20 15.25 20 10c0-4-4-8-8-8z"/><path d="M9 10l2 2 4-4"/></svg></span>
       <span>Movement</span>
     </button>
 
     <!-- Tactical Communications -->
-    <button class="tab{% if active_tab == 'tactical-comms' %} active{% endif %}"{%- if active_tab == "tactical-comms" %} id="tab-tactical-comms"{%- endif %} data-tab="tactical-comms">
+    <button class="tab{% if active_tab == 'tactical-comms' %} active{% endif %}" data-tab="tactical-comms">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 2 5a2 2 0 0 1 2-2z"/><line x1="15" y1="2" x2="15" y2="8"/><line x1="18" y1="5" x2="12" y2="5"/></svg></span>
       <span>Tac Comms</span>
     </button>
 
     <!-- Timeline -->
-    <button class="tab{% if active_tab == 'timeline' %} active{% endif %}"{%- if active_tab == "timeline" %} id="tab-timeline"{%- endif %} data-tab="timeline">
+    <button class="tab{% if active_tab == 'timeline' %} active{% endif %}" data-tab="timeline">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
       <span>Timeline</span>
     </button>
 
     <!-- Threat Intel -->
-    <button class="tab{% if active_tab == 'threat-intel' %} active{% endif %}"{%- if active_tab == "threat-intel" %} id="tab-threat-intel"{%- endif %} data-tab="threat-intel">
+    <button class="tab{% if active_tab == 'threat-intel' %} active{% endif %}" data-tab="threat-intel">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
       <span>Threats</span>
     </button>
 
     <!-- Land Assessment & Property -->
-    <button class="tab{% if active_tab == 'land-assessment' %} active{% endif %}"{%- if active_tab == "land-assessment" %} id="tab-land-assessment"{%- endif %} data-tab="land-assessment">
+    <button class="tab{% if active_tab == 'land-assessment' %} active{% endif %}" data-tab="land-assessment">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg></span>
       <span>Land</span>
     </button>
 
     <!-- Medical Phase 2 -->
-    <button class="tab{% if active_tab == 'medical-phase2' %} active{% endif %}"{%- if active_tab == "medical-phase2" %} id="tab-medical-phase2"{%- endif %} data-tab="medical-phase2">
+    <button class="tab{% if active_tab == 'medical-phase2' %} active{% endif %}" data-tab="medical-phase2">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
       <span>Med+</span>
     </button>
 
     <!-- Training & Knowledge -->
-    <button class="tab{% if active_tab == 'training-knowledge' %} active{% endif %}"{%- if active_tab == "training-knowledge" %} id="tab-training-knowledge"{%- endif %} data-tab="training-knowledge">
+    <button class="tab{% if active_tab == 'training-knowledge' %} active{% endif %}" data-tab="training-knowledge">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
       <span>Training</span>
     </button>
 
     <!-- Group Operations -->
-    <button class="tab{% if active_tab == 'group-ops' %} active{% endif %}"{%- if active_tab == "group-ops" %} id="tab-group-ops"{%- endif %} data-tab="group-ops">
+    <button class="tab{% if active_tab == 'group-ops' %} active{% endif %}" data-tab="group-ops">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
       <span>Group Ops</span>
     </button>
 
     <!-- Security & OPSEC -->
-    <button class="tab{% if active_tab == 'security-opsec' %} active{% endif %}"{%- if active_tab == "security-opsec" %} id="tab-security-opsec"{%- endif %} data-tab="security-opsec">
+    <button class="tab{% if active_tab == 'security-opsec' %} active{% endif %}" data-tab="security-opsec">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
       <span>OPSEC</span>
     </button>
 
     <!-- Agriculture & Permaculture -->
-    <button class="tab{% if active_tab == 'agriculture' %} active{% endif %}"{%- if active_tab == "agriculture" %} id="tab-agriculture"{%- endif %} data-tab="agriculture">
+    <button class="tab{% if active_tab == 'agriculture' %} active{% endif %}" data-tab="agriculture">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-8 2-12"/><path d="M9.7 8.5c1.8-.8 3.7-.3 5 1.2"/><path d="M14 20c-3-2-5.5-5.5-2-10"/><path d="M12 20V10"/></svg></span>
       <span>Agriculture</span>
     </button>
 
     <!-- Disaster-Specific Modules -->
-    <button class="tab{% if active_tab == 'disaster-modules' %} active{% endif %}"{%- if active_tab == "disaster-modules" %} id="tab-disaster-modules"{%- endif %} data-tab="disaster-modules">
+    <button class="tab{% if active_tab == 'disaster-modules' %} active{% endif %}" data-tab="disaster-modules">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
       <span>Disasters</span>
     </button>
 
     <!-- Daily Living & Quality of Life -->
-    <button class="tab{% if active_tab == 'daily-living' %} active{% endif %}"{%- if active_tab == "daily-living" %} id="tab-daily-living"{%- endif %} data-tab="daily-living">
+    <button class="tab{% if active_tab == 'daily-living' %} active{% endif %}" data-tab="daily-living">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
       <span>Daily Living</span>
     </button>
 
     <!-- Interoperability & Data Exchange -->
-    <button class="tab{% if active_tab == 'interoperability' %} active{% endif %}"{%- if active_tab == "interoperability" %} id="tab-interoperability"{%- endif %} data-tab="interoperability">
+    <button class="tab{% if active_tab == 'interoperability' %} active{% endif %}" data-tab="interoperability">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg></span>
       <span>Import/Export</span>
     </button>
 
     <!-- Hunting, Foraging & Wild Food -->
-    <button class="tab{% if active_tab == 'hunting-foraging' %} active{% endif %}"{%- if active_tab == "hunting-foraging" %} id="tab-hunting-foraging"{%- endif %} data-tab="hunting-foraging">
+    <button class="tab{% if active_tab == 'hunting-foraging' %} active{% endif %}" data-tab="hunting-foraging">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 7v5c0 5.25 3.4 10.1 8 11.25C16.6 22.1 20 17.25 20 12V7l-8-5z"/><path d="M9 12l2 2 4-4"/></svg></span>
       <span>Wild Food</span>
     </button>
 
     <!-- Hardware, Sensors & Mesh -->
-    <button class="tab{% if active_tab == 'hardware-sensors' %} active{% endif %}"{%- if active_tab == "hardware-sensors" %} id="tab-hardware-sensors"{%- endif %} data-tab="hardware-sensors">
+    <button class="tab{% if active_tab == 'hardware-sensors' %} active{% endif %}" data-tab="hardware-sensors">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 1v3"/><path d="M15 1v3"/><path d="M9 20v3"/><path d="M15 20v3"/><path d="M20 9h3"/><path d="M20 14h3"/><path d="M1 9h3"/><path d="M1 14h3"/></svg></span>
       <span>Hardware</span>
     </button>
 
     <!-- Platform & Security -->
-    <button class="tab{% if active_tab == 'platform-security' %} active{% endif %}"{%- if active_tab == "platform-security" %} id="tab-platform-security"{%- endif %} data-tab="platform-security">
+    <button class="tab{% if active_tab == 'platform-security' %} active{% endif %}" data-tab="platform-security">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
       <span>Security</span>
     </button>
 
     <!-- Specialized Modules -->
-    <button class="tab{% if active_tab == 'specialized-modules' %} active{% endif %}"{%- if active_tab == "specialized-modules" %} id="tab-specialized-modules"{%- endif %} data-tab="specialized-modules">
+    <button class="tab{% if active_tab == 'specialized-modules' %} active{% endif %}" data-tab="specialized-modules">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
       <span>Specialized</span>
     </button>
@@ -200,19 +200,19 @@
       <span class="sidebar-group-copy">Reference, media, and working memory.</span>
     </div>
     <!-- Library -->
-    <button class="tab{% if active_tab == 'kiwix-library' %} active{% endif %}"{%- if active_tab == "kiwix-library" %} id="tab-kiwix-library"{%- endif %} data-tab="kiwix-library">
+    <button class="tab{% if active_tab == 'kiwix-library' %} active{% endif %}" data-tab="kiwix-library">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
       <span data-i18n="nav.library">{{ tr('nav.library', 'Library') }}</span>
     </button>
 
     <!-- Notes -->
-    <button class="tab{% if active_tab == 'notes' %} active{% endif %}"{%- if active_tab == "notes" %} id="tab-notes"{%- endif %} data-tab="notes">
+    <button class="tab{% if active_tab == 'notes' %} active{% endif %}" data-tab="notes">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
       <span data-i18n="nav.notes">{{ tr('nav.notes', 'Notes') }}</span>
     </button>
 
     <!-- Media -->
-    <button class="tab{% if active_tab == 'media' %} active{% endif %}"{%- if active_tab == "media" %} id="tab-media"{%- endif %} data-tab="media">
+    <button class="tab{% if active_tab == 'media' %} active{% endif %}" data-tab="media">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
       <span data-i18n="nav.media">{{ tr('nav.media', 'Media') }}</span>
       <span id="badge-media" class="tab-badge green is-hidden"></span>
@@ -223,7 +223,7 @@
       <span class="sidebar-group-copy">Drafting, synthesis, and copiloting.</span>
     </div>
     <!-- AI Assistant -->
-    <button class="tab{% if active_tab == 'ai-chat' %} active{% endif %}"{%- if active_tab == "ai-chat" %} id="tab-ai-chat"{%- endif %} data-tab="ai-chat">
+    <button class="tab{% if active_tab == 'ai-chat' %} active{% endif %}" data-tab="ai-chat">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
       <span data-i18n="nav.copilot">{{ tr('nav.copilot', 'Copilot') }}</span>
       <span id="badge-ai-chat" class="tab-badge is-hidden"></span>
@@ -234,17 +234,17 @@
       <span class="sidebar-group-copy">Tune, verify, and manage the platform.</span>
     </div>
     <!-- Diagnostics -->
-    <button class="tab{% if active_tab == 'benchmark' %} active{% endif %}"{%- if active_tab == "benchmark" %} id="tab-benchmark"{%- endif %} data-tab="benchmark">
+    <button class="tab{% if active_tab == 'benchmark' %} active{% endif %}" data-tab="benchmark">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
       <span data-i18n="nav.diagnostics">{{ tr('nav.diagnostics', 'Diagnostics') }}</span>
     </button>
     <!-- Data Foundation -->
-    <button class="tab{% if active_tab == 'data-foundation' %} active{% endif %}"{%- if active_tab == "data-foundation" %} id="tab-data-foundation"{%- endif %} data-tab="data-foundation">
+    <button class="tab{% if active_tab == 'data-foundation' %} active{% endif %}" data-tab="data-foundation">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>
       <span>Data Packs</span>
     </button>
     <!-- Settings -->
-    <button class="tab{% if active_tab == 'settings' %} active{% endif %}"{%- if active_tab == "settings" %} id="tab-settings"{%- endif %} data-tab="settings">
+    <button class="tab{% if active_tab == 'settings' %} active{% endif %}" data-tab="settings">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       <span data-i18n="nav.settings">{{ tr('nav.settings', 'Settings') }}</span>
       <span id="badge-settings" class="tab-badge is-hidden"></span>

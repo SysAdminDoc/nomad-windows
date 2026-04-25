@@ -10,7 +10,7 @@
     </div>
     <div class="command-palette-input-shell">
       <span class="command-palette-input-icon" aria-hidden="true">&#128269;</span>
-      <input id="command-palette-input" class="command-palette-input" type="search" name="command_palette_query" autocomplete="off" aria-label="Search commands and records" placeholder="Search commands, notes, supplies, contacts…">
+      <input id="command-palette-input" class="command-palette-input" type="search" name="command_palette_query" autocomplete="off" role="combobox" aria-label="Search commands and records" aria-autocomplete="list" aria-controls="command-palette-results" aria-expanded="false" placeholder="Search commands, notes, supplies, contacts…">
       <button class="btn btn-sm btn-ghost command-palette-shortcuts-btn" type="button" data-shell-action="toggle-shortcuts" aria-label="Open keyboard shortcuts help">?</button>
     </div>
     <div class="command-palette-meta">
@@ -31,7 +31,7 @@
         </div>
       </div>
     </div>
-    <div id="command-palette-results" class="command-palette-results" role="listbox" aria-label="Command palette results"></div>
+    <div id="command-palette-results" class="command-palette-results" role="listbox" aria-label="Command palette results" aria-live="polite" aria-busy="false"></div>
   </div>
 </div>
 

@@ -390,6 +390,18 @@ function runWorkspaceLeaveCallback(tabId) {
 /* ─── Lazy Tab Init ─── */
 const _tabInitialized = {};
 
+function syncSidebarTabState(activeTabId) {
+  document.querySelectorAll('.sidebar-nav .tab[data-tab]').forEach(t => {
+    const active = !!activeTabId && t.dataset.tab === activeTabId;
+    t.classList.toggle('active', active);
+    if (active) {
+      t.setAttribute('aria-current', 'page');
+    } else {
+      t.removeAttribute('aria-current');
+    }
+  });
+}
+
 function activateWorkspaceTab(tab) {
   const tabId = tab.dataset.tab;
   const previousTabId = window.NOMAD_ACTIVE_TAB || document.querySelector('.tab.active')?.dataset.tab || '';
@@ -399,9 +411,8 @@ function activateWorkspaceTab(tab) {
     return false;
   }
   if (previousTabId && previousTabId !== tabId) runWorkspaceLeaveCallback(previousTabId);
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  tab.classList.add('active');
+  syncSidebarTabState(tabId);
   tabContent.classList.add('active');
   window.NOMAD_ACTIVE_TAB = tabId;
   updateSidebarSubs();
@@ -935,6 +946,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     activateWorkspaceTab(tab);
   });
 });
+syncSidebarTabState(window.NOMAD_ACTIVE_TAB || document.querySelector('.sidebar-nav .tab.active')?.dataset.tab || '');
 
 /* ─── Toast: loaded from /static/js/toast.js ─── */
 

@@ -47,6 +47,7 @@ let _workspaceResumeSyncTimer = null;
 let _workspaceResumeSyncForce = false;
 let _workspaceResumeHasServerState = false;
 let _commandPalettePreviewActions = [];
+let _commandPaletteRenderSeq = 0;
 
 function humanizeWorkspaceSlug(value) {
   return String(value || '')
@@ -2651,7 +2652,7 @@ function buildCommandPaletteButton(item, index, query) {
   const title = highlightMatch(item.title || 'Untitled', query);
   const subtitle = highlightMatch(item.subtitle || '', query);
   return `
-    <button type="button" class="command-palette-item${index === _commandPaletteActiveIndex ? ' is-active' : ''}" data-command-palette-index="${index}" role="option" aria-selected="${index === _commandPaletteActiveIndex ? 'true' : 'false'}">
+    <button type="button" id="command-palette-option-${index}" class="command-palette-item${index === _commandPaletteActiveIndex ? ' is-active' : ''}" data-command-palette-index="${index}" role="option" aria-selected="${index === _commandPaletteActiveIndex ? 'true' : 'false'}" aria-current="${index === _commandPaletteActiveIndex ? 'true' : 'false'}">
       <span class="command-palette-item-icon" aria-hidden="true">${item.icon || '&#8250;'}</span>
       <span class="command-palette-item-body">
         <span class="command-palette-item-title">${title}</span>
@@ -2664,8 +2665,10 @@ function buildCommandPaletteButton(item, index, query) {
 
 function setCommandPaletteActive(index) {
   const items = Array.from(document.querySelectorAll('[data-command-palette-index]'));
+  const input = document.getElementById('command-palette-input');
   if (!items.length) {
     _commandPaletteActiveIndex = -1;
+    input?.removeAttribute('aria-activedescendant');
     return;
   }
   const safeIndex = Math.max(0, Math.min(index, items.length - 1));
@@ -2674,7 +2677,9 @@ function setCommandPaletteActive(index) {
     const active = itemIndex === safeIndex;
     item.classList.toggle('is-active', active);
     item.setAttribute('aria-selected', active ? 'true' : 'false');
+    item.setAttribute('aria-current', active ? 'true' : 'false');
   });
+  if (items[safeIndex]?.id) input?.setAttribute('aria-activedescendant', items[safeIndex].id);
   items[safeIndex]?.scrollIntoView({block: 'nearest'});
 }
 
@@ -2698,23 +2703,38 @@ function executeCommandPaletteItem(index) {
 async function renderCommandPalette(query = '') {
   const resultsEl = document.getElementById('command-palette-results');
   if (!resultsEl) return;
+  const renderSeq = ++_commandPaletteRenderSeq;
   const q = query.trim();
+  resultsEl.setAttribute('aria-busy', q ? 'true' : 'false');
   renderCommandPalettePreview(q);
   const commandMatches = getCommandPaletteMatches(q).map(item => ({...item, kind: 'command'}));
   let searchMatches = [];
   if (q) {
-    const payload = await fetchUnifiedSearchPayload(q);
-    searchMatches = flattenUnifiedSearchPayload(payload).map(item => ({
-      kind: 'search',
-      section: 'Search Results',
-      title: item.title || 'Untitled',
-      subtitle: `${UNIFIED_SEARCH_TYPE_LABELS[item.type] || item.type} · Open matching record`,
-      meta: UNIFIED_SEARCH_TYPE_LABELS[item.type] || item.type,
-      icon: UNIFIED_SEARCH_TYPE_ICONS[item.type] || '&#128269;',
-      resultType: item.type,
-      resultId: Number(item.id) || 0,
-    }));
+    try {
+      const payload = await fetchUnifiedSearchPayload(q);
+      if (renderSeq !== _commandPaletteRenderSeq) return;
+      searchMatches = flattenUnifiedSearchPayload(payload).map(item => ({
+        kind: 'search',
+        section: 'Search Results',
+        title: item.title || 'Untitled',
+        subtitle: `${UNIFIED_SEARCH_TYPE_LABELS[item.type] || item.type} · Open matching record`,
+        meta: UNIFIED_SEARCH_TYPE_LABELS[item.type] || item.type,
+        icon: UNIFIED_SEARCH_TYPE_ICONS[item.type] || '&#128269;',
+        resultType: item.type,
+        resultId: Number(item.id) || 0,
+      }));
+    } catch (error) {
+      if (renderSeq !== _commandPaletteRenderSeq) return;
+      resultsEl.setAttribute('aria-busy', 'false');
+      resultsEl.innerHTML = '<div class="command-palette-empty"><strong>Search is unavailable.</strong><span>Commands still work. Try again once local records finish responding.</span></div>';
+      _commandPaletteItems = [];
+      _commandPaletteActiveIndex = -1;
+      document.getElementById('command-palette-input')?.removeAttribute('aria-activedescendant');
+      return;
+    }
   }
+  if (renderSeq !== _commandPaletteRenderSeq) return;
+  resultsEl.setAttribute('aria-busy', 'false');
 
   const sections = [];
   _commandPaletteItems = [];
@@ -2754,6 +2774,7 @@ async function renderCommandPalette(query = '') {
   if (!sections.length) {
     resultsEl.innerHTML = `<div class="command-palette-empty">No matches for <strong>${escapeHtml(q)}</strong>. Try a workspace name, a preparedness lane, or a record like a note, contact, or checklist.</div>`;
     _commandPaletteActiveIndex = -1;
+    document.getElementById('command-palette-input')?.removeAttribute('aria-activedescendant');
     return;
   }
 
@@ -2774,6 +2795,7 @@ function toggleCommandPalette(force) {
     }
     _commandPaletteReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setShellVisibility(overlay, true);
+    input.setAttribute('aria-expanded', 'true');
     clearTimeout(_commandPaletteTimer);
     if (input.value) {
       renderCommandPalette(input.value);
@@ -2786,6 +2808,11 @@ function toggleCommandPalette(force) {
     return;
   }
   setShellVisibility(overlay, false);
+  _commandPaletteRenderSeq++;
+  clearTimeout(_commandPaletteTimer);
+  document.getElementById('command-palette-results')?.setAttribute('aria-busy', 'false');
+  input.setAttribute('aria-expanded', 'false');
+  input.removeAttribute('aria-activedescendant');
   _commandPaletteItems = [];
   _commandPaletteActiveIndex = -1;
   _commandPalettePreviewActions = [];

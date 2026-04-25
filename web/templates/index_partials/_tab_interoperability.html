@@ -498,7 +498,7 @@
   /* ── Helpers ─────────────────────────────────────────── */
   var el  = function(id) { return document.getElementById(id); };
   var val = function(id) { var e = document.getElementById(id); return e ? e.value : ''; };
-  var api = function(url, opts) { return fetch(url, opts).then(function(r) { return r.json(); }); };
+  var api = function(url, opts) { return window.apiJson ? window.apiJson(url, opts) : fetch(url, opts).then(function(r) { return r.json(); }); };
   var post = function(url, body) { return api(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); };
   var del = function(url) { return api(url, {method:'DELETE'}); };
   function toast(msg) { if (window.showToast) window.showToast(msg); }

@@ -648,7 +648,7 @@
     const parsed=parseFloat(raw);
     return Number.isFinite(parsed)?parsed:(def??0);
   };
-  const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
+  const api=(url,opts)=>window.apiJson?window.apiJson(url,opts):fetch(url,opts).then(r=>r.json());
   function toast(msg){if(window.showToast)window.showToast(msg);}
   const esc=s=>(window.escapeHtml?window.escapeHtml(s):String(s==null?'':s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')

@@ -34,4 +34,24 @@ describe('source polish guardrails', () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it('keeps tab-local JSON helpers on the shared API client', () => {
+    const offenders = [];
+    const rawHelperPatterns = [
+      /const api\s*=\s*\(url,\s*opts\)\s*=>\s*fetch\(url,\s*opts\)\.then\(r\s*=>\s*r\.json\(\)\)/,
+      /const api=\(url,opts\)=>fetch\(url,opts\)\.then\(r=>r\.json\(\)\)/,
+      /var api\s*=\s*function\(url,\s*opts\)\s*\{\s*return fetch\(url,\s*opts\)\.then/,
+    ];
+
+    for (const root of SCAN_ROOTS) {
+      for (const file of walk(join(ROOT, root))) {
+        const text = readFileSync(file, 'utf8');
+        if (rawHelperPatterns.some(pattern => pattern.test(text))) {
+          offenders.push(relative(ROOT, file));
+        }
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
 });

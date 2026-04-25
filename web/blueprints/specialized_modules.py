@@ -1477,6 +1477,28 @@ def api_flights_list():
     return jsonify([_row(r, json_arrays=FLIGHT_JSON_ARRAYS) for r in rows])
 
 
+@specialized_modules_bp.route('/drones/<int:did>/flights')
+def api_drones_flights_nested(did):
+    """Nested alias for `/flights?drone_id=<did>`.
+
+    The frontend template (_tab_specialized_modules.html) constructs this
+    nested path directly (`/drones/<id>/flights`), so expose it as an
+    alias that routes through the existing filter logic. Added during the
+    V8-06 hardening pass on 2026-04-24.
+    """
+    limit, offset = _paginate()
+    with db_session() as db:
+        rows = db.execute(
+            '''SELECT df.*, d.name as drone_name
+               FROM drone_flights df
+               LEFT JOIN drones d ON df.drone_id = d.id
+               WHERE df.drone_id = ?
+               ORDER BY df.created_at DESC LIMIT ? OFFSET ?''',
+            (did, limit, offset)
+        ).fetchall()
+    return jsonify([_row(r, json_arrays=FLIGHT_JSON_ARRAYS) for r in rows])
+
+
 @specialized_modules_bp.route('/flights', methods=['POST'])
 def api_flights_create():
     data = request.get_json() or {}
@@ -1614,6 +1636,18 @@ def api_fitness_list():
 @specialized_modules_bp.route('/fitness', methods=['POST'])
 def api_fitness_create():
     data = request.get_json() or {}
+    person = (data.get('person') or '').strip()
+    if not person:
+        return jsonify({'error': 'person is required'}), 400
+    # Accept frontend synonym aliases (the _tab_specialized_modules.html
+    # template sends these short names; the DB columns are canonical).
+    # Precedence: canonical field wins if both are present.
+    exercise_type = data.get('exercise_type', data.get('workout_type', 'cardio'))
+    duration_min = data.get('duration_min', data.get('duration', 0))
+    distance_km = data.get('distance_km', data.get('distance', 0))
+    calories_burned = data.get('calories_burned', data.get('calories', 0))
+    heart_rate_avg = data.get('heart_rate_avg', data.get('heart_rate', 0))
+    perceived_exertion = data.get('perceived_exertion', data.get('exertion', 5))
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO fitness_logs
@@ -1621,21 +1655,19 @@ def api_fitness_create():
                 distance_km, reps, sets, weight_lbs, calories_burned,
                 heart_rate_avg, heart_rate_max, perceived_exertion, notes)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-            (data.get('person', ''),
+            (person,
              data.get('date', datetime.utcnow().strftime('%Y-%m-%d')),
-             data.get('exercise_type', 'cardio'),
-             data.get('activity', ''), data.get('duration_min', 0),
-             data.get('distance_km', 0), data.get('reps', 0),
-             data.get('sets', 0), data.get('weight_lbs', 0),
-             data.get('calories_burned', 0),
-             data.get('heart_rate_avg', 0), data.get('heart_rate_max', 0),
-             data.get('perceived_exertion', 5), data.get('notes', ''))
+             exercise_type, data.get('activity', ''), duration_min,
+             distance_km, data.get('reps', 0), data.get('sets', 0),
+             data.get('weight_lbs', 0), calories_burned,
+             heart_rate_avg, data.get('heart_rate_max', 0),
+             perceived_exertion, data.get('notes', ''))
         )
         db.commit()
         row = db.execute('SELECT * FROM fitness_logs WHERE id = ?',
                          (cur.lastrowid,)).fetchone()
     log_activity('fitness_logged', service='specialized',
-                 detail=f'{data.get("person", "unknown")}: {data.get("activity", data.get("exercise_type", ""))}')
+                 detail=f'{person}: {data.get("activity", exercise_type)}')
     return jsonify(dict(row)), 201
 
 
@@ -1658,6 +1690,40 @@ def api_fitness_delete(fid):
         db.commit()
     log_activity('fitness_deleted', service='specialized', detail=f'log {fid}')
     return jsonify({'deleted': True})
+
+
+@specialized_modules_bp.route('/fitness/weekly')
+def api_fitness_weekly():
+    """Per-person weekly fitness summary (frontend alias path).
+
+    The `_tab_specialized_modules.html` template fetches
+    `/fitness/weekly?person=<X>` and consumes
+    `{workouts, total_duration, total_calories, total_distance, avg_exertion}`.
+    Compute that shape directly from fitness_logs for the last 7 days.
+    Added during the V8-06 hardening pass on 2026-04-24.
+    """
+    person = (request.args.get('person') or '').strip()
+    if not person:
+        return jsonify({'error': 'person is required'}), 400
+    seven_days_ago = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d')
+    with db_session() as db:
+        row = db.execute(
+            '''SELECT COUNT(*) as workouts,
+                      COALESCE(SUM(duration_min), 0) as total_duration,
+                      COALESCE(SUM(calories_burned), 0) as total_calories,
+                      COALESCE(SUM(distance_km), 0) as total_distance,
+                      AVG(perceived_exertion) as avg_exertion
+               FROM fitness_logs
+               WHERE person = ? AND date >= ?''',
+            (person, seven_days_ago)
+        ).fetchone()
+    data = dict(row) if row else {}
+    # Sqlite may return None from AVG when no rows match — normalize to 0.
+    if data.get('avg_exertion') is None:
+        data['avg_exertion'] = 0
+    data['week_start'] = seven_days_ago
+    data['person'] = person
+    return jsonify(data)
 
 
 @specialized_modules_bp.route('/fitness/stats')

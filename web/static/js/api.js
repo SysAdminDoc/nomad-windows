@@ -129,6 +129,39 @@ async function apiFetch(url, options = {}) {
     }
 }
 
+function _apiRecoveryCopy(error) {
+    if (error?.network || error?.status === 0) {
+        return 'Check that NOMAD is still running locally, then try again.';
+    }
+    if (error?.status === 401 || error?.status === 403) {
+        return 'Refresh access or unlock the workspace, then retry.';
+    }
+    return 'Review the message and retry when ready.';
+}
+
+function notifyApiError(action, error, options = {}) {
+    if (options.silent) return;
+    const label = action || 'Request failed';
+    const recovery = options.recovery || _apiRecoveryCopy(error);
+    if (typeof window.toastError === 'function') {
+        window.toastError(label, error, { recovery });
+        return;
+    }
+    if (typeof window.showToast === 'function') {
+        const detail = error?.data?.error || error?.message || 'The request could not be completed.';
+        window.showToast(`${label}. ${detail}`, 'error');
+    }
+}
+
+async function apiJson(url, options = {}, action = 'Request failed', notifyOptions = {}) {
+    try {
+        return await apiFetch(url, options);
+    } catch (error) {
+        notifyApiError(action, error, notifyOptions);
+        throw error;
+    }
+}
+
 function apiPost(url, data) {
     return apiFetch(url, { method: 'POST', body: JSON.stringify(data) });
 }
@@ -147,7 +180,9 @@ function apiUpload(url, formData) {
 
 // Attach to window for backward compatibility
 window.apiFetch = apiFetch;
+window.apiJson = apiJson;
 window.apiPost = apiPost;
 window.apiPut = apiPut;
 window.apiDelete = apiDelete;
 window.apiUpload = apiUpload;
+window.notifyApiError = notifyApiError;

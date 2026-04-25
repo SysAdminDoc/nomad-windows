@@ -298,7 +298,7 @@
   });
 
   const $=id=>document.getElementById(id);
-  const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
+  const api=(url,opts)=>window.apiJson?window.apiJson(url,opts):fetch(url,opts).then(r=>r.json());
   const val=id=>($(id)||{}).value||'';
   const esc = typeof escapeHtml === 'function' ? escapeHtml : s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const numVal=(id,def)=>{

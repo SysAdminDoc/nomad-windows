@@ -1,8 +1,8 @@
 # Project N.O.M.A.D. — Roadmap
 
 > **Baseline:** v7.44.0 (~310 tables, 2,000+ routes, 77 blueprints)
-> **Current:** v7.61.0 (~326 tables, 2,100+ routes, 78 blueprints, `seeds/` package — 13 content modules shipped; V8 roadmap 15/24 Done)
-> **Updated:** 2026-04-24
+> **Current:** v7.65.0+ (~326 tables, 2,100+ routes, 78 blueprints, `seeds/` package — 13 content modules shipped; V8 roadmap 19/24 Done)
+> **Updated:** 2026-04-25
 > **Prior feature backlog:** 134/187 items complete (72%), 8 deferred (4%), 45 internal refactoring remaining (24%)
 
 ---
@@ -132,6 +132,13 @@ Single-session run continued through to **full H-17 closure**. Auto-engaged Larg
 **V8-04 outcome**: fully closed. H-17 fully closed. ~260 innerHTML assignments converted to the defense-in-depth `html\`\`` pattern; numerous real XSS holes closed across DB-sourced string interpolations that previously lacked `esc()` coverage.
 
 **V8 roadmap advances**: 18/24 → **19/24 Done**. Remaining 4 Open: V8-02 (progressive disclosure), V8-03 (lazy tab loading), V8-06 (blueprint test coverage), V8-08 (split db.py). 1 Blocked: V8-21 (macOS signing).
+
+### Implementation pass (2026-04-25) — API reliability polish
+
+- **F-9 closed.** `apiFetch()` already normalized network-level failures, but 15 tab-local JSON helpers still used raw `fetch(url, opts).then(r => r.json())`, bypassing shared CSRF, timeout, empty-body, and error normalization. Added `apiJson()` / `notifyApiError()` and moved the remaining tab-local helpers onto the shared client.
+- **Product polish:** tab-local request failures now use the managed `toastError()` recovery copy instead of silent console-only failures or raw unhandled rejections.
+- **Runtime consistency:** `safeFetch()` now delegates to `window.apiFetch` when available and keeps a timer cleanup fallback for pre-client execution.
+- **Regression coverage:** `tests/js/api-client.test.js` pins network normalization, toast recovery, and CSRF on mutating helper calls. `tests/js/source-polish.test.js` now blocks reintroducing raw tab-local JSON helpers.
 
 ### Factory-loop final state (post-iter-3)
 
@@ -691,7 +698,7 @@ Findings from deep inward codebase audits — issues that no competitor comparis
 | F-6 | **CSS design token adoption incomplete** — some files still use raw transition durations (`0.2s`/`0.3s`) instead of `var(--duration-fast)`/`var(--duration-normal)`, and raw font-family values instead of `var(--font-data)`. | Frontend | Low |
 | F-7 | **Event listener accumulation risk** — situation room adds map/card event listeners on tab switch without deduplication guards. Re-opening the tab may accumulate redundant listeners. | Frontend | Low |
 | F-8 | **Accessibility gaps** — status dots rely on color alone (no icon/text pairing), `tone-muted`/`tone-dim` may not meet WCAG AA contrast on dark backgrounds, map interactions lack keyboard alternatives. | Frontend | Medium |
-| F-9 | **`apiFetch()` doesn't catch network-level errors** — when `fetch()` throws `TypeError` (offline, DNS failure), `apiFetch` propagates it. Callers without try-catch get unhandled promise rejections. | Frontend | High |
+| F-9 | ~~**Shared API network-error handling gap**~~ — **Done 2026-04-25.** `apiFetch()` normalizes network-level failures; `apiJson()` adds managed `toastError()` recovery copy; the remaining 15 tab-local JSON helpers now route through the shared API client instead of raw `fetch(url, opts).then(r => r.json())`. | Frontend | High |
 | F-10 | **AI chat streaming doesn't cancel previous stream on new message** — if user sends while previous response is still streaming, both streams write to DOM simultaneously, producing garbled output. No AbortController cancellation. | Frontend | High |
 | F-11 | **Sitroom errors swallowed silently** — `fetchSitroomData()`, `_loadBreakingNews()`, `_loadOREFAlerts()` log to console but show no toast or UI indicator. Users see stale/empty cards with no explanation. | Frontend | Medium |
 | F-12 | **SSE reconnect backoff doesn't increase on flap** — `_reconnectDelay` resets to 1000ms after every connection. Rapid connect/disconnect cycles flood the server. | Frontend | Medium |

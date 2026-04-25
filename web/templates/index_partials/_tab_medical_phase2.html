@@ -422,7 +422,7 @@
   });
 
   const $=id=>document.getElementById(id);
-  const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
+  const api=(url,opts)=>window.apiJson?window.apiJson(url,opts):fetch(url,opts).then(r=>r.json());
   const val=id=>($(id)||{}).value||'';
   const numVal=(id,def)=>{
     const parsed = parseFloat(val(id));

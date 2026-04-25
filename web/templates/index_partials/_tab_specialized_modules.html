@@ -769,28 +769,30 @@
   window.smLoadCaches = function(){
     api(API + '/caches').then(items => {
       const list = el('sm-cache-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No supply caches yet', 'Add the first cache above to keep location, condition, and check cadence visible.'); return; }
-      list.innerHTML = items.map(c => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No supply caches yet', 'Add the first cache above to keep location, condition, and check cadence visible.')); return; }
+      const rows = items.map(c => {
         const condClass = 'sm-cond-' + (c.condition || 'good');
-        return `<div class="sm-list-item">
+        const id = Number(c.id) || 0;
+        return html`<div class="sm-list-item">
           <div class="sm-field-grow">
             <span class="sm-badge sm-type-${c.cache_type || c.type || 'supply'}">${(c.cache_type || c.type || 'supply').replace(/_/g,' ')}</span>
             <strong class="sm-tag-spacer">${c.name}</strong>
-            <span class="sm-badge sm-sec-${c.security_level || 'basic'} sm-tag-spacer">${(c.security_level || 'basic')}</span>
+            <span class="sm-badge sm-sec-${c.security_level || 'basic'} sm-tag-spacer">${c.security_level || 'basic'}</span>
             <br><small class="tone-muted">${c.location || 'Unknown'} | <span class="${condClass}">${c.condition || 'good'}</span> | Checked: ${fmtDate(c.last_checked)}</small>
           </div>
-          <div class="sm-action-cluster">${smDeleteButton('smDeleteCache(' + c.id + ')', c.name || 'supply cache')}</div>
+          <div class="sm-action-cluster">${trustedHTML(smDeleteButton('smDeleteCache(' + id + ')', c.name || 'supply cache'))}</div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
     });
     // Summary
     api(API + '/caches/summary').then(data => {
       const box = el('sm-cache-summary');
-      if(!data){ box.innerHTML = ''; return; }
-      box.innerHTML = `
+      if(!data){ safeSetHTML(box, ''); return; }
+      safeSetHTML(box, html`
         <div class="sm-summary-card"><div class="sm-summary-val">${data.total || 0}</div><div class="sm-summary-label">Caches</div></div>
         <div class="sm-summary-card"><div class="sm-summary-val">${data.by_type ? Object.keys(data.by_type).length : 0}</div><div class="sm-summary-label">Types</div></div>
-        <div class="sm-summary-card"><div class="sm-summary-val">${data.needs_check || 0}</div><div class="sm-summary-label">Need Check</div></div>`;
+        <div class="sm-summary-card"><div class="sm-summary-val">${data.needs_check || 0}</div><div class="sm-summary-label">Need Check</div></div>`);
     }).catch(() => {});
   };
 
@@ -814,9 +816,9 @@
   window.smLoadProcurement = function(){
     api(API + '/procurement').then(items => {
       const list = el('sm-procure-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No procurement lists yet', 'Create a list above to stage buying priorities, budget limits, and item counts.'); return; }
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No procurement lists yet', 'Create a list above to stage buying priorities, budget limits, and item counts.')); return; }
       let totalBudget = 0, totalSpent = 0;
-      list.innerHTML = items.map(p => {
+      const rows = items.map(p => {
         const budget = p.budget || 0;
         const spent = p.spent || 0;
         totalBudget += budget;
@@ -824,27 +826,30 @@
         const pct = budget > 0 ? Math.round(spent / budget * 100) : 0;
         const barColor = pct >= 90 ? 'var(--sm-red)' : pct >= 70 ? 'var(--sm-yellow)' : 'var(--sm-green)';
         const itemCount = p.items_count || (p.items ? (typeof p.items === 'string' ? p.items.split(',').length : p.items.length) : 0);
-        return `<div class="sm-list-item">
+        const id = Number(p.id) || 0;
+        return html`<div class="sm-list-item">
           <div class="sm-field-grow">
-            <span class="sm-badge sm-pri-${p.priority || 'medium'}">${(p.priority || 'medium')}</span>
+            <span class="sm-badge sm-pri-${p.priority || 'medium'}">${p.priority || 'medium'}</span>
             <strong class="sm-tag-spacer">${p.name}</strong>
             <span class="sm-meta-text-lg">${itemCount} items</span>
             <span class="sm-badge sm-tag-muted">${p.status || 'active'}</span>
             <div style="margin-top:6px">
               <small class="tone-muted">$${spent.toLocaleString()} / $${budget.toLocaleString()}</small>
-              <div class="sm-progress"><div class="sm-progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+              <div class="sm-progress"><div class="sm-progress-fill" style="--sm-proc-w:${Math.min(pct,100)}%;--sm-proc-tone:${barColor};width:var(--sm-proc-w);background:var(--sm-proc-tone)"></div></div>
             </div>
           </div>
-          <div class="sm-action-cluster">${smDeleteButton('smDeleteProcurement(' + p.id + ')', p.name || 'procurement list')}</div>
+          <div class="sm-action-cluster">${trustedHTML(smDeleteButton('smDeleteProcurement(' + id + ')', p.name || 'procurement list'))}</div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
       // Budget summary
       const budgetBox = el('sm-procure-budget');
       const remaining = totalBudget - totalSpent;
-      budgetBox.innerHTML = `
+      const remTone = remaining < 0 ? 'var(--sm-red)' : 'var(--sm-green)';
+      safeSetHTML(budgetBox, html`
         <div class="sm-summary-card"><div class="sm-summary-val">$${totalBudget.toLocaleString()}</div><div class="sm-summary-label">Total Budget</div></div>
         <div class="sm-summary-card"><div class="sm-summary-val">$${totalSpent.toLocaleString()}</div><div class="sm-summary-label">Spent</div></div>
-        <div class="sm-summary-card"><div class="sm-summary-val" style="color:${remaining<0?'var(--sm-red)':'var(--sm-green)'}">$${remaining.toLocaleString()}</div><div class="sm-summary-label">Remaining</div></div>`;
+        <div class="sm-summary-card"><div class="sm-summary-val" style="--sm-rem-tone:${remTone};color:var(--sm-rem-tone)">$${remaining.toLocaleString()}</div><div class="sm-summary-label">Remaining</div></div>`);
     });
   };
 
@@ -868,23 +873,27 @@
   window.smLoadPets = function(){
     api(API + '/pets').then(items => {
       const list = el('sm-pet-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No pets tracked yet', 'Add animals above to keep food runway, care notes, and readiness gaps in view.'); return; }
-      list.innerHTML = items.map(p => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No pets tracked yet', 'Add animals above to keep food runway, care notes, and readiness gaps in view.')); return; }
+      const rows = items.map(p => {
         const foodDays = p.food_supply_days || 0;
         const lowFood = foodDays < 7;
         const icon = speciesIcons[p.species] || speciesIcons.other;
-        return `<div class="sm-card ${lowFood ? 'sm-low-supply' : ''}">
+        const id = Number(p.id) || 0;
+        const foodBg = lowFood ? 'rgba(239,68,68,.2)' : 'rgba(34,197,94,.2)';
+        const foodFg = lowFood ? '#ef4444' : '#22c55e';
+        return html`<div class="sm-card ${lowFood ? 'sm-low-supply' : ''}">
           <div class="sm-row-header">
             <div>
-              <span style="font-size:1.5rem;margin-right:6px">${icon}</span>
+              <span style="font-size:1.5rem;margin-right:6px">${trustedHTML(icon)}</span>
               <strong class="sm-text-strong">${p.name}</strong>
               <br><small class="tone-muted">${p.breed || p.species || ''} | Age: ${p.age || '?'}y | ${p.weight || '?'} lbs</small>
-              <br><span class="sm-badge" style="background:${lowFood ? 'rgba(239,68,68,.2)' : 'rgba(34,197,94,.2)'};color:${lowFood ? '#ef4444' : '#22c55e'}">${foodDays}d food</span>
+              <br><span class="sm-badge" style="--sm-food-bg:${foodBg};--sm-food-fg:${foodFg};background:var(--sm-food-bg);color:var(--sm-food-fg)">${foodDays}d food</span>
             </div>
-            ${smDeleteButton('smDeletePet(' + p.id + ')', p.name || 'pet record')}
+            ${trustedHTML(smDeleteButton('smDeletePet(' + id + ')', p.name || 'pet record'))}
           </div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
     });
   };
 
@@ -909,18 +918,20 @@
   window.smLoadYouthPrograms = function(){
     api(API + '/youth-programs').then(items => {
       const list = el('sm-youth-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No youth programs yet', 'Create a program above to track instruction, age range, and readiness-focused learning.'); return; }
-      list.innerHTML = items.map(y => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No youth programs yet', 'Create a program above to track instruction, age range, and readiness-focused learning.')); return; }
+      const rows = items.map(y => {
         const stColor = y.status === 'active' ? '#22c55e' : y.status === 'planned' ? '#3b82f6' : y.status === 'completed' ? '#6b7280' : '#ef4444';
-        return `<div class="sm-list-item">
+        const id = Number(y.id) || 0;
+        return html`<div class="sm-list-item">
           <div class="sm-field-grow">
             <strong>${y.name}</strong>
-            <span class="sm-badge" style="background:${stColor}22;color:${stColor};margin-left:6px">${y.status || 'active'}</span>
+            <span class="sm-badge" style="--sm-youth-bg:${stColor}22;--sm-youth-fg:${stColor};background:var(--sm-youth-bg);color:var(--sm-youth-fg);margin-left:6px">${y.status || 'active'}</span>
             <br><small class="tone-muted">${(y.program_type||y.type||'').replace(/_/g,' ')} | Ages: ${y.age_range || '?'} | Instructor: ${y.instructor || 'TBD'}</small>
           </div>
-          ${smDeleteButton('smDeleteYouthProgram(' + y.id + ')', y.name || 'youth program')}
+          ${trustedHTML(smDeleteButton('smDeleteYouthProgram(' + id + ')', y.name || 'youth program'))}
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
     });
   };
 
@@ -944,18 +955,20 @@
   window.smLoadEOLPlans = function(){
     api(API + '/eol-plans').then(items => {
       const list = el('sm-eol-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No end-of-life plans yet', 'Add directive records here so review status and update recency are easy to check.'); return; }
-      list.innerHTML = items.map(e => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No end-of-life plans yet', 'Add directive records here so review status and update recency are easy to check.')); return; }
+      const rows = items.map(e => {
         const stColor = e.status === 'complete' ? '#22c55e' : e.status === 'needs_review' ? '#f59e0b' : '#6b7280';
-        return `<div class="sm-list-item">
+        const id = Number(e.id) || 0;
+        return html`<div class="sm-list-item">
           <div class="sm-field-grow">
             <strong>${e.person_name || e.person || ''}</strong>
-            <span class="sm-badge" style="background:${stColor}22;color:${stColor};margin-left:6px">${(e.status || 'draft').replace(/_/g,' ')}</span>
+            <span class="sm-badge" style="--sm-eol-bg:${stColor}22;--sm-eol-fg:${stColor};background:var(--sm-eol-bg);color:var(--sm-eol-fg);margin-left:6px">${(e.status || 'draft').replace(/_/g,' ')}</span>
             <br><small class="tone-muted">Updated: ${fmtDate(e.updated_at || e.last_updated)}</small>
           </div>
-          ${smDeleteButton('smDeleteEOLPlan(' + e.id + ')', e.person_name || e.person || 'end-of-life plan')}
+          ${trustedHTML(smDeleteButton('smDeleteEOLPlan(' + id + ')', e.person_name || e.person || 'end-of-life plan'))}
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
     });
   };
 
@@ -986,37 +999,39 @@
 
     api(url).then(items => {
       const list = el('sm-intel-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No intelligence reports yet', 'Submit the first report above to start building searchable source history and actionable context.'); return; }
-      list.innerHTML = `<table class="sm-table"><thead><tr>
-        <th>Title</th><th>Type</th><th>Source Rel.</th><th>Classification</th><th>Date</th><th>Status</th><th></th>
-      </tr></thead><tbody>${items.map(i => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No intelligence reports yet', 'Submit the first report above to start building searchable source history and actionable context.')); return; }
+      const rows = items.map(i => {
         const typeClass = 'sm-intel-' + (i.intel_type || 'osint');
         const classClass = 'sm-class-' + (i.classification || 'unclassified');
-        return `<tr>
-          <td><strong>${i.title}</strong>${i.actionable ? ' <span style="color:var(--sm-accent);font-size:.72rem">[ACTIONABLE]</span>' : ''}
-            ${i.pir ? '<br><small class="tone-muted">PIR: ' + i.pir + '</small>' : ''}</td>
+        const id = Number(i.id) || 0;
+        const actionable = i.actionable ? html` <span style="color:var(--sm-accent);font-size:.72rem">[ACTIONABLE]</span>` : '';
+        const pir = i.pir ? html`<br><small class="tone-muted">PIR: ${i.pir}</small>` : '';
+        return html`<tr>
+          <td><strong>${i.title}</strong>${actionable}
+            ${pir}</td>
           <td><span class="sm-badge ${typeClass}">${(i.intel_type || '').toUpperCase()}</span></td>
           <td style="text-align:center;font-weight:600">${i.reliability || '?'}</td>
           <td><span class="sm-badge ${classClass}">${(i.classification || 'unclassified').replace(/_/g,' ')}</span></td>
           <td>${fmtDate(i.created_at || i.date)}</td>
           <td>${i.status || 'active'}</td>
-          <td class="sm-action-cluster">${smDeleteButton('smDeleteIntel(' + i.id + ')', i.title || 'intelligence report')}</td>
+          <td class="sm-action-cluster">${trustedHTML(smDeleteButton('smDeleteIntel(' + id + ')', i.title || 'intelligence report'))}</td>
         </tr>`;
-      }).join('')}</tbody></table>`;
+      });
+      safeSetHTML(list, '<table class="sm-table"><thead><tr><th>Title</th><th>Type</th><th>Source Rel.</th><th>Classification</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
 
     // Summary cards
     api(API + '/intel/summary').then(data => {
       const box = el('sm-intel-summary');
-      if(!data){ box.innerHTML = ''; return; }
+      if(!data){ safeSetHTML(box, ''); return; }
       const byType = data.by_type || {};
       const typeCards = Object.keys(byType).map(t =>
-        `<div class="sm-summary-card"><div class="sm-summary-val">${byType[t]}</div><div class="sm-summary-label">${t.toUpperCase()}</div></div>`
+        html`<div class="sm-summary-card"><div class="sm-summary-val">${byType[t]}</div><div class="sm-summary-label">${t.toUpperCase()}</div></div>`
       ).join('');
-      box.innerHTML = `
+      safeSetHTML(box, html`
         <div class="sm-summary-card"><div class="sm-summary-val">${data.total || 0}</div><div class="sm-summary-label">Reports</div></div>
         <div class="sm-summary-card"><div class="sm-summary-val">${data.actionable || 0}</div><div class="sm-summary-label">Actionable</div></div>
-        ${typeCards}`;
+        ${trustedHTML(typeCards)}`);
     }).catch(() => {});
   };
 
@@ -1047,23 +1062,25 @@
   window.smLoadFabProjects = function(){
     api(API + '/fabrication').then(items => {
       const list = el('sm-fab-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No fabrication projects yet', 'Add a project above to track material, build time, and progress through completion.'); return; }
-      list.innerHTML = items.map(f => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No fabrication projects yet', 'Add a project above to track material, build time, and progress through completion.')); return; }
+      const rows = items.map(f => {
         const typeClass = 'sm-fab-' + (f.fab_type || f.type || '3d_print');
         const stClass = 'sm-fabst-' + (f.status || 'planned');
-        return `<div class="sm-card">
+        const id = Number(f.id) || 0;
+        return html`<div class="sm-card">
           <div class="sm-row-header">
             <div>
               <span class="sm-badge ${typeClass}">${(f.fab_type || f.type || '3d_print').replace(/_/g,' ')}</span>
               <strong class="sm-tag-spacer">${f.name}</strong>
               <span class="sm-badge ${stClass} sm-tag-spacer">${(f.status || 'planned').replace(/_/g,' ')}</span>
               <br><small class="tone-muted">Material: ${f.material || 'N/A'} | Est: ${f.estimated_time || '?'}h</small>
-              ${f.notes ? '<br><small class="tone-muted">' + f.notes + '</small>' : ''}
+              ${f.notes ? html`<br><small class="tone-muted">${f.notes}</small>` : ''}
             </div>
-            ${smDeleteButton('smDeleteFabProject(' + f.id + ')', f.name || 'fabrication project')}
+            ${trustedHTML(smDeleteButton('smDeleteFabProject(' + id + ')', f.name || 'fabrication project'))}
           </div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
     });
   };
 
@@ -1087,18 +1104,19 @@
   window.smLoadBadges = function(){
     api(API + '/badges').then(items => {
       const grid = el('sm-badge-grid');
-      if(!items || !items.length){ grid.innerHTML = smEmpty('No badges defined yet', 'Seed defaults or add the first badge above to create a lightweight recognition system.'); return; }
-      grid.innerHTML = items.map(b => `<div class="sm-badge-tile">
+      if(!items || !items.length){ safeSetHTML(grid, smEmpty('No badges defined yet', 'Seed defaults or add the first badge above to create a lightweight recognition system.')); return; }
+      const tiles = items.map(b => html`<div class="sm-badge-tile">
         <div class="icon">${b.icon || '?'}</div>
         <div class="name">${b.name}</div>
         <div><span class="sm-badge sm-rarity-${b.rarity || 'common'}">${b.rarity || 'common'}</span></div>
         <div class="pts">${b.points || 0} pts</div>
         <div style="margin-top:4px;font-size:.72rem;color:var(--text-secondary,#aaa)">${b.description || ''}</div>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(grid, tiles.join(''));
       // Populate award dropdown
       const sel = el('sm-award-badge');
-      sel.innerHTML = '<option value="">-- Select Badge --</option>' +
-        items.map(b => `<option value="${b.id}">${b.icon || ''} ${b.name} (${b.points}pts)</option>`).join('');
+      const opts = items.map(b => html`<option value="${Number(b.id)||0}">${b.icon || ''} ${b.name} (${b.points}pts)</option>`).join('');
+      safeSetHTML(sel, '<option value="">-- Select Badge --</option>' + opts);
     });
   };
 
@@ -1121,14 +1139,15 @@
     if(person) url += '?person=' + encodeURIComponent(person);
     api(url).then(items => {
       const list = el('sm-award-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No awards yet', 'Award a badge above to start building recognition history and momentum.'); return; }
-      list.innerHTML = items.map(a => `<div class="sm-list-item">
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No awards yet', 'Award a badge above to start building recognition history and momentum.')); return; }
+      const rows = items.map(a => html`<div class="sm-list-item">
         <div><span style="font-size:1.2rem;margin-right:4px">${a.badge_icon || ''}</span>
           <strong>${a.badge_name || 'Badge #' + a.badge_id}</strong>
           <span class="sm-meta-text">to ${a.person}</span>
         </div>
         <small class="tone-muted">${fmtDate(a.awarded_date || a.date)}</small>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(list, rows.join(''));
     });
   };
 
@@ -1145,15 +1164,16 @@
   window.smLoadLeaderboard = function(){
     api(API + '/leaderboard').then(items => {
       const box = el('sm-leaderboard');
-      if(!items || !items.length){ box.innerHTML = smEmpty('No leaderboard data yet', 'Once badges are awarded, points and ranking will appear here automatically.'); return; }
-      box.innerHTML = items.map((p, i) => `<div class="sm-leaderboard-item">
+      if(!items || !items.length){ safeSetHTML(box, smEmpty('No leaderboard data yet', 'Once badges are awarded, points and ranking will appear here automatically.')); return; }
+      const rows = items.map((p, i) => html`<div class="sm-leaderboard-item">
         <div class="sm-lb-rank">${i + 1}</div>
         <div class="sm-field-grow">
           <strong class="sm-text-strong">${p.person}</strong>
           <br><small class="tone-muted">${p.badge_count || 0} badges</small>
         </div>
         <div style="font-size:1.1rem;font-weight:700;color:var(--sm-accent)">${p.total_points || 0} pts</div>
-      </div>`).join('');
+      </div>`);
+      safeSetHTML(box, rows.join(''));
     });
   };
 
@@ -1167,37 +1187,42 @@
 
     api(url).then(items => {
       const list = el('sm-cal-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No events scheduled yet', 'Add a recurring or one-time event above to keep deadlines from slipping.'); return; }
-      list.innerHTML = '<div class="sm-card-title">All Events</div>' + items.map(e => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No events scheduled yet', 'Add a recurring or one-time event above to keep deadlines from slipping.')); return; }
+      const rows = items.map(e => {
         const evtClass = 'sm-evt-' + (e.event_type || e.type || 'seasonal');
-        return `<div class="sm-list-item">
+        const id = Number(e.id) || 0;
+        const preview = e.description ? e.description.substring(0, 120) : '';
+        return html`<div class="sm-list-item">
           <div class="sm-field-grow">
-            <span class="sm-badge ${evtClass}">${(e.event_type || e.type || 'seasonal')}</span>
+            <span class="sm-badge ${evtClass}">${e.event_type || e.type || 'seasonal'}</span>
             <strong class="sm-tag-spacer">${e.name}</strong>
             <span class="sm-meta-text-lg">${e.recurrence || 'once'}</span>
             <br><small class="tone-muted">${fmtDate(e.event_date || e.date)} | ${e.category || ''}</small>
-            ${e.description ? '<br><small class="tone-muted">' + e.description.substring(0, 120) + '</small>' : ''}
+            ${e.description ? html`<br><small class="tone-muted">${preview}</small>` : ''}
           </div>
-          ${smDeleteButton('smDeleteEvent(' + e.id + ')', e.name || 'event')}
+          ${trustedHTML(smDeleteButton('smDeleteEvent(' + id + ')', e.name || 'event'))}
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, '<div class="sm-card-title">All Events</div>' + rows.join(''));
     });
 
     // Upcoming 30 days
     api(API + '/events/upcoming').then(items => {
       const box = el('sm-cal-upcoming');
-      if(!items || !items.length){ box.innerHTML = smEmpty('No events in the next 30 days', 'The short-horizon calendar is clear for now.'); return; }
-      box.innerHTML = items.map(e => {
+      if(!items || !items.length){ safeSetHTML(box, smEmpty('No events in the next 30 days', 'The short-horizon calendar is clear for now.')); return; }
+      const rows = items.map(e => {
         const days = daysUntil(e.event_date || e.date);
-        const urgency = days !== null && days <= 3 ? 'color:var(--sm-red)' : days !== null && days <= 7 ? 'color:var(--sm-yellow)' : 'color:var(--sm-green)';
-        return `<div class="sm-list-item">
+        const tone = days !== null && days <= 3 ? 'var(--sm-red)' : days !== null && days <= 7 ? 'var(--sm-yellow)' : 'var(--sm-green)';
+        const label = days !== null ? (days === 0 ? 'TODAY' : days + 'd') : fmtDate(e.event_date || e.date);
+        return html`<div class="sm-list-item">
           <div>
             <span class="sm-badge sm-evt-${e.event_type || e.type || 'seasonal'}">${e.event_type || e.type || 'seasonal'}</span>
             <strong class="sm-tag-spacer">${e.name}</strong>
           </div>
-          <span style="font-weight:600;${urgency}">${days !== null ? (days === 0 ? 'TODAY' : days + 'd') : fmtDate(e.event_date || e.date)}</span>
+          <span style="--sm-urg-tone:${tone};font-weight:600;color:var(--sm-urg-tone)">${label}</span>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(box, rows.join(''));
     }).catch(() => {});
   };
 
@@ -1222,29 +1247,29 @@
   window.smLoadLegalDocs = function(){
     api(API + '/legal').then(items => {
       const list = el('sm-legal-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No legal documents tracked yet', 'Add documents above to monitor issue dates, expiry risk, and ownership.'); return; }
-      list.innerHTML = `<table class="sm-table"><thead><tr>
-        <th>Title</th><th>Type</th><th>Person</th><th>Issued</th><th>Expires</th><th>Alert</th><th></th>
-      </tr></thead><tbody>${items.map(d => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No legal documents tracked yet', 'Add documents above to monitor issue dates, expiry risk, and ownership.')); return; }
+      const rows = items.map(d => {
         const typeClass = 'sm-doc-' + (d.doc_type || d.type || 'id');
         const days = daysUntil(d.expiry_date);
-        let alert = '--';
+        const id = Number(d.id) || 0;
+        let alertEl = '--';
         if(days !== null){
-          if(days < 0) alert = '<span class="sm-tone-danger">EXPIRED</span>';
-          else if(days <= 30) alert = '<span class="sm-tone-danger">' + days + 'd</span>';
-          else if(days <= 90) alert = '<span style="color:var(--sm-yellow)">' + days + 'd</span>';
-          else alert = '<span style="color:var(--sm-green)">' + days + 'd</span>';
+          if(days < 0) alertEl = html`<span class="sm-tone-danger">EXPIRED</span>`;
+          else if(days <= 30) alertEl = html`<span class="sm-tone-danger">${days}d</span>`;
+          else if(days <= 90) alertEl = html`<span style="color:var(--sm-yellow)">${days}d</span>`;
+          else alertEl = html`<span style="color:var(--sm-green)">${days}d</span>`;
         }
-        return `<tr>
+        return html`<tr>
           <td><strong>${d.title}</strong></td>
-          <td><span class="sm-badge ${typeClass}">${(d.doc_type || d.type || 'id')}</span></td>
+          <td><span class="sm-badge ${typeClass}">${d.doc_type || d.type || 'id'}</span></td>
           <td>${d.person || '--'}</td>
           <td>${fmtDate(d.issue_date)}</td>
           <td>${fmtDate(d.expiry_date)}</td>
-          <td>${alert}</td>
-          <td class="sm-action-cluster">${smDeleteButton('smDeleteLegalDoc(' + d.id + ')', d.title || 'legal document')}</td>
+          <td>${alertEl}</td>
+          <td class="sm-action-cluster">${trustedHTML(smDeleteButton('smDeleteLegalDoc(' + id + ')', d.title || 'legal document'))}</td>
         </tr>`;
-      }).join('')}</tbody></table>`;
+      });
+      safeSetHTML(list, '<table class="sm-table"><thead><tr><th>Title</th><th>Type</th><th>Person</th><th>Issued</th><th>Expires</th><th>Alert</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
 
     // Expiring soon (90 days)
@@ -1253,10 +1278,10 @@
       const box = el('sm-legal-expiring');
       if(!items || !items.length){ section.style.display = 'none'; return; }
       section.style.display = 'block';
-      box.innerHTML = items.map(d => {
+      const rows = items.map(d => {
         const days = daysUntil(d.expiry_date);
         const urgency = days !== null && days < 0 ? 'EXPIRED' : days !== null && days <= 30 ? days + ' days' : days + ' days';
-        return `<div class="sm-list-item">
+        return html`<div class="sm-list-item">
           <div>
             <span class="sm-badge sm-doc-${d.doc_type || d.type || 'id'}">${d.doc_type || d.type || 'id'}</span>
             <strong class="sm-tag-spacer">${d.title}</strong>
@@ -1264,7 +1289,8 @@
           </div>
           <span class="sm-tone-danger">${urgency}</span>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(box, rows.join(''));
     }).catch(() => { el('sm-legal-expiring-section').style.display = 'none'; });
   };
 
@@ -1288,10 +1314,11 @@
   window.smLoadDrones = function(){
     api(API + '/drones').then(items => {
       const list = el('sm-drone-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No drones tracked yet', 'Add an airframe above to keep condition, mission volume, and hours visible.'); return; }
-      list.innerHTML = items.map(d => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No drones tracked yet', 'Add an airframe above to keep condition, mission volume, and hours visible.')); return; }
+      const rows = items.map(d => {
         const condClass = 'sm-drone-' + (d.condition || 'good');
-        return `<div class="sm-card">
+        const id = Number(d.id) || 0;
+        return html`<div class="sm-card">
           <div class="sm-row-header">
             <div>
               <strong class="sm-text-strong">${d.name}</strong>
@@ -1300,14 +1327,15 @@
               <br><small class="tone-muted">${d.manufacturer || ''} ${d.model || ''}</small>
               <br><small class="tone-muted">Flights: ${d.total_flights || 0} | Hours: ${d.total_hours || 0}</small>
             </div>
-            ${smDeleteButton('smDeleteDrone(' + d.id + ')', d.name || 'drone')}
+            ${trustedHTML(smDeleteButton('smDeleteDrone(' + id + ')', d.name || 'drone'))}
           </div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, rows.join(''));
       // Populate flight drone selector
       const sel = el('sm-flight-drone');
-      sel.innerHTML = '<option value="">-- Select Drone --</option>' +
-        items.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+      const opts = items.map(d => html`<option value="${Number(d.id)||0}">${d.name}</option>`).join('');
+      safeSetHTML(sel, '<option value="">-- Select Drone --</option>' + opts);
     });
   };
 
@@ -1328,19 +1356,21 @@
   /* ── Flight Logs ── */
   window.smLoadFlights = function(){
     const droneId = val('sm-flight-drone');
-    if(!droneId){ el('sm-flight-list').innerHTML = smEmpty('Select a drone', 'Choose an airframe to review its recent flight history and mission log.'); return; }
+    if(!droneId){ safeSetHTML(el('sm-flight-list'), smEmpty('Select a drone', 'Choose an airframe to review its recent flight history and mission log.')); return; }
     api(API + '/drones/' + droneId + '/flights').then(items => {
       const list = el('sm-flight-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No flights logged for this drone', 'Log the first mission above to start building an airframe history.'); return; }
-      list.innerHTML = `<table class="sm-table sm-card-spaced-xs"><thead><tr>
-        <th>Date</th><th>Mission</th><th>Duration</th><th>Alt (ft)</th><th></th>
-      </tr></thead><tbody>${items.map(f => `<tr>
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No flights logged for this drone', 'Log the first mission above to start building an airframe history.')); return; }
+      const rows = items.map(f => {
+        const id = Number(f.id) || 0;
+        return html`<tr>
         <td>${fmtDate(f.flight_date || f.date)}</td>
         <td>${f.mission || '--'}</td>
         <td>${f.duration || 0} min</td>
         <td>${f.max_altitude || '--'}</td>
-        <td class="sm-action-cluster">${smDeleteButton('smDeleteFlight(' + f.id + ')', (f.mission || 'flight log') + ' flight')}</td>
-      </tr>`).join('')}</tbody></table>`;
+        <td class="sm-action-cluster">${trustedHTML(smDeleteButton('smDeleteFlight(' + id + ')', (f.mission || 'flight log') + ' flight'))}</td>
+      </tr>`;
+      });
+      safeSetHTML(list, '<table class="sm-table sm-card-spaced-xs"><thead><tr><th>Date</th><th>Mission</th><th>Duration</th><th>Alt (ft)</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -1364,18 +1394,17 @@
      ═══════════════════════════════════════════════════════════ */
   window.smLoadFitness = function(){
     const person = val('sm-fit-person');
-    if(!person){ el('sm-fitness-list').innerHTML = smEmpty('Enter a person name', 'Search a teammate or household member to view workout history and weekly totals.'); el('sm-fitness-stats').innerHTML = ''; return; }
+    if(!person){ safeSetHTML(el('sm-fitness-list'), smEmpty('Enter a person name', 'Search a teammate or household member to view workout history and weekly totals.')); safeSetHTML(el('sm-fitness-stats'), ''); return; }
     api(API + '/fitness?person=' + encodeURIComponent(person)).then(items => {
       const list = el('sm-fitness-list');
-      if(!items || !items.length){ list.innerHTML = smEmpty('No workouts logged for ' + person, 'Log the first session above to start tracking consistency and weekly totals.'); return; }
-      list.innerHTML = `<table class="sm-table sm-card-spaced-xs"><thead><tr>
-        <th>Date</th><th>Type</th><th>Activity</th><th>Duration</th><th>Dist</th><th>Reps/Sets/Wt</th><th>Cal</th><th>HR</th><th>RPE</th><th></th>
-      </tr></thead><tbody>${items.map(w => {
+      if(!items || !items.length){ safeSetHTML(list, smEmpty('No workouts logged for ' + person, 'Log the first session above to start tracking consistency and weekly totals.')); return; }
+      const rows = items.map(w => {
         const fitClass = 'sm-fit-' + (w.workout_type || w.type || 'cardio');
         const repsStr = [w.reps ? w.reps + 'r' : '', w.sets ? w.sets + 's' : '', w.weight_lbs ? w.weight_lbs + 'lb' : ''].filter(Boolean).join('/') || '--';
-        return `<tr>
+        const id = Number(w.id) || 0;
+        return html`<tr>
           <td>${fmtDate(w.created_at || w.date)}</td>
-          <td><span class="sm-badge ${fitClass}">${(w.workout_type || w.type || 'cardio')}</span></td>
+          <td><span class="sm-badge ${fitClass}">${w.workout_type || w.type || 'cardio'}</span></td>
           <td>${w.activity || '--'}</td>
           <td>${w.duration || 0}m</td>
           <td>${w.distance ? w.distance + 'mi' : '--'}</td>
@@ -1383,21 +1412,22 @@
           <td>${w.calories || '--'}</td>
           <td>${w.heart_rate || '--'}</td>
           <td>${w.exertion || '--'}</td>
-          <td class="sm-action-cluster">${smDeleteButton('smDeleteWorkout(' + w.id + ')', w.activity || 'workout')}</td>
+          <td class="sm-action-cluster">${trustedHTML(smDeleteButton('smDeleteWorkout(' + id + ')', w.activity || 'workout'))}</td>
         </tr>`;
-      }).join('')}</tbody></table>`;
+      });
+      safeSetHTML(list, '<table class="sm-table sm-card-spaced-xs"><thead><tr><th>Date</th><th>Type</th><th>Activity</th><th>Duration</th><th>Dist</th><th>Reps/Sets/Wt</th><th>Cal</th><th>HR</th><th>RPE</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
 
     // Weekly stats
     api(API + '/fitness/weekly?person=' + encodeURIComponent(person)).then(data => {
       const box = el('sm-fitness-stats');
-      if(!data){ box.innerHTML = ''; return; }
-      box.innerHTML = `
+      if(!data){ safeSetHTML(box, ''); return; }
+      safeSetHTML(box, html`
         <div class="sm-stat-card"><div class="sm-stat-val">${data.workouts || 0}</div><div class="sm-stat-lbl">Workouts</div></div>
         <div class="sm-stat-card"><div class="sm-stat-val">${data.total_duration || 0}m</div><div class="sm-stat-lbl">Duration</div></div>
         <div class="sm-stat-card"><div class="sm-stat-val">${data.total_calories || 0}</div><div class="sm-stat-lbl">Calories</div></div>
         <div class="sm-stat-card"><div class="sm-stat-val">${data.total_distance ? data.total_distance.toFixed(1) : 0}mi</div><div class="sm-stat-lbl">Distance</div></div>
-        <div class="sm-stat-card"><div class="sm-stat-val">${data.avg_exertion ? data.avg_exertion.toFixed(1) : '--'}</div><div class="sm-stat-lbl">Avg RPE</div></div>`;
+        <div class="sm-stat-card"><div class="sm-stat-val">${data.avg_exertion ? data.avg_exertion.toFixed(1) : '--'}</div><div class="sm-stat-lbl">Avg RPE</div></div>`);
     }).catch(() => {});
   };
 

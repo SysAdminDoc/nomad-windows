@@ -436,7 +436,10 @@
   const mpNumberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
   const mpEmpty=(title, body)=>`<div class="mp-empty"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
   const mpDeleteButton=(action, label)=>`<button type="button" class="mp-btn mp-btn-danger-quiet mp-btn-icon" onclick="${action}" aria-label="${esc(label)}">&times;</button>`;
-  const mpConfirmDelete=label=>window.confirm(`Delete ${label}? This removes it from Medical Phase 2.`);
+  const mpConfirmDelete=label=>confirmDestructiveChoice(label, {
+    title: 'Delete medical record?',
+    detail: 'This removes it from Medical Phase 2.',
+  });
   const mpNumber=value=>mpNumberFormatter.format(Number(value)||0);
 
   /* ── Pregnancy ── */
@@ -462,8 +465,8 @@
         gravida:numVal('mp-preg-gravida',1),para:numVal('mp-preg-para',0),status:val('mp-preg-status')})
     }).then(()=>{$('mp-preg-patient').value='';mpLoadPregnancies();});
   };
-  window.mpDeletePregnancy=function(id){
-    if(!mpConfirmDelete('this pregnancy record')) return;
+  window.mpDeletePregnancy=async function(id){
+    if(!(await mpConfirmDelete('this pregnancy record'))) return;
     api('/api/medical/pregnancies/'+id,{method:'DELETE'}).then(()=>mpLoadPregnancies());
   };
 
@@ -489,8 +492,8 @@
         treatment:val('mp-dent-treatment'),pain_level:numVal('mp-dent-pain',0),treatment_date:val('mp-dent-date')})
     }).then(()=>{$('mp-dent-patient').value='';mpLoadDental();});
   };
-  window.mpDeleteDental=function(id){
-    if(!mpConfirmDelete('this dental record')) return;
+  window.mpDeleteDental=async function(id){
+    if(!(await mpConfirmDelete('this dental record'))) return;
     api('/api/medical/dental/'+id,{method:'DELETE'}).then(()=>mpLoadDental());
   };
 
@@ -533,16 +536,22 @@
         severity:val('mp-chr-severity'),medication_stockpile_days:numVal('mp-chr-stockpile',0)})
     }).then(()=>{$('mp-chr-patient').value='';mpLoadChronic();mpLoadChronicAlerts();});
   };
-  window.mpEditChronic=function(id, currentDays){
-    const days=prompt('Update medication stockpile days for this patient.', String(currentDays ?? 0));if(days===null)return;
+  window.mpEditChronic=async function(id, currentDays){
+    const days=await promptChoice('Medication stockpile days', {
+      title: 'Update medication buffer',
+      message: 'Set the current medication buffer for this chronic-care record.',
+      confirmLabel: 'Update Days',
+      value: String(currentDays ?? 0),
+      field: {type: 'number', min: '0', required: true},
+    });if(days===null)return;
     const parsed=Number.parseInt(days,10);
     if(Number.isNaN(parsed)||parsed<0){ if(window.toast){ toast('Enter a valid number of days.', 'error'); } return; }
     api('/api/medical/chronic/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({medication_stockpile_days:parsed})
     }).then(()=>{mpLoadChronic();mpLoadChronicAlerts();});
   };
-  window.mpDeleteChronic=function(id){
-    if(!mpConfirmDelete('this chronic-care record')) return;
+  window.mpDeleteChronic=async function(id){
+    if(!(await mpConfirmDelete('this chronic-care record'))) return;
     api('/api/medical/chronic/'+id,{method:'DELETE'}).then(()=>{mpLoadChronic();mpLoadChronicAlerts();});
   };
 
@@ -581,8 +590,8 @@
         dose_number:numVal('mp-vax-dose',1),next_due:val('mp-vax-next')})
     }).then(()=>{$('mp-vax-patient').value='';mpLoadVax();mpLoadVaxDue();});
   };
-  window.mpDeleteVax=function(id){
-    if(!mpConfirmDelete('this vaccination record')) return;
+  window.mpDeleteVax=async function(id){
+    if(!(await mpConfirmDelete('this vaccination record'))) return;
     api('/api/medical/vaccinations/'+id,{method:'DELETE'}).then(()=>{mpLoadVax();mpLoadVaxDue();});
   };
 
@@ -622,8 +631,8 @@
         anxiety_level:numVal('mp-mh-anxiety',0),sleep_hours:numVal('mp-mh-sleep',7),energy_level:numVal('mp-mh-energy',5)})
     }).then(()=>{$('mp-mh-patient').value='';mpLoadMH();});
   };
-  window.mpDeleteMH=function(id){
-    if(!mpConfirmDelete('this wellness check-in')) return;
+  window.mpDeleteMH=async function(id){
+    if(!(await mpConfirmDelete('this wellness check-in'))) return;
     api('/api/medical/mental-health/'+id,{method:'DELETE'}).then(()=>mpLoadMH());
   };
 
@@ -649,8 +658,8 @@
         weight_lb:numVal('mp-vet-weight',0),condition:val('mp-vet-condition'),treatment:val('mp-vet-treatment')})
     }).then(()=>{$('mp-vet-name').value='';mpLoadVet();});
   };
-  window.mpDeleteVet=function(id){
-    if(!mpConfirmDelete('this veterinary record')) return;
+  window.mpDeleteVet=async function(id){
+    if(!(await mpConfirmDelete('this veterinary record'))) return;
     api('/api/medical/vet/'+id,{method:'DELETE'}).then(()=>mpLoadVet());
   };
 

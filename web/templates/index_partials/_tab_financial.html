@@ -727,7 +727,10 @@
         const finEmpty = (title, body) => '<div class="fin-empty"><strong>' + escapeText(title) + '</strong><span>' + escapeText(body) + '</span></div>';
         const finDeleteButton = (action, label) => '<button type="button" class="fin-btn-delete" onclick="' + action + '" data-item-label="' + escapeText(label) + '" title="Delete ' + escapeText(label) + '" aria-label="Delete ' + escapeText(label) + '">&times;</button>';
         const finDeleteLabel = (action, fallback) => document.querySelector('[onclick="' + action + '"]')?.getAttribute('data-item-label') || fallback;
-        const finConfirmDelete = (label) => window.confirm('Delete ' + label + '? This removes it from the financial workspace.');
+        const finConfirmDelete = (label) => confirmDestructiveChoice(label, {
+          title: 'Delete financial record?',
+          detail: 'This removes it from the financial workspace.',
+        });
 
         /* ── Form Visibility ── */
         window.showFinForm = function (type) {
@@ -853,7 +856,7 @@
 
         window.deleteFinCash = async function (id) {
           const label = finDeleteLabel('deleteFinCash(' + id + ')', 'this cash reserve');
-          if (!finConfirmDelete(label)) return;
+          if (!(await finConfirmDelete(label))) return;
           try {
             await apiDelete('/api/financial/cash/' + id);
             toast('Cash entry removed', 'success');
@@ -945,7 +948,7 @@
 
         window.deleteFinMetal = async function (id) {
           const label = finDeleteLabel('deleteFinMetal(' + id + ')', 'this metal holding');
-          if (!finConfirmDelete(label)) return;
+          if (!(await finConfirmDelete(label))) return;
           try {
             await apiDelete('/api/financial/metals/' + id);
             toast('Metal entry removed', 'success');
@@ -1033,7 +1036,7 @@
 
         window.deleteFinBarter = async function (id) {
           const label = finDeleteLabel('deleteFinBarter(' + id + ')', 'this barter item');
-          if (!finConfirmDelete(label)) return;
+          if (!(await finConfirmDelete(label))) return;
           try {
             await apiDelete('/api/financial/barter/' + id);
             toast('Barter item removed', 'success');
@@ -1115,7 +1118,7 @@
 
         window.deleteFinDocument = async function (id) {
           const label = finDeleteLabel('deleteFinDocument(' + id + ')', 'this document record');
-          if (!finConfirmDelete(label)) return;
+          if (!(await finConfirmDelete(label))) return;
           try {
             await apiDelete('/api/financial/documents/' + id);
             toast('Document removed', 'success');

@@ -263,7 +263,10 @@
   const laLabel=value=>String(value||'Unknown').replace(/_/g,' ');
   const laEmpty=(title, body, extraClass='')=>`<div class="${['la-empty', extraClass].filter(Boolean).join(' ')}"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
   const laDeleteButton=(action, label)=>`<button type="button" class="la-btn la-btn-danger-quiet la-btn-icon" onclick="${action}" aria-label="${esc(label)}">&times;</button>`;
-  const laConfirmDelete=label=>window.confirm(`Delete ${label}? This removes it from land assessment.`);
+  const laConfirmDelete=label=>confirmDestructiveChoice(label, {
+    title: 'Delete land record?',
+    detail: 'This removes it from land assessment.',
+  });
   const laNumber=value=>laNumberFormatter.format(Number(value)||0);
   const laMoney=value=>`$${laMoneyFormatter.format(Number(value)||0)}`;
 
@@ -358,8 +361,8 @@
         status:val('la-prop-status')})
     }).then(()=>{$('la-prop-name').value='';laLoadProperties();});
   };
-  window.laDeleteProperty=function(id){
-    if(!laConfirmDelete('this property')) return;
+  window.laDeleteProperty=async function(id){
+    if(!(await laConfirmDelete('this property'))) return;
     api('/api/properties/'+id,{method:'DELETE'}).then(()=>laLoadProperties());
   };
 
@@ -439,8 +442,8 @@
         value_estimate:numVal('la-feat-value')})
     }).then(()=>{$('la-feat-name').value='';laLoadFeatures();});
   };
-  window.laDeleteFeature=function(id){
-    if(!laConfirmDelete('this feature')) return;
+  window.laDeleteFeature=async function(id){
+    if(!(await laConfirmDelete('this feature'))) return;
     api('/api/features/'+id,{method:'DELETE'}).then(()=>laLoadFeatures());
   };
 
@@ -474,8 +477,8 @@
         estimated_cost:numVal('la-dp-cost'),status:val('la-dp-status')})
     }).then(()=>{$('la-dp-name').value='';laLoadDevPlans();});
   };
-  window.laDeleteDevPlan=function(id){
-    if(!laConfirmDelete('this development plan')) return;
+  window.laDeleteDevPlan=async function(id){
+    if(!(await laConfirmDelete('this development plan'))) return;
     api('/api/dev-plans/'+id,{method:'DELETE'}).then(()=>laLoadDevPlans());
   };
 

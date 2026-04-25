@@ -705,7 +705,10 @@
     }
 
     function wmConfirmDelete(label) {
-      return window.confirm('Delete ' + label + '? This removes it from the water workspace.');
+      return confirmDestructiveChoice(label, {
+        title: 'Delete water record?',
+        detail: 'This removes it from the water workspace.',
+      });
     }
 
     /* ------------------------------------------------------------------ */
@@ -816,7 +819,7 @@
 
     window.deleteWaterStorage = async function (id) {
       const label = wmDeleteLabel('deleteWaterStorage(' + id + ')', 'storage entry');
-      if (!wmConfirmDelete(label)) return;
+      if (!(await wmConfirmDelete(label))) return;
       try {
         await apiDelete('/api/water/storage/' + id);
         toast('Storage deleted.', 'success');
@@ -898,7 +901,7 @@
 
     window.deleteWaterFilter = async function (id) {
       const label = wmDeleteLabel('deleteWaterFilter(' + id + ')', 'filter');
-      if (!wmConfirmDelete(label)) return;
+      if (!(await wmConfirmDelete(label))) return;
       try {
         await apiDelete('/api/water/filters/' + id);
         toast('Filter deleted.', 'success');
@@ -978,7 +981,7 @@
 
     window.deleteWaterSource = async function (id) {
       const label = wmDeleteLabel('deleteWaterSource(' + id + ')', 'water source');
-      if (!wmConfirmDelete(label)) return;
+      if (!(await wmConfirmDelete(label))) return;
       try {
         await apiDelete('/api/water/sources/' + id);
         toast('Source deleted.', 'success');

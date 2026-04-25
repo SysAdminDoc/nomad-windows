@@ -307,7 +307,10 @@
   };
   const tcEmpty=(title,body)=>`<div class="tc-empty"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
   const tcDeleteButton=(action,label)=>`<button type="button" class="tc-btn tc-btn-icon tc-btn-danger-quiet" onclick='${action}' title="Delete ${esc(label)}" aria-label="Delete ${esc(label)}">&times;</button>`;
-  const tcConfirmDelete=label=>window.confirm(`Delete ${label}? This removes it from the tactical communications workspace.`);
+  const tcConfirmDelete=label=>confirmDestructiveChoice(label, {
+    title: 'Delete communications record?',
+    detail: 'This removes it from the tactical communications workspace.',
+  });
 
   /* ── Radio Equipment ── */
   window.tcLoadRadios=function(){
@@ -332,8 +335,8 @@
         assigned_to:val('tc-radio-assigned'),location:val('tc-radio-location')})
     }).then(()=>{$('tc-radio-name').value='';$('tc-radio-model').value='';tcLoadRadios();});
   };
-  window.tcDeleteRadio=function(id,label){
-    if(!tcConfirmDelete(label || 'radio')) return;
+  window.tcDeleteRadio=async function(id,label){
+    if(!(await tcConfirmDelete(label || 'radio'))) return;
     api('/api/radio-equipment/'+id,{method:'DELETE'}).then(()=>tcLoadRadios());
   };
 
@@ -366,8 +369,8 @@
         running_password:val('tc-auth-running'),duress_code:val('tc-auth-duress')})
     }).then(()=>{$('tc-auth-challenge').value='';$('tc-auth-response').value='';tcLoadAuth();});
   };
-  window.tcDeleteAuth=function(id,label){
-    if(!tcConfirmDelete(label || 'authentication set')) return;
+  window.tcDeleteAuth=async function(id,label){
+    if(!(await tcConfirmDelete(label || 'authentication set'))) return;
     api('/api/auth-codes/'+id,{method:'DELETE'}).then(()=>tcLoadAuth());
   };
 
@@ -392,8 +395,8 @@
         net_control:val('tc-net-control')})
     }).then(()=>{$('tc-net-name').value='';tcLoadNets();});
   };
-  window.tcDeleteNet=function(id,label){
-    if(!tcConfirmDelete(label || 'net schedule')) return;
+  window.tcDeleteNet=async function(id,label){
+    if(!(await tcConfirmDelete(label || 'net schedule'))) return;
     api('/api/net-schedules/'+id,{method:'DELETE'}).then(()=>tcLoadNets());
   };
 
@@ -415,8 +418,8 @@
   window.tcSeedTemplates=function(){
     api('/api/message-templates/seed',{method:'POST'}).then(r=>{tcLoadMessages();});
   };
-  window.tcDeleteTemplate=function(id,label){
-    if(!tcConfirmDelete(label || 'message template')) return;
+  window.tcDeleteTemplate=async function(id,label){
+    if(!(await tcConfirmDelete(label || 'message template'))) return;
     api('/api/message-templates/'+id,{method:'DELETE'}).then(()=>tcLoadMessages());
   };
 

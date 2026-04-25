@@ -550,7 +550,11 @@ async function toggleCheckItem(idx) {
 }
 
 async function deleteChecklist(id) {
-  if (!confirm('Delete this checklist?')) return;
+  const confirmed = await confirmDestructiveChoice('this checklist', {
+    title: 'Delete checklist?',
+    detail: 'Checklist items and completion state are removed.',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete(`/api/checklists/${id}`);
     toast('Checklist deleted', 'warning');

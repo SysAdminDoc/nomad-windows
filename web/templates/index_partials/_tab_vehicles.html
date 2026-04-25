@@ -580,7 +580,10 @@
     const vehicleEmpty = (title, body) => `<div class="vehicles-empty-state"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
     const vehicleEmptyRow = (colspan, title, body) => `<tr><td colspan="${colspan}" class="vehicles-empty-cell">${vehicleEmpty(title, body)}</td></tr>`;
     const vehicleDeleteButton = (action, label) => `<button type="button" class="btn btn-sm vehicles-btn-icon vehicles-btn-danger-quiet" onclick='${action}' title="Delete ${esc(label)}" aria-label="Delete ${esc(label)}">&times;</button>`;
-    const vehicleConfirmDelete = (label, context) => window.confirm(`Delete ${label}?${context ? ` ${context}` : ''}`);
+    const vehicleConfirmDelete = (label, context) => confirmDestructiveChoice(label, {
+      title: 'Delete vehicle record?',
+      detail: context || 'This removes it from the vehicle workspace.',
+    });
 
     /* ══════════════════════════════════════
        1. loadVehicles — main init
@@ -748,7 +751,7 @@
        ══════════════════════════════════════ */
     window.deleteVehicle = async function deleteVehicle(id, label) {
       const target = label || 'vehicle';
-      if (!vehicleConfirmDelete(target, 'This removes the vehicle and all related maintenance and fuel records.')) return;
+      if (!(await vehicleConfirmDelete(target, 'This removes the vehicle and all related maintenance and fuel records.'))) return;
       try {
         await apiDelete(`/api/vehicles/${id}`);
         toast('Vehicle deleted', 'success');
@@ -1008,7 +1011,7 @@
     /* ── Delete maintenance ───────────── */
     window.deleteMaintenance = async function deleteMaintenance(vehicleId, mid, label) {
       const target = label || 'service record';
-      if (!vehicleConfirmDelete(target, 'This removes it from the maintenance history for this vehicle.')) return;
+      if (!(await vehicleConfirmDelete(target, 'This removes it from the maintenance history for this vehicle.'))) return;
       try {
         await apiDelete(`/api/vehicles/maintenance/${mid}`);
         toast('Service record deleted', 'success');

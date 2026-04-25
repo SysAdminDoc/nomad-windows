@@ -1387,6 +1387,17 @@ async function confirmChoice(message, options = {}) {
   return !!decision.confirmed;
 }
 window.confirmChoice = confirmChoice;
+async function confirmDestructiveChoice(label, options = {}) {
+  const action = options.action || 'Delete';
+  const target = String(label || 'this item').trim();
+  return confirmChoice(options.message || `${action} ${target}.`, {
+    title: options.title || `${action} item?`,
+    detail: options.detail || 'This action cannot be undone.',
+    confirmLabel: options.confirmLabel || action,
+    tone: options.tone || 'danger',
+  });
+}
+window.confirmDestructiveChoice = confirmDestructiveChoice;
 async function promptFields(options = {}) {
   const decision = await confirmAction(Object.assign({
     title: 'Enter details',

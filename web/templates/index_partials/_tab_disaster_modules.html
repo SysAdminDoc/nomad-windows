@@ -469,8 +469,18 @@
   const protLevelColors = { basic:'#22c55e', moderate:'#3b82f6', hardened:'#a855f7', blast_rated:'#ef4444' };
   const dmEmpty = (title, body) => `<div class="dm-empty"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
   const dmDeleteButton = (action, label) => `<button type="button" class="dm-btn dm-btn-icon dm-btn-danger-quiet" onclick="${action}" title="Delete ${esc(label)}" aria-label="Delete ${esc(label)}">&times;</button>`;
-  const dmConfirmDelete = label => window.confirm(`Delete ${label}? This removes it from the disaster workspace.`);
-  const dmConfirmOffline = label => window.confirm(`Mark ${label} as offline? This keeps the record visible but removes it from active service.`);
+  const dmConfirmDelete = label => confirmDestructiveChoice(label, {
+    title: 'Delete disaster record?',
+    detail: 'This removes it from the disaster workspace.',
+  });
+  const dmConfirmOffline = label => confirmDestructiveChoice(label, {
+    action: 'Mark Offline',
+    title: 'Mark system offline?',
+    message: `Mark ${label} as offline.`,
+    detail: 'This keeps the record visible but removes it from active service.',
+    confirmLabel: 'Mark Offline',
+    tone: 'warning',
+  });
   const dmActionLabel = action => root.querySelector(`[onclick="${action}"]`)?.closest('tr, .dm-list-item, .dm-card')?.querySelector('strong')?.textContent;
 
   function fmtDate(d){ if(!d) return '--'; const dt=new Date(d); return dt.toLocaleDateString(); }
@@ -576,9 +586,9 @@
     }).then(() => { el('dm-plan-name').value = ''; el('dm-plan-desc').value = ''; dmLoadPlans(); toast('Plan created'); });
   };
 
-  window.dmDeletePlan = function(id){
+  window.dmDeletePlan = async function(id){
     const planName = dmActionLabel(`dmExpandPlan(${id})`) || 'this plan';
-    if(!dmConfirmDelete(planName)) return;
+    if(!(await dmConfirmDelete(planName))) return;
     api(API + '/plans/' + id, {method:'DELETE'}).then(() => { dmLoadPlans(); toast('Plan removed'); });
   };
 
@@ -660,9 +670,9 @@
     }).then(() => { el('dm-energy-name').value = ''; el('dm-energy-fuel').value = ''; el('dm-energy-notes').value = ''; dmLoadEnergy(); toast('Energy system added'); });
   };
 
-  window.dmSetEnergyOffline = function(id){
+  window.dmSetEnergyOffline = async function(id){
     const systemName = dmActionLabel(`dmSetEnergyOffline(${id})`);
-    if(!dmConfirmOffline(systemName || 'this system')) return;
+    if(!(await dmConfirmOffline(systemName || 'this system'))) return;
     api(API + '/energy/' + id, {method:'PUT', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({status:'offline'})
     }).then(() => { dmLoadEnergy(); toast('System marked offline'); });
@@ -773,9 +783,9 @@
     }).then(() => { el('dm-con-name').value = ''; el('dm-con-desc').value = ''; dmLoadConstruction(); toast('Project created'); });
   };
 
-  window.dmDeleteConstruction = function(id){
+  window.dmDeleteConstruction = async function(id){
     const projectName = dmActionLabel(`dmDeleteConstruction(${id})`) || 'this project';
-    if(!dmConfirmDelete(projectName)) return;
+    if(!(await dmConfirmDelete(projectName))) return;
     api(API + '/construction/' + id, {method:'DELETE'}).then(() => { dmLoadConstruction(); toast('Project removed'); });
   };
 
@@ -798,9 +808,9 @@
     }).then(() => { el('dm-mat-name').value = ''; el('dm-mat-unit').value = ''; dmLoadMaterials(); toast('Material added'); });
   };
 
-  window.dmDeleteMaterial = function(id){
+  window.dmDeleteMaterial = async function(id){
     const materialName = dmActionLabel(`dmDeleteMaterial(${id})`) || 'this material';
-    if(!dmConfirmDelete(materialName)) return;
+    if(!(await dmConfirmDelete(materialName))) return;
     api(API.replace('/disaster','/disaster/materials') + '/' + id, {method:'DELETE'}).then(() => { dmLoadMaterials(); toast('Material removed'); });
   };
 
@@ -855,9 +865,9 @@
     }).then(() => { el('dm-fort-name').value = ''; el('dm-fort-notes').value = ''; dmLoadFortifications(); toast('Fortification added'); });
   };
 
-  window.dmDeleteFortification = function(id){
+  window.dmDeleteFortification = async function(id){
     const fortName = dmActionLabel(`dmDeleteFortification(${id})`) || 'this fortification';
-    if(!dmConfirmDelete(fortName)) return;
+    if(!(await dmConfirmDelete(fortName))) return;
     api(API + '/fortifications/' + id, {method:'DELETE'}).then(() => { dmLoadFortifications(); toast('Fortification removed'); });
   };
 

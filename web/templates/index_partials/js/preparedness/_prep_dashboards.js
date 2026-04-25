@@ -221,7 +221,11 @@ async function logIncident() {
 }
 
 async function deleteIncident(id) {
-  if (!confirm('Delete this incident entry?')) return;
+  const confirmed = await confirmDestructiveChoice('this incident entry', {
+    title: 'Delete incident?',
+    detail: 'This removes the event from the incident log.',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/incidents/' + id);
     loadIncidents();
@@ -229,7 +233,13 @@ async function deleteIncident(id) {
 }
 
 async function clearIncidents() {
-  if (!confirm('Clear all incident log entries? This cannot be undone.')) return;
+  const confirmed = await confirmDestructiveChoice('all incident log entries', {
+    action: 'Clear',
+    title: 'Clear incident log?',
+    detail: 'This cannot be undone.',
+    confirmLabel: 'Clear Log',
+  });
+  if (!confirmed) return;
   try {
     await apiPost('/api/incidents/clear');
     toast('Incident log cleared', 'warning');

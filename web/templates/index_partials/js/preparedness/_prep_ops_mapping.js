@@ -106,7 +106,11 @@ function createTimerQuick(name, mins) {
 }
 
 async function deleteTimer(id) {
-  if (!confirm('Delete this timer?')) return;
+  const confirmed = await confirmDestructiveChoice('this timer', {
+    title: 'Delete timer?',
+    detail: 'This removes the timer and its alert state.',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/timers/' + id);
     toast('Timer deleted', 'warning');
@@ -231,7 +235,11 @@ async function submitWaypoint(lat, lng) {
 }
 
 async function deleteWaypoint(id) {
-  if (!confirm('Delete this waypoint?')) return;
+  const confirmed = await confirmDestructiveChoice('this waypoint', {
+    title: 'Delete waypoint?',
+    detail: 'This removes the saved map point.',
+  });
+  if (!confirmed) return;
   try {
     await apiDelete('/api/waypoints/' + id);
     toast('Waypoint deleted', 'warning');

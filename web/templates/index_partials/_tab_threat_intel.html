@@ -323,7 +323,10 @@
     return `<button class="btn btn-xs ti-btn-danger-quiet ti-btn-icon" type="button" onclick="${action}" aria-label="${tiEsc(label)}">&times;</button>`;
   }
   function tiConfirmDelete(label) {
-    return window.confirm(`Delete ${label}? This removes it from the threat workspace.`);
+    return confirmDestructiveChoice(label, {
+      title: 'Delete threat record?',
+      detail: 'This removes it from the threat workspace.',
+    });
   }
   function tiLabel(value) {
     return String(value || 'Unknown').replace(/_/g, ' ');
@@ -494,7 +497,7 @@
   }
 
   async function deleteThreat(id) {
-    if (!tiConfirmDelete('this threat')) return;
+    if (!(await tiConfirmDelete('this threat'))) return;
     try {
       await apiDelete('/api/threat-intel/entries/' + id);
       toast('Threat deleted', 'success');
@@ -511,7 +514,7 @@
   }
 
   async function deleteThreatFeed(id) {
-    if (!tiConfirmDelete('this feed')) return;
+    if (!(await tiConfirmDelete('this feed'))) return;
     try {
       await apiDelete('/api/threat-intel/feeds/' + id);
       toast('Feed deleted', 'success');

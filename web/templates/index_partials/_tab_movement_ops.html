@@ -344,7 +344,10 @@
   };
   const moEmpty=(title, body)=>`<div class="mo-empty"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
   const moDeleteButton=(action,label)=>`<button type="button" class="mo-btn mo-btn-icon mo-btn-danger-quiet" onclick='${action}' title="Delete ${esc(label)}" aria-label="Delete ${esc(label)}">&times;</button>`;
-  const moConfirmDelete=label=>window.confirm(`Delete ${label}? This removes it from the movement workspace.`);
+  const moConfirmDelete=label=>confirmDestructiveChoice(label, {
+    title: 'Delete movement record?',
+    detail: 'This removes it from the movement workspace.',
+  });
 
   /* ── Movement Plans ── */
   window.moLoadPlans=function(){
@@ -367,8 +370,8 @@
         pace_count_per_100m:numVal('mo-plan-pace',65),night_movement:numVal('mo-plan-night')})
     }).then(()=>{$('mo-plan-name').value='';moLoadPlans();});
   };
-  window.moDeletePlan=function(id, label){
-    if(!moConfirmDelete(label || 'movement plan')) return;
+  window.moDeletePlan=async function(id, label){
+    if(!(await moConfirmDelete(label || 'movement plan'))) return;
     api('/api/movement-plans/'+id,{method:'DELETE'}).then(()=>moLoadPlans());
   };
 
@@ -392,8 +395,8 @@
         speed_mph:numVal('mo-av-speed'),storage_location:val('mo-av-location')})
     }).then(()=>{$('mo-av-name').value='';moLoadAV();});
   };
-  window.moDeleteAV=function(id, label){
-    if(!moConfirmDelete(label || 'alternate transport asset')) return;
+  window.moDeleteAV=async function(id, label){
+    if(!(await moConfirmDelete(label || 'alternate transport asset'))) return;
     api('/api/alt-vehicles/'+id,{method:'DELETE'}).then(()=>moLoadAV());
   };
 
@@ -418,8 +421,8 @@
         description:val('mo-hz-desc'),bypass_route:val('mo-hz-bypass')})
     }).then(()=>{$('mo-hz-name').value='';moLoadHazards();});
   };
-  window.moDeleteHazard=function(id, label){
-    if(!moConfirmDelete(label || 'route hazard')) return;
+  window.moDeleteHazard=async function(id, label){
+    if(!(await moConfirmDelete(label || 'route hazard'))) return;
     api('/api/route-hazards/'+id,{method:'DELETE'}).then(()=>moLoadHazards());
   };
 
@@ -443,8 +446,8 @@
         notes:val('mo-vl-notes')})
     }).then(()=>{$('mo-vl-vehicle').value='';moLoadVehicleLoading();});
   };
-  window.moDeleteLoading=function(id, label){
-    if(!moConfirmDelete(label || 'vehicle staging plan')) return;
+  window.moDeleteLoading=async function(id, label){
+    if(!(await moConfirmDelete(label || 'vehicle staging plan'))) return;
     api('/api/vehicle-loading/'+id,{method:'DELETE'}).then(()=>moLoadVehicleLoading());
   };
 
@@ -478,8 +481,8 @@
       body:JSON.stringify({current_status:status,last_updated:new Date().toISOString()})
     }).then(()=>moLoadGoNogo());
   };
-  window.moDeleteGoNogo=function(id, label){
-    if(!moConfirmDelete(label || 'go or no-go criterion')) return;
+  window.moDeleteGoNogo=async function(id, label){
+    if(!(await moConfirmDelete(label || 'go or no-go criterion'))) return;
     api('/api/go-nogo/'+id,{method:'DELETE'}).then(()=>moLoadGoNogo());
   };
 

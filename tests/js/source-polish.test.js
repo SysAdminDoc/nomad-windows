@@ -54,4 +54,24 @@ describe('source polish guardrails', () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it('keeps preparedness read panels on the shared prep API helper', () => {
+    const offenders = [];
+    const targetFiles = [
+      'web/templates/index_partials/js/preparedness/_prep_dashboards.js',
+      'web/templates/index_partials/js/preparedness/_prep_ops_mapping.js',
+    ];
+    const rawReadPatterns = [/\bsafeFetch\s*\(/, /\bapiFetch\s*\(/];
+
+    for (const target of targetFiles) {
+      const lines = readFileSync(join(ROOT, target), 'utf8').split(/\r?\n/);
+      lines.forEach((line, index) => {
+        if (rawReadPatterns.some(pattern => pattern.test(line))) {
+          offenders.push(`${target}:${index + 1}:${line.trim()}`);
+        }
+      });
+    }
+
+    expect(offenders).toEqual([]);
+  });
 });

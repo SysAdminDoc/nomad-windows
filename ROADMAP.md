@@ -140,6 +140,12 @@ Single-session run continued through to **full H-17 closure**. Auto-engaged Larg
 - **Runtime consistency:** `safeFetch()` now delegates to `window.apiFetch` when available and keeps a timer cleanup fallback for pre-client execution.
 - **Regression coverage:** `tests/js/api-client.test.js` pins network normalization, toast recovery, and CSRF on mutating helper calls. `tests/js/source-polish.test.js` now blocks reintroducing raw tab-local JSON helpers.
 
+### Continuation pass (2026-04-25) — Preparedness API recovery polish
+
+- **P2-I14 closed for the prep runtime.** Added `prepFetchJson()` / `prepRenderPanelError()` as the preparedness-specific read helper over the shared API client, then moved burn-rate, incident-log, timer, waypoint, and emergency-card read paths off raw `safeFetch()` / `apiFetch()` calls.
+- **Product polish:** failed readiness panels now show inline recovery states where the user can act, while background print-card enrichment keeps quiet fallbacks so emergency-card generation still works offline or partially degraded.
+- **Regression coverage:** `tests/js/source-polish.test.js` now blocks `safeFetch()` / `apiFetch()` read regressions in the migrated preparedness dashboard and ops mapping partials.
+
 ### Factory-loop final state (post-iter-3)
 
 - **V8 roadmap**: 18 of 24 items Done (V8-09 closed v7.65.1-pre; V8-11 closed v7.65.0 / `502e057`). 5 Open: V8-02 (progressive disclosure), V8-03 (lazy tab loading), V8-04 (innerHTML audit tail — 8 tab templates pending), V8-06 (blueprint test coverage gap), V8-08 (split db.py package). 1 Blocked: V8-21 (macOS signing — Apple Developer credentials).
@@ -807,7 +813,7 @@ Items derived from audit findings above, tagged `[internal]`.
 | P2-I11 | **SSE subscriber pruning** | Proactively remove stale SSE subscribers (queue full for >60s or last keepalive >60s ago) in the alert engine loop. | E-1, C-5 |
 | P2-I12 | **SHA256 verification on service downloads** | Download checksums from upstream GitHub releases and verify after download for all 7 services, not just self-update. | H-4 |
 | P2-I13 | **Migrate remaining 80+ `get_db()` calls to `db_session()`** | Convert bare `get_db()`/`db.close()` pairs across all blueprints to `with db_session() as db:` to prevent connection leaks. | B-6 |
-| P2-I14 | **Migrate remaining 40 raw `fetch()` to api wrappers** | Convert unguarded `fetch()` GET calls in `_prep_dashboards.js`, `_prep_family_field.js`, `_prep_ops_mapping.js` to `apiFetch()` with `resp.ok` checks. | B-7 |
+| P2-I14 | ~~**Migrate remaining prep runtime reads to shared API wrappers**~~ | **Done 2026-04-25.** `prepFetchJson()` now routes preparedness read panels through `apiJson()` / `apiFetch()` with managed recovery copy and inline panel errors for burn-rate, incidents, timers, waypoints, and emergency-card enrichment. Source guard blocks reintroducing `safeFetch()` / `apiFetch()` reads in the migrated dashboard and ops mapping partials. | B-7 |
 | P2-I15 | ~~**Pin dependencies in `requirements.txt`**~~ | **Done** (v7.52.0) — version ranges in requirements.txt + requirements-dev.txt | G-6, G-12 |
 | P2-I16 | **Add `schema_version` table for migrations** | Track applied column migrations in DB instead of checking `PRAGMA table_info()` for every migration on every startup. | D-6 |
 | P2-I17 | **Parallelize `auto_start_services()`** | Start all 8 services in parallel threads instead of serial. Use a threading.Barrier or join loop to wait for all. | D-7 |

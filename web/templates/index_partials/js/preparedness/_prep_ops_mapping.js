@@ -50,7 +50,13 @@ function toggleTimerPanel() {
 
 async function loadTimers() {
   try {
-    const timers = await apiFetch('/api/timers');
+    const timers = await prepFetchJson('/api/timers', {}, {
+      action: 'Load timers',
+      fallback: null,
+      targetId: 'timer-list',
+      inlineMessage: 'Timers unavailable.',
+    });
+    if (timers === null) return;
     const timerList = Array.isArray(timers) ? timers : [];
     const el = document.getElementById('timer-list');
     if (!timerList.length) {
@@ -172,7 +178,11 @@ function renderMapPopupShell({ title, meta = '', facts = [], notes = '', section
 async function loadWaypoints() {
   if (!_map) return;
   try {
-    const waypoints = await apiFetch('/api/waypoints');
+    const waypoints = await prepFetchJson('/api/waypoints', {}, {
+      action: 'Load map waypoints',
+      fallback: null,
+    });
+    if (!Array.isArray(waypoints)) return;
     // Remove existing waypoint markers
     if (window._waypointMarkers) window._waypointMarkers.forEach(m => m.remove());
     window._waypointMarkers = [];
@@ -324,9 +334,21 @@ async function printFullCard() {
   let contacts = [], summary = {categories:[]}, trend = {};
   try {
     [contacts, summary, trend] = await Promise.all([
-      apiFetch('/api/contacts').catch(()=>[]),
-      apiFetch('/api/inventory/summary').catch(()=>({categories:[]})),
-      apiFetch('/api/weather/trend').catch(()=>({})),
+      prepFetchJson('/api/contacts', {}, {
+        action: 'Load emergency contacts',
+        fallback: [],
+        notifyOptions: {silent: true},
+      }),
+      prepFetchJson('/api/inventory/summary', {}, {
+        action: 'Load inventory summary',
+        fallback: {categories:[]},
+        notifyOptions: {silent: true},
+      }),
+      prepFetchJson('/api/weather/trend', {}, {
+        action: 'Load weather trend',
+        fallback: {},
+        notifyOptions: {silent: true},
+      }),
     ]);
   } catch(e) { toast('Failed to load data for print card', 'error'); return; }
   // Get localStorage data
@@ -337,7 +359,11 @@ async function printFullCard() {
   let sit = readJsonStorage(localStorage, 'nomad-sit-board', {});
   // Also try settings
   try {
-    const s = await apiFetch('/api/settings');
+    const s = await prepFetchJson('/api/settings', {}, {
+      action: 'Load situation board',
+      fallback: {},
+      notifyOptions: {silent: true},
+    });
     if (s.sit_board) Object.assign(sit, safeJsonParse(s.sit_board, {}));
   } catch(e) {}
 

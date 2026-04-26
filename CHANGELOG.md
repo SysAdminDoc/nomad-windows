@@ -2,6 +2,18 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.11] - 2026-04-26
+
+- **UX polish pass: 9 reported issues addressed.** New `web/static/css/premium/120_ui_polish.css` covers most fixes; targeted file edits handle the rest. Verified in Playwright before shipping.
+  - **Home hero** — title was clamp(26-38px) wrapping 6 lines and leaving a half-empty card. Tightened to clamp(20-26px) with reduced line-height and hero padding.
+  - **Tools compass** — was rendering half-width while NukeMap/VIPTrack cards below were full-width. Added `layout-span-full` class and `grid-column: 1 / -1` override.
+  - **Vehicles / Timeline / Diagnostics / Data Foundation** — `.tab-content.tab-vcenter` was using `justify-content: center` which pushed short content down ~250px, leaving an empty header band. Switched to `flex-start` so content anchors at the top.
+  - **Notes** — forced `.notes-layout` and shell to `width: 100%; max-width: none` so it fills like other workspaces.
+  - **Maps** — region cards now use `display: flex; justify-content: space-between` with `margin-left: auto` on the download button so all download buttons align to the right.
+  - **Situation Room** — added `:root[data-theme="nomad"]` overrides for `.sr-shell`, `.sr-panel`, `.sr-news-desk`, `.sr-watchfloor`, `.sr-globe`, `.sr-header` so the dark gradients only apply in nightops/cyber themes.
+  - **NukeMap right panel** — was hardcoded with Catppuccin Mocha tokens. Added `:root[data-theme="nomad"] #tab-nukemap` overrides directly inline so `.nk-tab`, `.burst-btn`, `.btn-secondary`, `.filter-chip`, `.quick-target` use light-theme colors.
+  - **VIPTrack top-right buttons** — `body.day-mode .filter-chip / .hud-btn / .icon-btn / .map-control-button` now have white-with-dark-border styling for visible contrast in light mode. SVG strokes recolored to dark.
+
 ## [v7.65.10] - 2026-04-26
 
 - **Fix: light theme rendered dark form panels with white text on tab pages.** Per-tab inline `<style>` blocks (medical-phase2, agriculture, daily-living, group-ops, etc.) used legacy CSS variable names like `var(--card-bg, #1a1a2e)`, `var(--input-bg, #12121f)`, `var(--text-primary, #eee)`, `var(--text-secondary, #aaa)`, `var(--danger, ...)`, `var(--success, ...)`, `var(--blue, ...)`, `var(--base, ...)` that **were never defined in any theme**. On light theme (`nomad`), the dark hardcoded fallbacks were used and panels rendered dark navy with white text on a cream page background. Live Playwright DOM inspection confirmed `--card-bg`, `--input-bg`, `--text-primary`, `--text-secondary` were all `<unset>`. New `web/static/css/app/05_legacy_token_aliases.css` aliases every legacy name to a canonical theme token (`--card-bg → var(--surface-solid)`, `--input-bg → var(--surface-field)`, `--text-primary → var(--text)`, `--danger → var(--red)`, etc.), so values automatically adapt per-theme. Loaded right after the canonical tokens via `app.css`.

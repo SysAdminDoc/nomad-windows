@@ -72,6 +72,44 @@
             --text-dim: #555;
             --text-muted: #888;
         }
+        /* Day-mode contrast fixes — the default chip/button styles render
+           gray-on-light and become unreadable. Push backgrounds whiter and
+           text darker so the floating HUD and filter chips actually pop. */
+        body.day-mode .filter-chip,
+        body.day-mode .filter-button,
+        body.day-mode .map-control-button,
+        body.day-mode .hud-btn,
+        body.day-mode .icon-btn {
+            background: rgba(255, 255, 255, 0.96) !important;
+            border: 1px solid rgba(0, 0, 0, 0.22) !important;
+            color: #1a1a1a !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+        }
+        body.day-mode .filter-chip:hover,
+        body.day-mode .filter-button:hover,
+        body.day-mode .map-control-button:hover,
+        body.day-mode .hud-btn:hover,
+        body.day-mode .icon-btn:hover {
+            background: #fff !important;
+            border-color: rgba(0, 0, 0, 0.35) !important;
+            color: #000 !important;
+        }
+        body.day-mode .filter-chip.active,
+        body.day-mode .filter-button.active,
+        body.day-mode .map-control-button.active,
+        body.day-mode .hud-btn.active,
+        body.day-mode .icon-btn.active {
+            background: var(--accent) !important;
+            border-color: var(--accent) !important;
+            color: #000 !important;
+        }
+        /* SVG icons inside HUD buttons — recolor strokes for light bg */
+        body.day-mode .hud-btn svg,
+        body.day-mode .icon-btn svg,
+        body.day-mode .map-control-button svg {
+            stroke: #1a1a1a !important;
+            fill: none !important;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
         :where(button, input, select, textarea, a, .leaflet-control-zoom a):focus-visible {

@@ -175,6 +175,39 @@
       #tab-nukemap .section-title.collapsible.collapsed::before{transform:rotate(-90deg)}
       #tab-nukemap .section.sec-collapsed>*:not(.section-title){display:none!important}
 
+      /* Light-theme override: NukeMap was hardcoded with Catppuccin Mocha
+         tokens (dark) — when NOMAD is in light mode, the right panel buttons
+         render gray-on-gray and become unreadable. Boost contrast in nomad. */
+      :root[data-theme="nomad"] #tab-nukemap .nk-tab,
+      :root[data-theme="nomad"] #tab-nukemap .burst-btn,
+      :root[data-theme="nomad"] #tab-nukemap .btn-secondary {
+        color: var(--text) !important;
+        border-color: var(--border-hover, rgba(0,0,0,0.18)) !important;
+      }
+      :root[data-theme="nomad"] #tab-nukemap .nk-tab.active,
+      :root[data-theme="nomad"] #tab-nukemap .burst-btn.active {
+        background: var(--accent) !important;
+        color: var(--text-inverse, #fff) !important;
+        border-color: var(--accent) !important;
+      }
+      :root[data-theme="nomad"] #tab-nukemap .filter-chip,
+      :root[data-theme="nomad"] #tab-nukemap .quick-target,
+      :root[data-theme="nomad"] #tab-nukemap [class*="quick-target"] {
+        background: var(--surface-solid) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      :root[data-theme="nomad"] #tab-nukemap .panel-content,
+      :root[data-theme="nomad"] #tab-nukemap .panel-body,
+      :root[data-theme="nomad"] #tab-nukemap .panel-header {
+        background: var(--surface-solid) !important;
+        color: var(--text) !important;
+      }
+      :root[data-theme="nomad"] #tab-nukemap .section-title,
+      :root[data-theme="nomad"] #tab-nukemap label {
+        color: var(--text-dim) !important;
+      }
+
       /* Tabs (NukeMap inner tabs — renamed to avoid NOMAD collision) */
       #tab-nukemap .tabs{display:flex;gap:2px;background:var(--surface0);border-radius:var(--radius-sm);padding:2px;margin-bottom:12px}
       #tab-nukemap .nk-tab{flex:1;padding:6px 4px;border-radius:6px;background:transparent;border:none;color:var(--overlay1);font-size:10px;font-weight:700;cursor:pointer;transition:background-color .2s,color .2s,box-shadow .2s;text-align:center;text-transform:uppercase;letter-spacing:0.5px}

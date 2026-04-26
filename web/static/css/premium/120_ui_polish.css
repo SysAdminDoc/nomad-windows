@@ -1,0 +1,109 @@
+/*
+ * UI polish — fixes from the post-light-theme audit pass.
+ *
+ * Each rule below addresses a specific user-reported issue. Loaded
+ * last in the premium chain to win source-order ties.
+ */
+
+/* ─── #1 Home: hero headline was clamp(26-38px) and wrapped 6 lines,
+ *      leaving a half-empty card. Tighten so the search bar and
+ *      "Choose the lane that matches..." copy fit above the fold. */
+.home-launch-title {
+  font-size: clamp(20px, 1.7vw, 26px) !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.025em !important;
+}
+.home-launch-text {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+.home-launch-hero {
+  padding: 18px 22px !important;
+}
+
+/* ─── #2 Tools: compass card was half-width while NukeMap/VIPTrack
+ *      cards below it were full-width. Force the compass card to
+ *      span the full grid row like its siblings. */
+.tools-compass-card {
+  grid-column: 1 / -1 !important;
+}
+
+/* ─── #3 Vehicles / Timeline / Diagnostics / Data Foundation: huge
+ *      empty space at top from .tab-vcenter centering content
+ *      vertically when content is shorter than viewport. Anchor
+ *      content to the top instead. */
+.tab-content.active.tab-vcenter {
+  justify-content: flex-start !important;
+}
+
+/* ─── #4 Notes: layout was constrained vs other workspaces. Force
+ *      the notes shell to fill the available width like the rest. */
+#tab-notes .notes-layout,
+#tab-notes .notes-shell,
+#tab-notes .notes-workspace {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* ─── #5 Maps: regional download buttons were positioned next to
+ *      the region label, breaking visual rhythm. Push them to the
+ *      right edge of each region row so all action buttons align. */
+.region-card,
+.map-region-card,
+[class*="map-region"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+.region-card .btn,
+.map-region-card .btn,
+[class*="map-region"] .btn {
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* ─── #6 Situation Room: hardcoded dark backgrounds bleed through
+ *      the light theme. Soften the body.situation-room-active
+ *      backdrop so it inherits theme colors. The deep-dark
+ *      "watchfloor" aesthetic is intentional in nightops/cyber
+ *      themes — gate the dark surface to those themes only. */
+:root[data-theme="nomad"] body.situation-room-active,
+body.situation-room-active:not([data-theme]) {
+  background: var(--bg) !important;
+}
+:root[data-theme="nomad"] #tab-situation-room,
+#tab-situation-room:not([data-theme]) {
+  background: var(--surface-solid) !important;
+  color: var(--text) !important;
+}
+:root[data-theme="nomad"] .sr-shell,
+:root[data-theme="nomad"] .sitroom-shell,
+:root[data-theme="nomad"] [class*="sitroom-"],
+:root[data-theme="nomad"] [class*="sr-"]:not(.sr-alert-toast) {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+/* Dark gradients on individual sit-room panels — replace with theme-aware */
+:root[data-theme="nomad"] .sr-panel,
+:root[data-theme="nomad"] .sitroom-panel,
+:root[data-theme="nomad"] .sr-card,
+:root[data-theme="nomad"] .sitroom-card {
+  background: var(--surface-solid) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+/* ─── Sitroom news desk + headline strip on light theme */
+:root[data-theme="nomad"] .sr-news-desk,
+:root[data-theme="nomad"] .sr-watchfloor,
+:root[data-theme="nomad"] .sr-globe,
+:root[data-theme="nomad"] .sr-header,
+:root[data-theme="nomad"] .sr-stats-strip,
+:root[data-theme="nomad"] .sr-ticker {
+  background: var(--surface-solid) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}

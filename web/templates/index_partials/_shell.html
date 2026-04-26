@@ -312,6 +312,40 @@
   </div>
 </nav><!-- /sidebar -->
 
+<script>
+  // Preserve sidebar scroll position across page navigations. The sidebar
+  // is its own scroll container (overflow-y: auto) and resets to 0 on each
+  // full page load — jarring when the user clicks a tab deep in the list.
+  // Restoring inline (rather than via DOMContentLoaded) avoids the visible
+  // flash of scroll-top before the saved position kicks in.
+  (function () {
+    var sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    var KEY = 'nomad-sidebar-scroll';
+    try {
+      var saved = parseInt(sessionStorage.getItem(KEY), 10);
+      if (Number.isFinite(saved) && saved > 0) sidebar.scrollTop = saved;
+    } catch (e) {}
+    // rAF-coalesced save — at most once per frame, no missed final position
+    // before navigation (debounced timers can be cancelled mid-flight when
+    // the page begins to unload).
+    var raf = 0;
+    function save() {
+      try { sessionStorage.setItem(KEY, String(sidebar.scrollTop)); } catch (e) {}
+    }
+    sidebar.addEventListener('scroll', function () {
+      if (raf) return;
+      raf = requestAnimationFrame(function () {
+        raf = 0;
+        save();
+      });
+    }, { passive: true });
+    // Flush on navigation start so the very last scroll position before a
+    // click is always persisted.
+    window.addEventListener('pagehide', save);
+  })();
+</script>
+
 <!-- Emergency Mode banner (shown when active) -->
 <div id="emergency-banner" class="emergency-banner is-hidden" role="alert" aria-live="assertive">
   <div class="emergency-banner-inner">

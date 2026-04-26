@@ -70,19 +70,23 @@
 }
 
 /* ─── #5 Maps: regional download buttons were positioned next to
- *      the region label, breaking visual rhythm. Push them to the
- *      right edge of each region row so all action buttons align. */
+ *      the region label, so each row's Download button sat at a
+ *      different X depending on the label length. Force the inner
+ *      `.region-card-shell` (which wraps label + button) into a
+ *      flex row with the button pushed to the right edge of the
+ *      card — every Download now lines up at the same right edge. */
 .region-card,
-.map-region-card,
-[class*="map-region"] {
+.region-card-shell {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 12px !important;
+  width: 100% !important;
 }
-.region-card .btn,
-.map-region-card .btn,
-[class*="map-region"] .btn {
+.region-card-shell > .btn,
+.region-card-shell > button,
+.region-card > .btn,
+.region-card > button {
   margin-left: auto !important;
   flex-shrink: 0 !important;
 }
@@ -130,35 +134,58 @@ body.situation-room-active:not([data-theme]) {
   border-color: var(--border) !important;
 }
 
-/* The two cards directly under the situation-room header
- * (.sr-saved-desk-bar = "Saved Watchlists", .sr-posture-bar
- *  = "Current Posture") had a dark-to-light vertical gradient
- * that bled into a near-white panel at the bottom — jarring
- * against the dark watchfloor. Force a flat dark backdrop so
- * the cards read as part of the watchfloor instead of pasted
- * in from a different theme. */
-.sr-saved-desk-bar,
-.sr-posture-bar,
-.sr-watchlist-bar,
-.sr-current-posture {
-  background: rgba(8, 11, 16, 0.92) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  color: rgba(237, 242, 247, 0.92) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+/* The cards directly under the situation-room header
+ * (.sr-saved-desk-bar = "Saved Watchlists", .sr-posture-bar =
+ * "Current Posture", and the empty-state callouts inside them)
+ * each had a dark-to-near-white linear-gradient, so the bottom
+ * half of every card was nearly white — a jarring break from the
+ * dark watchfloor surrounding them.
+ *
+ * We flatten ALL of them to solid black with light dark-mode
+ * text. Higher-specificity selectors (#tab-situation-room ...)
+ * are required because the source rules in 45_situation_room.css
+ * use the same prefix (specificity 1,1,0). */
+#tab-situation-room .sr-header,
+#tab-situation-room .sr-saved-desk-bar,
+#tab-situation-room .sr-posture-bar,
+#tab-situation-room .sr-saved-desk-empty,
+#tab-situation-room .sr-posture-empty,
+#tab-situation-room .sr-watchlist-bar,
+#tab-situation-room .sr-current-posture,
+#tab-situation-room .sr-newsdesk-brief,
+#tab-situation-room .sr-newsdesk-nav,
+#tab-situation-room .sr-actions-bar {
+  background: #000 !important;
+  background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #e6edf5 !important;
+  box-shadow: none !important;
 }
-.sr-saved-desk-bar *,
-.sr-posture-bar *,
-.sr-watchlist-bar *,
-.sr-current-posture * {
-  color: inherit;
+#tab-situation-room .sr-saved-desk-bar *,
+#tab-situation-room .sr-posture-bar *,
+#tab-situation-room .sr-saved-desk-empty *,
+#tab-situation-room .sr-posture-empty *,
+#tab-situation-room .sr-watchlist-bar *,
+#tab-situation-room .sr-current-posture *,
+#tab-situation-room .sr-newsdesk-brief *,
+#tab-situation-room .sr-header * {
+  color: inherit !important;
 }
-/* Inputs inside those bars (e.g., "Name current desk") need a
- * darker field with light text so they match the surrounding
- * panel rather than appearing as bright white inputs. */
-.sr-saved-desk-bar input,
-.sr-posture-bar input,
-.sr-watchlist-bar input {
-  background: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+/* Form inputs in those bars — keep darker than the panel for
+ * contrast, with light typed text. */
+#tab-situation-room .sr-saved-desk-bar input,
+#tab-situation-room .sr-posture-bar input,
+#tab-situation-room .sr-watchlist-bar input,
+#tab-situation-room .sr-input {
+  background: #0a0a0a !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
   color: #f0f4f8 !important;
+}
+/* Buttons inside the dark bars — outline style for legibility */
+#tab-situation-room .sr-saved-desk-bar .sr-btn,
+#tab-situation-room .sr-posture-bar .sr-btn,
+#tab-situation-room .sr-actions-bar .sr-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #e6edf5 !important;
 }

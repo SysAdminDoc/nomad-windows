@@ -2,6 +2,10 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.6] - 2026-04-26
+
+- **Fix: 13 workspace tabs rendered blank under their dedicated routes.** Med+, Land, Agriculture, Disasters, Wild Food, Group Ops, OPSEC, Movement, Tac Comms, Daily Living, Hardware, Platform Security, and Specialized all hardcoded `class="tab-content is-hidden"` instead of using the conditional `{% if active_tab == '<slug>' %} active{% endif %}` pattern that the working tabs (VIPTrack, Water, Financial, Vehicles, Threats, Data Packs, Timeline, etc.) use. Combined with the global `.tab-content { display: none } .tab-content.active { display: block }` rules and `.is-hidden { display: none !important }` utility, those 13 partials were rendered into the page but never displayed under their own `/medical-plus`, `/land`, etc. routes — the route returned 200 but the user saw an empty workspace below the inspector card. Replaced the hardcoded `is-hidden` with the conditional active pattern in all 13 partials.
+
 ## [v7.65.5] - 2026-04-26
 
 - **Fix: workspace inspector showed generic "Resume workspace" for 21 tabs that already had full content.** `WORKSPACE_TAB_META` and `WORKSPACE_GROUP_LABELS` in `_app_workspace_memory.js` only knew about 12 of 36 sidebar tabs — anything outside that core set rendered with the fallback label `humanizeWorkspaceSlug(activeTab)`, the generic chevron icon `›`, and the placeholder summary `Resume workspace.` This made fully built-out workspaces (Med+, Land, Water, Financial, Vehicles, Tac Comms, Group Ops, OPSEC, Disasters, Daily Living, Wild Food, Threats, Specialized, Hardware, Security, Data Packs, Movement, Agriculture, Timeline, NukeMap, VIPTrack) look like empty placeholders. Added proper label, emoji icon, and one-sentence summary for each, plus group classification (Briefing / Operations / Knowledge / System / Assistant) so they sort correctly in the workspace memory and pinned-workspaces UIs.

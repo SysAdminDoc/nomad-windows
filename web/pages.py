@@ -128,6 +128,125 @@ WORKSPACE_PAGES = {
         'title': 'Interoperability',
         'partial': 'index_partials/_tab_interoperability.html',
     },
+    # ─── Sidebar tabs that previously had no Flask route ────────────────
+    # Each had a partial template but no `/<slug>` route, so navigating to
+    # them from any standalone workspace page (e.g. /viptrack-tab) silently
+    # re-loaded the same page. Routes auto-register from this dict via the
+    # loop in register_pages() below.
+    'water-mgmt': {
+        'route': '/water-mgmt',
+        'aliases': [],
+        'title': 'Water',
+        'partial': 'index_partials/_tab_water_mgmt.html',
+    },
+    'financial': {
+        'route': '/financial',
+        'aliases': [],
+        'title': 'Financial',
+        'partial': 'index_partials/_tab_financial.html',
+    },
+    'vehicles': {
+        'route': '/vehicles',
+        'aliases': [],
+        'title': 'Vehicles',
+        'partial': 'index_partials/_tab_vehicles.html',
+    },
+    'movement-ops': {
+        'route': '/movement',
+        'aliases': [],
+        'title': 'Movement',
+        'partial': 'index_partials/_tab_movement_ops.html',
+    },
+    'tactical-comms': {
+        'route': '/tactical-comms',
+        'aliases': ['/comms'],
+        'title': 'Tac Comms',
+        'partial': 'index_partials/_tab_tactical_comms.html',
+    },
+    'timeline': {
+        'route': '/timeline',
+        'aliases': [],
+        'title': 'Timeline',
+        'partial': 'index_partials/_tab_timeline.html',
+    },
+    'threat-intel': {
+        'route': '/threats',
+        'aliases': [],
+        'title': 'Threats',
+        'partial': 'index_partials/_tab_threat_intel.html',
+    },
+    'land-assessment': {
+        'route': '/land',
+        'aliases': [],
+        'title': 'Land',
+        'partial': 'index_partials/_tab_land_assessment.html',
+    },
+    'medical-phase2': {
+        'route': '/medical-plus',
+        'aliases': [],
+        'title': 'Med+',
+        'partial': 'index_partials/_tab_medical_phase2.html',
+    },
+    'group-ops': {
+        'route': '/group-ops',
+        'aliases': [],
+        'title': 'Group Ops',
+        'partial': 'index_partials/_tab_group_ops.html',
+    },
+    'security-opsec': {
+        'route': '/opsec',
+        'aliases': [],
+        'title': 'OPSEC',
+        'partial': 'index_partials/_tab_security_opsec.html',
+    },
+    'agriculture': {
+        'route': '/agriculture',
+        'aliases': [],
+        'title': 'Agriculture',
+        'partial': 'index_partials/_tab_agriculture.html',
+    },
+    'disaster-modules': {
+        'route': '/disasters',
+        'aliases': [],
+        'title': 'Disasters',
+        'partial': 'index_partials/_tab_disaster_modules.html',
+    },
+    'daily-living': {
+        'route': '/daily-living',
+        'aliases': [],
+        'title': 'Daily Living',
+        'partial': 'index_partials/_tab_daily_living.html',
+    },
+    'hunting-foraging': {
+        'route': '/wild-food',
+        'aliases': [],
+        'title': 'Wild Food',
+        'partial': 'index_partials/_tab_hunting_foraging.html',
+    },
+    'hardware-sensors': {
+        'route': '/hardware',
+        'aliases': [],
+        'title': 'Hardware',
+        'partial': 'index_partials/_tab_hardware_sensors.html',
+    },
+    'platform-security': {
+        'route': '/platform-security',
+        'aliases': [],
+        'title': 'Security',
+        'partial': 'index_partials/_tab_platform_security.html',
+    },
+    'specialized-modules': {
+        'route': '/specialized',
+        'aliases': [],
+        'title': 'Specialized',
+        'partial': 'index_partials/_tab_specialized_modules.html',
+    },
+    'data-foundation': {
+        'route': '/data-packs',
+        'aliases': [],
+        'title': 'Data Packs',
+        'partial': 'index_partials/_tab_data_foundation.html',
+    },
 }
 
 WORKSPACE_ROUTES = {tab: meta['route'] for tab, meta in WORKSPACE_PAGES.items()}
@@ -451,6 +570,31 @@ def register_pages(app):
     @app.route('/data-exchange')
     def interoperability_page():
         return render_workspace_page('interoperability', app=app)
+
+    # ─── Auto-register workspace pages without hand-rolled routes ─────
+    # Any tab in WORKSPACE_PAGES whose route isn't already mapped above
+    # gets a generated handler. Adding a tab to WORKSPACE_PAGES is enough
+    # — no boilerplate route handler needed. Prevents the regression where
+    # 19 sidebar tabs (water-mgmt, financial, vehicles, etc.) had partials
+    # but no Flask route, breaking sidebar nav from /viptrack-tab et al.
+    _registered_routes = {rule.rule for rule in app.url_map.iter_rules()}
+    for _tab_id, _meta in WORKSPACE_PAGES.items():
+        _endpoint_base = 'workspace_' + _tab_id.replace('-', '_')
+
+        def _make_handler(tid):
+            def _handler():
+                return render_workspace_page(tid, app=app)
+            return _handler
+
+        _handler_fn = _make_handler(_tab_id)
+        if _meta['route'] not in _registered_routes:
+            app.add_url_rule(_meta['route'], _endpoint_base, _handler_fn)
+            _registered_routes.add(_meta['route'])
+        for _idx, _alias in enumerate(_meta.get('aliases', [])):
+            if _alias in _registered_routes:
+                continue
+            app.add_url_rule(_alias, f'{_endpoint_base}_alias_{_idx}', _handler_fn)
+            _registered_routes.add(_alias)
 
     # ─── i18n API ─────────────────────────────────────────────────────
     SUPPORTED_LANGUAGES, TRANSLATIONS = _get_translations_pair()

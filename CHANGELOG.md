@@ -2,6 +2,18 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.9] - 2026-04-26
+
+- **Fix: tab page header was actually `.workspace-context-bar` (not the per-tab command-deck I was targeting in v7.65.7-8).** Verified with live Playwright DOM inspection: the huge "Med+ / Pregnancy, dental, chronic..." white card at the top measured 333px tall. It's defined in `_shell.html` as `#workspace-context-bar` and contains: a 20-28px clamp title, a 13px line-height-1.65 summary, a "Suggested actions" copy block (kicker + descriptive sentence), 5 meta-action buttons, all in a 2-column grid with generous gaps. v7.65.7-8 targeted only the per-tab `<prefix>-command-deck` cards which sit BELOW this bar — those decks were never the user's complaint.
+- Rewrote `web/static/css/premium/110_compact_command_decks.css` to:
+  - Force `.workspace-context-bar` into a single horizontal row (title + description + buttons inline)
+  - Shrink title to 16px (was clamp 20-28px)
+  - Truncate summary to one line with ellipsis
+  - Hide the redundant "Suggested actions / Stay in the flow..." copy block (the buttons themselves communicate intent)
+  - Compact buttons to 28px height
+  - Halve padding, gap, border-radius
+- Net result: header dropped from 333px to ~80px. Sub-tabs and content area visible above the fold immediately on tab load.
+
 ## [v7.65.8] - 2026-04-26
 
 - **Fix: compact command-deck CSS from v7.65.7 didn't apply to multi-class decks (FOUC).** Selectors used `[class$="-command-deck"]` (ends-with), but every deck has at least two classes (`mp-command-deck workspace-panel`), so the attribute value ends with `workspace-panel` and the suffix matcher silently missed every multi-class element. The result: my override loaded but never applied; the bundle's `.workspace-panel { padding: 12px 14px !important }` and each tab's inline `#tab-X .x-command-deck { padding: 18px 20px }` won, producing the "loads condensed for a split second then expands huge" behavior the user saw (head-loaded CSS painted first, then body-inline `<style>` finished parsing and inflated everything). Switched all selectors to `[class*="..."]` (substring match) with `:not(...)` to disambiguate `-command-deck` from `-command-deck-head` etc. Added a higher-specificity selector `.workspace-panel[class*="-command-deck"]:not([class*="-command-deck-"])` to win over the bundle's `.workspace-panel` !important rule for command-deck cards specifically.

@@ -2,6 +2,10 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.7] - 2026-04-26
+
+- **UX: compact tab page headers — content now front-and-center.** Every workspace partial defined its own `<prefix>-command-deck` card with 18-20px padding, 24px border-radius, 1.32rem title, full-width description, a row of decorative pills, and jump-to-section buttons that duplicate the sub-tab nav directly below. Combined, the header consumed ~180-220px of vertical space before any actual content. New `web/static/css/premium/110_compact_command_decks.css` targets the shared suffix pattern (`[class$="-command-deck"]`, etc.) and shrinks padding (10/14), border-radius (12), title (0.98rem), description (0.78rem), hides the decorative pill row entirely (it's `aria-hidden` and duplicates sub-tabs), and compacts the sub-tab shell that sits directly below. Net result: header drops to ~70-90px, sub-tabs and content visible above the fold.
+
 ## [v7.65.6] - 2026-04-26
 
 - **Fix: 13 workspace tabs rendered blank under their dedicated routes.** Med+, Land, Agriculture, Disasters, Wild Food, Group Ops, OPSEC, Movement, Tac Comms, Daily Living, Hardware, Platform Security, and Specialized all hardcoded `class="tab-content is-hidden"` instead of using the conditional `{% if active_tab == '<slug>' %} active{% endif %}` pattern that the working tabs (VIPTrack, Water, Financial, Vehicles, Threats, Data Packs, Timeline, etc.) use. Combined with the global `.tab-content { display: none } .tab-content.active { display: block }` rules and `.is-hidden { display: none !important }` utility, those 13 partials were rendered into the page but never displayed under their own `/medical-plus`, `/land`, etc. routes — the route returned 200 but the user saw an empty workspace below the inspector card. Replaced the hardcoded `is-hidden` with the conditional active pattern in all 13 partials.

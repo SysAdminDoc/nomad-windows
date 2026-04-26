@@ -2,6 +2,10 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.4] - 2026-04-26
+
+- **UX: preserve sidebar scroll position across page navigations.** Sidebar is its own scroll container (`overflow-y: auto`) and reset to 0 on every full page load. Clicking a tab deep in the list (e.g., Training, Agriculture) made the sidebar jump to the top, forcing the user to scroll back down to see what they'd selected. Inline `<script>` block in `_shell.html` now restores `sidebar.scrollTop` from `sessionStorage` synchronously (before any other JS runs — no flicker), saves on scroll via `requestAnimationFrame` coalescing, and flushes on `pagehide` so the last scroll before a click is always captured.
+
 ## [v7.65.3] - 2026-04-26
 
 - **Fix: sidebar navigation locked when on standalone workspace pages** — 19 sidebar tabs (water-mgmt, financial, vehicles, movement-ops, tactical-comms, timeline, threat-intel, land-assessment, medical-phase2, group-ops, security-opsec, agriculture, disaster-modules, daily-living, hunting-foraging, hardware-sensors, platform-security, specialized-modules, data-foundation) had partial templates but no Flask routes registered. From any standalone workspace page (`/viptrack-tab`, `/nukemap-tab`, etc.), clicking these tabs invoked `navigateToWorkspace(tabId)` which called `buildWorkspaceUrl(tabId)`. Since the tab wasn't in `WORKSPACE_ROUTES`, the helper fell back to `window.location.pathname` and built `/viptrack-tab?tab=water-mgmt` — re-loading the same workspace page and appearing to do nothing.

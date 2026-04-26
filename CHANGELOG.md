@@ -2,6 +2,41 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.66.0] - 2026-04-26 — UX Polish, Light-Theme Restoration, Workspace Routing
+
+First public release since v7.32.0 (2026-04-15). Rolls up 33 internal version bumps spanning architecture hardening, V8-series test coverage, and a focused UX polish pass after the user audit on 2026-04-26.
+
+### UX & Light Theme (today's work, v7.65.2 → v7.65.12)
+- **Workspace navigation overhaul** — sidebar tabs now navigate from any standalone workspace page (was falling back to current path and silently re-rendering). Auto-route registration loop in `register_pages()` makes adding new tabs a 1-line dict change.
+- **Sidebar scroll preserved** across page navigations (was resetting to 0 on every click).
+- **13 workspace tabs** that rendered blank under their dedicated routes (Med+, Land, Agriculture, Disasters, Wild Food, Group Ops, OPSEC, Movement, Tac Comms, Daily Living, Hardware, Platform Security, Specialized) now activate correctly — they had hardcoded `class="tab-content is-hidden"` instead of the conditional active pattern.
+- **Tab page headers compacted** from ~333px to ~80px — `.workspace-context-bar` was the actual culprit, not the per-tab command-decks. Single-row layout, smaller title, ellipsis-truncated summary, hidden redundant "Suggested actions" copy block.
+- **Light theme restored** — per-tab partials used legacy CSS variable names (`--card-bg`, `--input-bg`, `--text-primary`, `--text-secondary`, `--danger`, `--success`, `--blue`, `--base`) with dark hardcoded fallbacks that were never defined in any theme. New `05_legacy_token_aliases.css` maps them to canonical theme tokens.
+- **Light theme is now the default** on first run regardless of OS `prefers-color-scheme`.
+- **9-issue UX polish pass**: home hero spans full deck width, Tools compass card now full-width, Vehicles/Timeline/Diagnostics/Data Foundation no longer have empty header band, Notes/Maps full-width, Maps download buttons right-aligned, Situation Room dark gradients gated to nightops/cyber themes, NukeMap right panel uses light tokens in nomad theme, VIPTrack day-mode HUD buttons + filter chips have visible contrast.
+- **Workspace metadata** added for 21 tabs that previously rendered the generic "Resume workspace." inspector text.
+- **VIPTrack/NukeMap CSP regression fix** — `connect-src` was locked to localhost-only, blocking ADS-B feeds and CORS proxies; widened to `https:` for the desktop/LAN trust model.
+
+### Architecture & Test Coverage (v7.33.0 → v7.65.0)
+- **App factory refactor** (V8-04, V8-06) — `create_app()` slimmed; lazy blueprint registration; SSE broadcast fix; DB-leak audit tooling.
+- **Blueprint test coverage** — 16+ blueprint smoke suites added (homestead, benchmark, brief, kiwix, land_assessment, kb, undo, data_packs, exercises, nutrition, consumption, kit_builder, scheduled_reports, hardware_sensors, hunting_foraging, daily_living, supplies, timeline, specialized_modules, etc.). Per-blueprint test counts in commit log.
+- **Frontend security & UX hardening** (v7.55.1) — replaced native confirm/prompt dialogs with modal flows, unified destructive confirmations, stabilized toast stacking, restored workspace toast feedback, polished shared API failure handling.
+- **Premium design system** (v7.53.0, v7.54.0) — complete design token migration; cross-theme audit + WCAG compliance pass.
+- **Frontend primitives** (v7.52.0), OpenAPI + AI tools + survival reference + i18n expansion (v7.51.0), CSV export + aisle grouping + OCR + change detection (v7.50.0).
+- **18-item roadmap batch** (v7.48.0), 13 more roadmap items + CI/docs (v7.49.0).
+- **Auth proxy + caloric gap + security hardening** (v7.47.0).
+- **Search bangs + CPU temp + CI hardening** (v7.46.0).
+- **Phase 1.1: Data Foundation & Localization** (v7.44.0).
+- **Premium polish passes 4-8** (v7.39.0 → v7.43.0): instrument-grade redesign, flagship surface polish, micro-polish, final refinements.
+
+### Content & Reference (v7.59.0 → v7.60.0)
+- Mobile prep nav + docs site (V8-19, V8-20).
+- Seeds package + field medicine + CBRN reference content packs.
+
+### Build & Distribution
+- **GitHub Actions** builds Windows (PyInstaller exe + Inno installer), Linux (PyInstaller binary + AppImage), and macOS (PyInstaller binary, signed when secrets configured).
+- This release attaches the Windows portable executable and Inno Setup installer.
+
 ## [v7.65.12] - 2026-04-26
 
 - **Home: command desk hero now spans the full deck width.** Previously the hero was nested inside `.home-launch-main` (1.3fr left grid column) so the headline was forced to wrap into 6+ narrow lines while the right column had room to spare. Restructured `.home-launch-deck` with `grid-template-areas: "hero hero" / "main side"` and put `.home-launch-main` into `display: contents` so the hero element promotes to the parent grid and spans both columns. The headline now reads naturally on 3 lines, and Work Lanes (left) + Resume panel (right) sit beside each other below.

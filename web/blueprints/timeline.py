@@ -56,7 +56,7 @@ def api_timeline():
         # ── Vehicle Maintenance Due ──
         if not type_set or 'maintenance' in type_set:
             rows = db.execute(
-                '''SELECT m.id, m.task_name, m.next_due_date AS event_date, m.status,
+                '''SELECT m.id, m.service_type, m.next_due_date AS event_date, m.status,
                           v.make, v.model, v.year
                    FROM vehicle_maintenance m
                    LEFT JOIN vehicles v ON v.id = m.vehicle_id
@@ -70,7 +70,7 @@ def api_timeline():
                         'type': 'maintenance',
                         'source': 'vehicle_maintenance',
                         'source_id': r['id'],
-                        'title': f'{r["task_name"]} — {vehicle_name}',
+                        'title': f'{r["service_type"]} — {vehicle_name}',
                         'date': r['event_date'],
                         'detail': f'Status: {r["status"]}',
                         'severity': 'warning' if r['status'] == 'pending' else 'info',
@@ -79,7 +79,7 @@ def api_timeline():
         # ── Scheduled Tasks ──
         if not type_set or 'task' in type_set:
             rows = db.execute(
-                '''SELECT id, title, next_due AS event_date, category, assigned_to, priority
+                '''SELECT id, name AS title, next_due AS event_date, category, assigned_to
                    FROM scheduled_tasks
                    WHERE next_due != '' AND next_due IS NOT NULL'''
             ).fetchall()
@@ -99,7 +99,7 @@ def api_timeline():
         # ── Financial Document Expirations ──
         if not type_set or 'expiration' in type_set or 'financial' in type_set:
             rows = db.execute(
-                '''SELECT id, name, doc_type, expiration AS event_date
+                '''SELECT id, description AS name, doc_type, expiration AS event_date
                    FROM financial_documents
                    WHERE expiration != '' AND expiration IS NOT NULL'''
             ).fetchall()
@@ -160,9 +160,9 @@ def api_timeline():
         # ── Filter Replacement Due ──
         if not type_set or 'maintenance' in type_set or 'water' in type_set:
             rows = db.execute(
-                '''SELECT id, name, next_replacement AS event_date, status
+                '''SELECT id, name, replacement_date AS event_date, status
                    FROM water_filters
-                   WHERE next_replacement != '' AND next_replacement IS NOT NULL'''
+                   WHERE replacement_date != '' AND replacement_date IS NOT NULL'''
             ).fetchall()
             for r in rows:
                 r = dict(r)
@@ -180,7 +180,7 @@ def api_timeline():
         # ── Fuel Storage Expirations ──
         if not type_set or 'expiration' in type_set or 'fuel' in type_set:
             rows = db.execute(
-                '''SELECT id, fuel_type, quantity_gallons, expires AS event_date
+                '''SELECT id, fuel_type, quantity, expires AS event_date
                    FROM fuel_storage
                    WHERE expires != '' AND expires IS NOT NULL'''
             ).fetchall()
@@ -193,7 +193,7 @@ def api_timeline():
                         'source_id': r['id'],
                         'title': f'{r["fuel_type"]} fuel expires',
                         'date': r['event_date'],
-                        'detail': f'{r["quantity_gallons"]} gal',
+                        'detail': f'{r["quantity"]} gal',
                         'severity': _expiration_severity(r['event_date']),
                     })
 
@@ -298,7 +298,7 @@ def api_timeline_overdue():
 
         # Overdue tasks
         rows = db.execute(
-            "SELECT id, title, next_due, category FROM scheduled_tasks WHERE next_due != '' AND next_due < ?",
+            "SELECT id, name AS title, next_due, category FROM scheduled_tasks WHERE next_due != '' AND next_due < ?",
             (today,)
         ).fetchall()
         for r in rows:
@@ -315,7 +315,7 @@ def api_timeline_overdue():
 
         # Overdue maintenance
         rows = db.execute(
-            "SELECT m.id, m.task_name, m.next_due_date, v.make, v.model FROM vehicle_maintenance m LEFT JOIN vehicles v ON v.id = m.vehicle_id WHERE m.status = 'pending' AND m.next_due_date != '' AND m.next_due_date < ?",
+            "SELECT m.id, m.service_type, m.next_due_date, v.make, v.model FROM vehicle_maintenance m LEFT JOIN vehicles v ON v.id = m.vehicle_id WHERE m.status = 'pending' AND m.next_due_date != '' AND m.next_due_date < ?",
             (today,)
         ).fetchall()
         for r in rows:
@@ -324,7 +324,7 @@ def api_timeline_overdue():
                 'type': 'maintenance_overdue',
                 'source': 'vehicle_maintenance',
                 'source_id': r['id'],
-                'title': f'{r["task_name"]} — {r.get("make", "")} {r.get("model", "")}',
+                'title': f'{r["service_type"]} — {r.get("make", "")} {r.get("model", "")}',
                 'date': r['next_due_date'],
                 'detail': 'Overdue maintenance',
                 'severity': 'critical',
@@ -390,7 +390,7 @@ def _collect_upcoming(db, events, start, end):
         })
     # Scheduled tasks
     rows = db.execute(
-        "SELECT id, title, next_due, category, priority FROM scheduled_tasks WHERE next_due != '' AND next_due BETWEEN ? AND ?",
+        "SELECT id, name AS title, next_due, category FROM scheduled_tasks WHERE next_due != '' AND next_due BETWEEN ? AND ?",
         (start, end)
     ).fetchall()
     for r in rows:
@@ -403,14 +403,14 @@ def _collect_upcoming(db, events, start, end):
         })
     # Vehicle maintenance
     rows = db.execute(
-        "SELECT m.id, m.task_name, m.next_due_date, v.make, v.model FROM vehicle_maintenance m LEFT JOIN vehicles v ON v.id = m.vehicle_id WHERE m.next_due_date != '' AND m.next_due_date BETWEEN ? AND ?",
+        "SELECT m.id, m.service_type, m.next_due_date, v.make, v.model FROM vehicle_maintenance m LEFT JOIN vehicles v ON v.id = m.vehicle_id WHERE m.next_due_date != '' AND m.next_due_date BETWEEN ? AND ?",
         (start, end)
     ).fetchall()
     for r in rows:
         r = dict(r)
         events.append({
             'type': 'maintenance', 'source': 'vehicle_maintenance', 'source_id': r['id'],
-            'title': f'{r["task_name"]} — {r.get("make", "")} {r.get("model", "")}',
+            'title': f'{r["service_type"]} — {r.get("make", "")} {r.get("model", "")}',
             'date': r['next_due_date'], 'detail': 'Vehicle maintenance',
             'severity': 'warning',
         })

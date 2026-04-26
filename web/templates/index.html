@@ -17,8 +17,8 @@
   try {
     const savedTheme = localStorage.getItem('nomad-theme');
     const savedDensity = localStorage.getItem('nomad-density') || 'compact';
-    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    const theme = savedTheme || (prefersDark ? 'nightops' : 'nomad');
+    // Project default is the light "nomad" theme regardless of OS preference.
+    const theme = savedTheme || 'nomad';
     document.documentElement.setAttribute('data-density', savedDensity);
     if (theme && theme !== 'nomad') {
       document.documentElement.setAttribute('data-theme', theme);

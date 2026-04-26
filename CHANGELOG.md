@@ -2,6 +2,11 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.10] - 2026-04-26
+
+- **Fix: light theme rendered dark form panels with white text on tab pages.** Per-tab inline `<style>` blocks (medical-phase2, agriculture, daily-living, group-ops, etc.) used legacy CSS variable names like `var(--card-bg, #1a1a2e)`, `var(--input-bg, #12121f)`, `var(--text-primary, #eee)`, `var(--text-secondary, #aaa)`, `var(--danger, ...)`, `var(--success, ...)`, `var(--blue, ...)`, `var(--base, ...)` that **were never defined in any theme**. On light theme (`nomad`), the dark hardcoded fallbacks were used and panels rendered dark navy with white text on a cream page background. Live Playwright DOM inspection confirmed `--card-bg`, `--input-bg`, `--text-primary`, `--text-secondary` were all `<unset>`. New `web/static/css/app/05_legacy_token_aliases.css` aliases every legacy name to a canonical theme token (`--card-bg → var(--surface-solid)`, `--input-bg → var(--surface-field)`, `--text-primary → var(--text)`, `--danger → var(--red)`, etc.), so values automatically adapt per-theme. Loaded right after the canonical tokens via `app.css`.
+- **Default theme is now light (`nomad`) regardless of OS preference.** Previously, on first run the app sniffed `prefers-color-scheme: dark` and defaulted to `nightops` (dark) if the OS was in dark mode. Updated all three default-theme code paths (`workspace_page.html` FOUC script, `index.html` FOUC script, `_app_core_shell.js` initTheme) to default to `nomad`. Existing user preferences in `localStorage('nomad-theme')` are still respected — only the first-run default changed.
+
 ## [v7.65.9] - 2026-04-26
 
 - **Fix: tab page header was actually `.workspace-context-bar` (not the per-tab command-deck I was targeting in v7.65.7-8).** Verified with live Playwright DOM inspection: the huge "Med+ / Pregnancy, dental, chronic..." white card at the top measured 333px tall. It's defined in `_shell.html` as `#workspace-context-bar` and contains: a 20-28px clamp title, a 13px line-height-1.65 summary, a "Suggested actions" copy block (kicker + descriptive sentence), 5 meta-action buttons, all in a 2-column grid with generous gaps. v7.65.7-8 targeted only the per-tab `<prefix>-command-deck` cards which sit BELOW this bar — those decks were never the user's complaint.

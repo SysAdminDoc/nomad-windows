@@ -549,9 +549,9 @@ document.addEventListener('keydown', e => {
 });
 (function initTheme() {
   let saved = localStorage.getItem('nomad-theme');
-  // Auto-detect OS dark mode on first run (no saved preference)
+  // Project default is the light "nomad" theme regardless of OS preference.
   if (!saved) {
-    saved = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'nightops' : 'nomad';
+    saved = 'nomad';
   }
   if (saved !== 'nomad') document.documentElement.setAttribute('data-theme', saved);
   document.querySelectorAll('.theme-btn').forEach(b => {

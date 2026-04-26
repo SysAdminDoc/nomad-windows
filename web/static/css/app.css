@@ -1,5 +1,6 @@
 /* App CSS Manifest — keep import order stable; later files intentionally override earlier layers. */
 @import url("./app/00_theme_tokens.css");
+@import url("./app/05_legacy_token_aliases.css");
 @import url("./app/10_shell_layout.css");
 @import url("./app/20_primary_workspaces.css");
 @import url("./app/30_secondary_workspaces.css");

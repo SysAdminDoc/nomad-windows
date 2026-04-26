@@ -29,15 +29,17 @@ MUTATING_METHODS = ('POST', 'PUT', 'PATCH', 'DELETE')
 # Hand-picked CSP for a single-origin desktop/LAN app. `unsafe-inline`
 # + `unsafe-eval` are required by the current UI (inline <script>/onclick
 # handlers, Leaflet/Cesium wasm). `blob:` and `data:` accommodate offline
-# tile previews and inline SVG favicons.
+# tile previews and inline SVG favicons. `connect-src https:` is required
+# by embedded apps (VIPTrack ADS-B feeds, NukeMap, weather/aviation APIs,
+# CORS proxies) — the trust model is local desktop, not internet-facing.
 _CSP_POLICY = (
     "default-src 'self'; "
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; "
     "style-src 'self' 'unsafe-inline'; "
     "img-src 'self' data: blob: https:; "
     "font-src 'self' data:; "
-    "connect-src 'self' blob: ws: http://127.0.0.1:* http://localhost:*; "
-    "media-src 'self' blob:; "
+    "connect-src 'self' blob: ws: wss: https: http://127.0.0.1:* http://localhost:*; "
+    "media-src 'self' blob: https:; "
     "worker-src 'self' blob:; "
     "frame-src 'self'; "
     "frame-ancestors 'none'; "

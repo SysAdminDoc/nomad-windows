@@ -2,6 +2,11 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.2] - 2026-04-26
+
+- **Fix: VIPTrack map shows no aircraft (CSP regression)** — `web/middleware.py` `_CSP_POLICY` `connect-src` was locked to `'self' blob: ws: http://127.0.0.1:* http://localhost:*`, blocking every outbound HTTPS call from embedded apps. VIPTrack pulls live ADS-B data from `api.adsb.one` / `api.adsb.lol` / `api.airplanes.live` plus CORS proxies (`api.codetabs.com`, `api.allorigins.win`, `corsproxy.io`) and aircraft photo/DB lookups (`api.planespotters.net`, `hexdb.io`). NukeMap and other future iframe-based apps would hit the same wall. Widened to `'self' blob: ws: wss: https: http://127.0.0.1:* http://localhost:*` — matches the existing `img-src https:` posture for a single-origin desktop/LAN app where the trust model is local. Regression introduced in 4e72b1e ("UX polish: sentence-case copy, rich toasts, VIPTrack embed CSP").
+- Also widened `media-src` to `'self' blob: https:` for any future audio/video pulled from external APIs (e.g., aircraft audio recordings).
+
 ## [Unreleased]
 
 - **V8-06 — `tests/test_blueprint_homestead.py` smoke suite (45 tests, 14 routes).** Eighth V8-06 close this session. `web/blueprints/homestead.py` (658 LOC) — calculator-heavy: 11 pure-function compute routes + 3 humanure CRUD. Mix of happy-path shape pinning + hand-computed value verification: greywater (pipe-size threshold ladder, soil-type infiltration ordering), humanure thermophilic tracker (3-hot-day status flip), wood BTU (20 species), wood-heating (4 insulation factor monotonicity, efficiency clamping), sun-path (arctic-latitude `math.acos` clamp, southern-hemisphere glazing flip, summer-solstice declination), battery-bank (6 chemistries, DoD clamp above chemistry max), curing salt (3 cure types + ppm clamp), fermentation (1000mL→600mL→21g default, salt_pct clamp), seed-isolation (17 crops + 404 + case-insensitive), varroa calendar (12 months + lat offset note + silent fallback to 40 on invalid lat — pinned), withdrawal reference + timer (400 on unknown drug + invalid date). 45/45 green.

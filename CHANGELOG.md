@@ -2,6 +2,10 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.5] - 2026-04-26
+
+- **Fix: workspace inspector showed generic "Resume workspace" for 21 tabs that already had full content.** `WORKSPACE_TAB_META` and `WORKSPACE_GROUP_LABELS` in `_app_workspace_memory.js` only knew about 12 of 36 sidebar tabs — anything outside that core set rendered with the fallback label `humanizeWorkspaceSlug(activeTab)`, the generic chevron icon `›`, and the placeholder summary `Resume workspace.` This made fully built-out workspaces (Med+, Land, Water, Financial, Vehicles, Tac Comms, Group Ops, OPSEC, Disasters, Daily Living, Wild Food, Threats, Specialized, Hardware, Security, Data Packs, Movement, Agriculture, Timeline, NukeMap, VIPTrack) look like empty placeholders. Added proper label, emoji icon, and one-sentence summary for each, plus group classification (Briefing / Operations / Knowledge / System / Assistant) so they sort correctly in the workspace memory and pinned-workspaces UIs.
+
 ## [v7.65.4] - 2026-04-26
 
 - **UX: preserve sidebar scroll position across page navigations.** Sidebar is its own scroll container (`overflow-y: auto`) and reset to 0 on every full page load. Clicking a tab deep in the list (e.g., Training, Agriculture) made the sidebar jump to the top, forcing the user to scroll back down to see what they'd selected. Inline `<script>` block in `_shell.html` now restores `sidebar.scrollTop` from `sessionStorage` synchronously (before any other JS runs — no flicker), saves on scroll via `requestAnimationFrame` coalescing, and flushes on `pagehide` so the last scroll before a click is always captured.

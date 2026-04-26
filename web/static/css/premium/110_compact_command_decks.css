@@ -1,0 +1,83 @@
+/*
+ * Compact command-deck headers across every workspace tab.
+ *
+ * Each tab partial defines its own `<prefix>-command-deck` card with
+ * 18-20px padding, 24px border-radius, 1.32rem title, 13-14px description,
+ * a row of decorative pills (aria-hidden), and a row of jump-to-section
+ * buttons that duplicate the sub-tab nav directly below. Combined, the
+ * header eats ~180-220px of vertical space before any actual content.
+ *
+ * This file targets the shared suffix pattern (`[class$="-command-deck"]`)
+ * with !important because each tab's inline <style> uses higher-specificity
+ * `#tab-<id> .<prefix>-command-deck` selectors and loads after this stylesheet.
+ *
+ * Goal: ~70-90px header instead of 180-220px, so the actual workspace
+ * content (sub-tabs + cards + forms) is visible above the fold.
+ */
+
+[class$="-command-deck"] {
+  display: grid !important;
+  gap: 6px !important;
+  margin-bottom: 10px !important;
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+  box-shadow: var(--elev-1, 0 4px 12px rgba(0, 0, 0, 0.15)) !important;
+}
+
+[class$="-command-deck-head"] {
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+[class$="-command-copy"] {
+  gap: 2px !important;
+}
+
+[class$="-command-title"] {
+  font-size: 0.98rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+[class$="-command-text"] {
+  font-size: 0.78rem !important;
+  line-height: 1.4 !important;
+  max-width: 88ch !important;
+}
+
+/* Decorative pill row directly under the title — every tab also has the
+ * functional sub-tab nav immediately below this card, so the pills are
+ * pure visual noise eating ~40px of vertical. They're aria-hidden in the
+ * markup, confirming they're decorative. */
+[class$="-command-pills"] {
+  display: none !important;
+}
+
+/* Jump-to-section buttons in the deck head. Many tabs duplicate sub-tab
+ * names here. Keep them visible but compact. */
+[class$="-command-actions"] {
+  gap: 6px !important;
+}
+[class$="-command-actions"] button,
+[class$="-command-actions"] .btn {
+  min-height: 28px !important;
+  padding: 4px 10px !important;
+  font-size: 0.78rem !important;
+}
+
+/* Compact sub-tab shell that sits directly below the deck. Was 12-14px
+ * padding + 18px margin-bottom, eating another ~70px. */
+[class$="-sub-tabs-shell"] {
+  padding: 6px 8px !important;
+  margin-bottom: 10px !important;
+  gap: 4px !important;
+  border-radius: 12px !important;
+}
+[class$="-sub-tabs-label"] {
+  display: none !important;
+}
+[class$="-sub-tab"] {
+  min-height: 28px !important;
+  padding: 4px 12px !important;
+  font-size: 0.78rem !important;
+}

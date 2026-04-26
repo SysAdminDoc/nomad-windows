@@ -129,3 +129,36 @@ body.situation-room-active:not([data-theme]) {
   color: var(--text) !important;
   border-color: var(--border) !important;
 }
+
+/* The two cards directly under the situation-room header
+ * (.sr-saved-desk-bar = "Saved Watchlists", .sr-posture-bar
+ *  = "Current Posture") had a dark-to-light vertical gradient
+ * that bled into a near-white panel at the bottom — jarring
+ * against the dark watchfloor. Force a flat dark backdrop so
+ * the cards read as part of the watchfloor instead of pasted
+ * in from a different theme. */
+.sr-saved-desk-bar,
+.sr-posture-bar,
+.sr-watchlist-bar,
+.sr-current-posture {
+  background: rgba(8, 11, 16, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: rgba(237, 242, 247, 0.92) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+.sr-saved-desk-bar *,
+.sr-posture-bar *,
+.sr-watchlist-bar *,
+.sr-current-posture * {
+  color: inherit;
+}
+/* Inputs inside those bars (e.g., "Name current desk") need a
+ * darker field with light text so they match the surrounding
+ * panel rather than appearing as bright white inputs. */
+.sr-saved-desk-bar input,
+.sr-posture-bar input,
+.sr-watchlist-bar input {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f0f4f8 !important;
+}

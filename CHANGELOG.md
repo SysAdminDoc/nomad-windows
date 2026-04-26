@@ -2,6 +2,12 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.3] - 2026-04-26
+
+- **Fix: sidebar navigation locked when on standalone workspace pages** — 19 sidebar tabs (water-mgmt, financial, vehicles, movement-ops, tactical-comms, timeline, threat-intel, land-assessment, medical-phase2, group-ops, security-opsec, agriculture, disaster-modules, daily-living, hunting-foraging, hardware-sensors, platform-security, specialized-modules, data-foundation) had partial templates but no Flask routes registered. From any standalone workspace page (`/viptrack-tab`, `/nukemap-tab`, etc.), clicking these tabs invoked `navigateToWorkspace(tabId)` which called `buildWorkspaceUrl(tabId)`. Since the tab wasn't in `WORKSPACE_ROUTES`, the helper fell back to `window.location.pathname` and built `/viptrack-tab?tab=water-mgmt` — re-loading the same workspace page and appearing to do nothing.
+- Registered all 19 in `WORKSPACE_PAGES` with dedicated routes (`/water-mgmt`, `/financial`, `/vehicles`, etc.).
+- Added an auto-route-registration loop in `register_pages()` that generates handlers for any tab in `WORKSPACE_PAGES` without a hand-rolled route. Future tab additions only need a `WORKSPACE_PAGES` entry — no boilerplate `@app.route` handler — and the regression class can't recur.
+
 ## [v7.65.2] - 2026-04-26
 
 - **Fix: VIPTrack map shows no aircraft (CSP regression)** — `web/middleware.py` `_CSP_POLICY` `connect-src` was locked to `'self' blob: ws: http://127.0.0.1:* http://localhost:*`, blocking every outbound HTTPS call from embedded apps. VIPTrack pulls live ADS-B data from `api.adsb.one` / `api.adsb.lol` / `api.airplanes.live` plus CORS proxies (`api.codetabs.com`, `api.allorigins.win`, `corsproxy.io`) and aircraft photo/DB lookups (`api.planespotters.net`, `hexdb.io`). NukeMap and other future iframe-based apps would hit the same wall. Widened to `'self' blob: ws: wss: https: http://127.0.0.1:* http://localhost:*` — matches the existing `img-src https:` posture for a single-origin desktop/LAN app where the trust model is local. Regression introduced in 4e72b1e ("UX polish: sentence-case copy, rich toasts, VIPTrack embed CSP").

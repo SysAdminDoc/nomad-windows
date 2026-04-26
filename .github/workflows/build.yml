@@ -61,8 +61,20 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt "pyinstaller>=6.0,<7.0" pytest pytest-cov
 
+      - name: Install xvfb (Linux only — pywebview/Xlib needs a display to import)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y xvfb
+
       - name: Run tests with coverage
-        run: pytest tests/ -x -q --tb=short --cov=web --cov=db --cov-report=xml --cov-report=term-missing
+        # Wrap in xvfb-run on Linux so `import webview` doesn't crash with
+        # "Bad display name" when tests transitively import nomad.py.
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            xvfb-run -a pytest tests/ -x -q --tb=short --cov=web --cov=db --cov-report=xml --cov-report=term-missing
+          else
+            pytest tests/ -x -q --tb=short --cov=web --cov=db --cov-report=xml --cov-report=term-missing
+          fi
+        shell: bash
 
       - name: Upload coverage to Codecov
         if: runner.os == 'Linux'
@@ -184,7 +196,8 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    # Run even if some matrix jobs fail — upload whatever artifacts exist.
+    if: always() && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
@@ -195,45 +208,39 @@ jobs:
 
       - name: Prepare release assets
         run: |
-          set -e
+          set +e
           mkdir -p release
-          for f in \
-            artifacts/NOMADFieldDesk-Windows/NOMADFieldDesk.exe \
-            artifacts/NOMADFieldDesk-Linux/NOMADFieldDesk \
-            artifacts/NOMADFieldDesk-macOS/NOMADFieldDesk \
-            artifacts/NOMAD-Setup/NOMAD-Setup.exe; do
-            if [ ! -f "$f" ]; then
-              echo "ERROR: Missing expected artifact: $f"
-              exit 1
-            fi
-          done
-          cp artifacts/NOMADFieldDesk-Windows/NOMADFieldDesk.exe release/NOMADFieldDesk-Windows.exe
-          cp artifacts/NOMADFieldDesk-Linux/NOMADFieldDesk release/NOMADFieldDesk-Linux
-          cp artifacts/NOMADFieldDesk-macOS/NOMADFieldDesk release/NOMADFieldDesk-macOS
-          cp artifacts/NOMAD-Setup/NOMAD-Setup.exe release/NOMAD-Setup.exe
-          # Copy AppImage if present
+          # Copy each artifact only if it exists — don't bail when one OS failed
+          [ -f artifacts/NOMADFieldDesk-Windows/NOMADFieldDesk.exe ] && cp artifacts/NOMADFieldDesk-Windows/NOMADFieldDesk.exe release/NOMADFieldDesk-Windows.exe
+          [ -f artifacts/NOMADFieldDesk-Linux/NOMADFieldDesk ]       && cp artifacts/NOMADFieldDesk-Linux/NOMADFieldDesk       release/NOMADFieldDesk-Linux
+          [ -f artifacts/NOMADFieldDesk-macOS/NOMADFieldDesk ]       && cp artifacts/NOMADFieldDesk-macOS/NOMADFieldDesk       release/NOMADFieldDesk-macOS
+          [ -f artifacts/NOMAD-Setup/NOMAD-Setup.exe ]               && cp artifacts/NOMAD-Setup/NOMAD-Setup.exe               release/NOMAD-Setup.exe
           if ls artifacts/NOMADFieldDesk-AppImage/NOMADFieldDesk*.AppImage 1>/dev/null 2>&1; then
             cp artifacts/NOMADFieldDesk-AppImage/NOMADFieldDesk*.AppImage release/NOMADFieldDesk-Linux-x86_64.AppImage
           fi
-          chmod +x release/NOMADFieldDesk-Linux release/NOMADFieldDesk-macOS
+          chmod +x release/NOMADFieldDesk-Linux release/NOMADFieldDesk-macOS 2>/dev/null || true
           chmod +x release/*.AppImage 2>/dev/null || true
+          if [ -z "$(ls -A release/)" ]; then
+            echo "ERROR: No release artifacts present at all"
+            exit 1
+          fi
           cd release && sha256sum * > SHA256SUMS.txt
+          echo "=== Release contents ==="
+          ls -la
 
       # NOTE: ARM64 Linux/macOS builds are a future addition.
       # GitHub Actions lacks free native ARM64 runners; would require QEMU
       # cross-compilation or self-hosted runners.
       - name: Upload release assets
         run: |
-          ASSETS=(
-            release/NOMADFieldDesk-Windows.exe
-            release/NOMAD-Setup.exe
-            release/NOMADFieldDesk-Linux
-            release/NOMADFieldDesk-macOS
-            release/SHA256SUMS.txt
-          )
-          # Include AppImage if built
-          if [ -f release/NOMADFieldDesk-Linux-x86_64.AppImage ]; then
-            ASSETS+=(release/NOMADFieldDesk-Linux-x86_64.AppImage)
+          # Upload whichever artifacts were produced
+          ASSETS=()
+          for f in release/*; do
+            [ -f "$f" ] && ASSETS+=("$f")
+          done
+          if [ ${#ASSETS[@]} -eq 0 ]; then
+            echo "No assets to upload"
+            exit 1
           fi
           gh release upload ${{ github.ref_name }} \
             "${ASSETS[@]}" \

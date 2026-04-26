@@ -1,0 +1,55 @@
+/*
+ * Legacy CSS variable aliases for per-tab inline styles.
+ *
+ * Many tab partials (medical-phase2, agriculture, daily-living, etc.)
+ * use legacy CSS variable names like `var(--card-bg, #1a1a2e)`,
+ * `var(--input-bg, #12121f)`, `var(--text-primary, #eee)` with
+ * dark-themed hardcoded fallbacks. None of these names are defined
+ * in `00_theme_tokens.css` for any theme — so on light themes
+ * (nomad), the dark hardcoded fallback is used and panels render
+ * dark navy with white text on a cream page background.
+ *
+ * This file aliases every legacy name to a canonical theme token
+ * so the value automatically adapts per-theme. Loaded right after
+ * the canonical tokens via `app.css` so all per-tab CSS picks up
+ * the right value.
+ *
+ * Single source of truth: edit canonical tokens in
+ * `00_theme_tokens.css`; these aliases just remap names.
+ */
+
+:root {
+  /* Surfaces & cards (commonly hardcoded to dark navy in tab partials) */
+  --card-bg: var(--surface-solid);
+  --card-bg-alt: var(--surface2);
+  --card-bg-hover: var(--surface-strong, var(--surface2));
+  --input-bg: var(--surface-field, var(--surface));
+  --input-border: var(--border);
+  --panel-bg: var(--surface-solid);
+
+  /* Text aliases */
+  --text-primary: var(--text);
+  --text-secondary: var(--text-dim);
+  --text-tertiary: var(--text-muted);
+
+  /* Status colors that some tabs reference with shorter names */
+  --danger: var(--red);
+  --danger-dim: var(--red-dim);
+  --success: var(--green);
+  --success-dim: var(--green-dim);
+  --blue: var(--info);
+  --blue-dim: var(--info-dim);
+  --warning-color: var(--warning);
+
+  /* Accent variants used inconsistently */
+  --accent-orange: var(--orange);
+  --accent-soft: var(--accent-dim);
+
+  /* Catppuccin-style names some partials borrowed */
+  --base: var(--bg);
+  --crust: var(--bg);
+  --mantle: var(--surface-solid);
+
+  /* Layout breathing room (referenced by deck min-height calcs) */
+  --app-bottom-clearance: 0px;
+}

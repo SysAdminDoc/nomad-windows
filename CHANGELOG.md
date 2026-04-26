@@ -2,6 +2,10 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.8] - 2026-04-26
+
+- **Fix: compact command-deck CSS from v7.65.7 didn't apply to multi-class decks (FOUC).** Selectors used `[class$="-command-deck"]` (ends-with), but every deck has at least two classes (`mp-command-deck workspace-panel`), so the attribute value ends with `workspace-panel` and the suffix matcher silently missed every multi-class element. The result: my override loaded but never applied; the bundle's `.workspace-panel { padding: 12px 14px !important }` and each tab's inline `#tab-X .x-command-deck { padding: 18px 20px }` won, producing the "loads condensed for a split second then expands huge" behavior the user saw (head-loaded CSS painted first, then body-inline `<style>` finished parsing and inflated everything). Switched all selectors to `[class*="..."]` (substring match) with `:not(...)` to disambiguate `-command-deck` from `-command-deck-head` etc. Added a higher-specificity selector `.workspace-panel[class*="-command-deck"]:not([class*="-command-deck-"])` to win over the bundle's `.workspace-panel` !important rule for command-deck cards specifically.
+
 ## [v7.65.7] - 2026-04-26
 
 - **UX: compact tab page headers — content now front-and-center.** Every workspace partial defined its own `<prefix>-command-deck` card with 18-20px padding, 24px border-radius, 1.32rem title, full-width description, a row of decorative pills, and jump-to-section buttons that duplicate the sub-tab nav directly below. Combined, the header consumed ~180-220px of vertical space before any actual content. New `web/static/css/premium/110_compact_command_decks.css` targets the shared suffix pattern (`[class$="-command-deck"]`, etc.) and shrinks padding (10/14), border-radius (12), title (0.98rem), description (0.78rem), hides the decorative pill row entirely (it's `aria-hidden` and duplicates sub-tabs), and compacts the sub-tab shell that sits directly below. Net result: header drops to ~70-90px, sub-tabs and content visible above the fold.

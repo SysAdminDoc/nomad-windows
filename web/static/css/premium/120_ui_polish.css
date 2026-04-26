@@ -5,20 +5,42 @@
  * last in the premium chain to win source-order ties.
  */
 
-/* ─── #1 Home: hero headline was clamp(26-38px) and wrapped 6 lines,
- *      leaving a half-empty card. Tighten so the search bar and
- *      "Choose the lane that matches..." copy fit above the fold. */
-.home-launch-title {
-  font-size: clamp(20px, 1.7vw, 26px) !important;
-  line-height: 1.15 !important;
-  letter-spacing: -0.025em !important;
+/* ─── #1 Home: command desk hero was constrained to a 1.3fr left
+ *      grid column, forcing the headline to wrap into 6+ narrow
+ *      lines while the right column had room to spare. Restructure
+ *      so the hero spans the full deck width and the resume/pinned
+ *      side panel slides in below it. */
+.home-launch-deck {
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.92fr) !important;
+  grid-template-areas:
+    "hero hero"
+    "main side" !important;
 }
-.home-launch-text {
-  font-size: 13px !important;
-  line-height: 1.5 !important;
+.home-launch-main {
+  display: contents !important;
 }
 .home-launch-hero {
-  padding: 18px 22px !important;
+  grid-area: hero !important;
+  padding: 20px 28px !important;
+}
+.home-launch-lanes {
+  grid-area: main !important;
+}
+.home-launch-side {
+  grid-area: side !important;
+}
+/* Now the headline can breathe — restore a substantial size so it
+ * reads as the page hero. */
+.home-launch-title {
+  font-size: clamp(24px, 2.4vw, 34px) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.025em !important;
+  max-width: 32ch !important;
+}
+.home-launch-text {
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  max-width: 64ch !important;
 }
 
 /* ─── #2 Tools: compass card was half-width while NukeMap/VIPTrack

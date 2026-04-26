@@ -2,6 +2,10 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.65.12] - 2026-04-26
+
+- **Home: command desk hero now spans the full deck width.** Previously the hero was nested inside `.home-launch-main` (1.3fr left grid column) so the headline was forced to wrap into 6+ narrow lines while the right column had room to spare. Restructured `.home-launch-deck` with `grid-template-areas: "hero hero" / "main side"` and put `.home-launch-main` into `display: contents` so the hero element promotes to the parent grid and spans both columns. The headline now reads naturally on 3 lines, and Work Lanes (left) + Resume panel (right) sit beside each other below.
+
 ## [v7.65.11] - 2026-04-26
 
 - **UX polish pass: 9 reported issues addressed.** New `web/static/css/premium/120_ui_polish.css` covers most fixes; targeted file edits handle the rest. Verified in Playwright before shipping.

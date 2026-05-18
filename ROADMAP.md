@@ -1,9 +1,10 @@
 # Project N.O.M.A.D. — Roadmap
 
 > **Baseline:** v7.44.0 (~310 tables, 2,000+ routes, 77 blueprints)
-> **Current:** v7.65.0+ (~326 tables, 2,100+ routes, 78 blueprints, `seeds/` package — 13 content modules shipped; V8 roadmap 19/24 Done)
-> **Updated:** 2026-04-25
+> **Current:** v7.66.0 (~264 reflected tables, 1,644 routes, 73 blueprints, `seeds/` package — 14 content modules shipped; V8 roadmap 19/24 Done; UX polish wave v7.65.7→v7.66.0 closed light-theme regressions, command-deck compaction, workspace routing)
+> **Updated:** 2026-05-06
 > **Prior feature backlog:** 134/187 items complete (72%), 8 deferred (4%), 45 internal refactoring remaining (24%)
+> **Round 4 research:** see bottom of file — 12 new external signals harvested (NWS API v2.5 + alerts.weather.gov sunset Dec-2025, Meshtastic 2.6 next-hop routing, Ollama structured outputs, Open WebUI 2025 agentic retrieval, Reticulum/LXMF ecosystem, WCAG 2.2 + EAA enforcement, SLSA/Sigstore supply chain, PyTauri re-eval, Grocy 4.6, Homebox v1, Glance 0.8.4, FCC 25-60 60m band)
 
 ---
 
@@ -1056,3 +1057,113 @@ Each release is scoped so a single focused content-authoring pass (by a domain e
 - `pywin32==308` — pywebview dep on Windows; PyInstaller hook `--collect-submodules pywin32`.
 - `pyinstaller==6.11.1` — spec essentials: `--add-data "static;static" --add-data "templates;templates" --collect-submodules <package>`, runtime hook for `multiprocessing.freeze_support()` (CLAUDE.md global rule).
 - `python-dotenv==1.0.1` — load `.env` before `Flask(__name__)`; gotcha: PyInstaller one-file expands to `_MEIPASS`, so `.env` path must be resolved relative to `sys.executable` not `__file__`.
+
+## Round 4 — External Research (2026-05-06)
+
+Targeted post-v7.66.0 pass: hunting for net-new signal published since the 2026-04-25 roadmap update. Sources gated to ≤ 2026-05-06. Standards / platform-API changes are weighted highest because they create deadlines, not preferences.
+
+### Sources
+
+1. NWS API v2.5 release notice — https://www.weather.gov/media/notification/pdf_2025/scn25-44_API_latest_changesmay22_2025.pdf (2025-05-22; new station names, integer gridX/Y, CAP latency, eventEndingTime local-time default)
+2. NWS alerts webpage termination — https://www.weather.gov/media/notification/pdf_2025/scn25-73_alerts_webpage_termination.pdf (`alerts.weather.gov` and `alerts-v2.weather.gov` retire 2025-12-02; force migration to `api.weather.gov/alerts`)
+3. Meshtastic 2.6 release — https://meshtastic.org/blog/meshtastic-2-6-preview/ (next-hop routing for DMs, per-channel MQTT uplink/downlink, MUI on-device UI)
+4. Iowa Mesh Net 2.6 deep dive — https://iowamesh.net/blog/2025/03/28/meshtastic-v2.6-a-feature-packed-release/ (deployment notes, fallback-to-flooding behavior)
+5. Ollama structured outputs — https://markaicode.com/ollama-structured-outputs-json-schema-validation/ + https://www.michaelkabuage.com/blog/8-ollama-structured-output (JSON Schema enforcement via `format=`, Pydantic v2 round-trip, ~100% schema compliance vs. ~40% prompt-only)
+6. Open WebUI 2025 features — https://docs.openwebui.com/features/ + https://open-webui.com/open-webui-release-notes/ (agentic retrieval, full-context mode, hybrid BM25+vector with cross-encoder rerank, native Python tool workspace, native desktop apps for macOS/Windows/Linux)
+7. Reticulum / LXMF ecosystem — https://reticulum.network/manual/software.html + https://github.com/markqvist/nomadnet + https://reticulum.betweentheborders.com/software/Sideband.html (transport-agnostic mesh, store-and-forward, paper-message QR transfer, voice via LXST)
+8. R3Tina iOS LXMF client — https://r3tina.app/index.html (Swift port; relevant only as ecosystem signal, NOMAD remains desktop-first)
+9. SLSA + Sigstore + CycloneDX Python — https://packaging.python.org/en/latest/guides/supply-chain-security/ + https://github.com/CycloneDX/cyclonedx-python-lib + https://github.com/pypa/pip-audit + https://github.com/slsa-framework/slsa-github-generator
+10. WCAG 2.2 official summary — https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/ (9 new SC since 2.1; 4.1.1 Parsing removed)
+11. EU Accessibility Act enforcement — https://www.allaccessible.org/blog/wcag-22-compliance-checklist-implementation-roadmap (effective 2025-06-28; relevant only if NOMAD distributes inside EU, but cheap to pre-comply)
+12. PyTauri / Tauri 2 vs pywebview — https://pytauri.github.io/pytauri/dev/ + https://biggo.com/news/202510140726_PyTauri_Python_Tauri_Binding (smaller binary, granular permissions, Rust toolchain cost)
+13. Grocy 4.6.0 changelog — https://grocy.info/changelog (PHP 8.5+ / SQLite 3.40+ floors; unit-conversion automation; barcode special-char fixes)
+14. Homebox v1 roadmap — https://blog.homebox.software/homebox-v1-roadmap-update/ + https://github.com/sysadminsmedia/homebox (Go + ShadCN UI, PostgreSQL alongside SQLite, Argon2id, S3 object-storage WIP)
+15. Glance v0.8.4 — https://github.com/glanceapp/glance/releases (Material Design Icons via `mdi:` prefix, auto-invert prefix for theme-aware icons, multi-todo widget fix)
+16. FCC 25-60 (Dec 2025) — https://docs.fcc.gov/public/attachments/FCC-25-60A1.pdf (formalized 5351.5–5366.5 kHz / 60m allocation per WRC-15)
+17. ARES/RACES frequency reference — https://radio-hobbyist.com/ares-and-races-frequencies-a-comprehensive-guide/ (canonical national net frequency list 80m / 40m / 20m / 60m)
+18. GitHub `prepper` topic — https://github.com/topics/prepper (refugiOS, wrolpi, mesh-api, zim-llm, civilization_node, kamrad — direct adjacent OSS for competitor matrix)
+19. preppersvoice — https://preppersvoice.com/2025/06/06/how-to-install-an-offline-uncensored-ai-chatbot-on-raspberry-pi-5-the-ultimate-disaster-survival-assistant/ (community signal: Raspberry Pi 5 + uncensored LLM as a parallel deployment shape)
+
+### Harvested Feature Candidates (R4-01 … R4-42)
+
+Tier legend: **Now** = next 1–2 minor releases; **Next** = inside the v7.x line; **Later** = needs prerequisites or a major-version slot; **UC** = under consideration / signal not yet strong enough; **Rejected** = explicitly out of scope, justification inline.
+
+| # | Title | Source | Tier | Justification |
+|---|-------|--------|------|---------------|
+| R4-01 | **Migrate weather alerts off `alerts.weather.gov`** — audit every code path that hits `alerts.weather.gov` or `alerts-v2.weather.gov`; switch to `api.weather.gov/alerts/active/zone/<ZONEID>` (GeoJSON or CAP XML); add a fallback warning banner if any retired URL still resolves. | Source 2 | **Now** | Hard deadline 2025-12-02; existing user installs will silently break otherwise. Same effort whether done early or late. |
+| R4-02 | **Honor NWS API v2.5 field changes** — treat `gridX`/`gridY` as ints (not strings), accept `null` for missing values in DWML output, parse new station-name field, surface CAP-product latency from health-check. | Source 1 | **Now** | One-line parsing fixes; ignoring them produces silent wrong-grid lookups. |
+| R4-03 | **Localize `eventEndingTime` correctly** — NWS now returns local-time offset by default in alerts; verify our timezone math against the new contract, add a regression seed alert with non-UTC offset. | Source 1 | **Now** | One regression test prevents off-by-tz-offset alert filtering. |
+| R4-04 | **CycloneDX SBOM in CI** — add `cyclonedx-bom` step to the build workflow; attach `sbom.json` to every GitHub Release alongside the EXE. | Source 9 | **Next** | Cheap, helps users running `pip-audit`/`osv-scanner` against installs. Pure additive; zero runtime cost. |
+| R4-05 | **`pip-audit` gate on the requirements lock** — fail CI if any pinned dep has a known CVE; documented exception list. | Source 9 | **Next** | Already-pinned `requirements.txt` makes this a one-shot wire-up. Earns "no known CVE" claim in README. |
+| R4-06 | **Sigstore-sign release artifacts** — `cosign sign-blob` over EXE + SBOM + ZIP; publish public key in repo and Rekor entry URL in release notes. | Source 9 | **Next** | Matches Open WebUI / many self-hosted peers; users running airgapped checks finally have a verification story. |
+| R4-07 | **Reproducible build attestation** — add `slsa-github-generator` workflow producing SLSA L2 provenance for every tag. | Source 9 | **Later** | Requires hermetic CI; depends on R4-04/R4-05 being in place first. |
+| R4-08 | **WCAG 2.2 Target Size sweep (SC 2.5.8)** — audit all interactive controls for ≥ 24×24 CSS-px or sufficient spacing; flag command-deck and tab-strip compaction as primary regressions to watch. | Source 10 | **Now** | Ties into v7.66.0 UX polish wave; cheap to fold in while the same surfaces are open. |
+| R4-09 | **WCAG 2.2 Focus Not Obscured (SC 2.4.11)** — verify sticky headers / drawers / sidebars never hide a focused control; add automated check in Playwright suite. | Source 10 | **Now** | Most likely violation site is the sticky command deck — high-traffic surface. |
+| R4-10 | **WCAG 2.2 Consistent Help (SC 3.2.6) & Redundant Entry (SC 3.3.7)** — ensure the in-app help surface is in the same DOM position on every tab; audit multi-step forms (e.g., trip planner, inventory add) for redundant re-entry. | Source 10 | **Next** | A-level criteria; legally cheaper to comply than to defend. |
+| R4-11 | **WCAG 2.2 Dragging Movements (SC 2.5.7)** — confirm every drag interaction (gear loadouts, planner reordering, map pan) has a non-drag alternative. | Source 10 | **Next** | Map pan already has keyboard arrows in MapLibre — verify rest. |
+| R4-12 | **EAA pre-compliance bundle** — single docs page mapping NOMAD features to WCAG 2.2 AA; lets EU users self-attest without us having to ship in EU. | Sources 10, 11 | **UC** | NOMAD is not currently EU-distributed; this is goodwill insurance, not blocking. |
+| R4-13 | **Adopt Ollama structured-outputs JSON Schema** — every place we currently regex-parse LLM output (gear suggestions, scenario summaries, recipe extraction) switches to `format=<pydantic_schema>` with retry on validation failure. | Source 5 | **Now** | Removes the largest class of "AI returned garbage" bug we still see; aligns with already-pinned Ollama path. |
+| R4-14 | **AI image-vision pipeline (Ollama vision + structured output)** — let users drop a label / pill / receipt / radio cheat-sheet image into AI tab, get a typed JSON object back (not a paragraph). | Source 5 | **Next** | Ollama vision models (Qwen3-VL, Llama 3.2-Vision) already supported on local CPU; structured output makes it usable for inventory ingest. |
+| R4-15 | **Hybrid BM25 + vector retrieval over the seed packs** — replace pure SQLite-FTS where AI tab needs it; cross-encoder reranker for top-K. | Source 6 | **Later** | Real value, but pulls in a vector store dep — gate on whether AI tab usage justifies the install footprint. |
+| R4-16 | **Full-context mode for short docs** — when a seed pack section is small enough, inject the whole thing into AI context instead of chunking; flag in the doc-picker UI. | Source 6 | **Next** | Open WebUI shipped this because chunking-tax on small corpora was hurting answer quality; same applies to our checklists. |
+| R4-17 | **In-app Python tool workspace (sandboxed)** — users define small Python "tools" the AI can call (parse a CAP XML, compute potable-water-per-day, query gear DB). MUST be opt-in, sandboxed, and disabled by default. | Source 6 | **UC** | High value, high blast radius. Localhost-only mitigates network risk but local-FS access still needs a hard sandbox before this can ship. |
+| R4-18 | **Per-channel MQTT routing UI for Meshtastic helpers** — if/when we ship the deferred Meshtastic dashboard, expose 2.6's per-channel uplink/downlink toggles, not just global on/off. | Sources 3, 4 | **Later** | Already in the dependency-gated bucket; this just sharpens the spec. |
+| R4-19 | **Next-hop routing diagnostics view** — visualize last-known next-hop per remote node; fall back to "flood" badge when none assigned. | Sources 3, 4 | **Later** | Same gate as R4-18; spec sharpening only. |
+| R4-20 | **Reticulum / LXMF interop reference page** — docs-only addition: how to pair NOMAD with NomadNet / Sideband / MeshChat side-by-side; we are not the messenger, we orient around it. | Source 7 | **Next** | Pure docs; high value to the off-grid audience that already runs Sideband. Zero code risk. |
+| R4-21 | **Paper-message QR ingest** — accept Sideband-style "paper message" QR codes pasted into a textarea, decode with the LXMF reference lib, surface as a read-only inbox view. | Source 7 | **UC** | Genuinely useful for air-gapped sneakernet, but adds a crypto dep we have not vetted. Park until at least one user asks. |
+| R4-22 | **PyTauri re-evaluation memo** — formal one-pass write-up: cold-start size, memory under load, build-pipeline cost, dep diff vs pywebview. Decision: stay on pywebview unless cold-start exceeds N seconds on target hardware. | Source 12 | **UC** | Roadmap already lists Tauri as deferred — this just commits to revisiting it once, with numbers, not vibes. |
+| R4-23 | **Grocy-compatible barcode/UPC export** — let users export pantry items as a Grocy-compatible JSON/CSV so dual-tool households don't double-enter. | Source 13 | **UC** | Small audience, but the only meaningful integration angle with Grocy that doesn't require us hosting Grocy. |
+| R4-24 | **Homebox-compatible inventory export** — same idea, Homebox JSON shape, item + location tree. | Source 14 | **UC** | Same logic as R4-23. Both are export-only — never import (avoid becoming a Grocy/Homebox shim). |
+| R4-25 | **MDI icon-pack support in the icon picker** — add Material Design Icons alongside our existing Lucide set; namespace with `mdi:` prefix per Glance's convention. | Source 15 | **Next** | Cheap, expands user expressiveness on dashboards / loadout cards. Lucide remains default. |
+| R4-26 | **Theme-aware icon auto-invert** — port Glance 0.8.4's `auto-invert` prefix idea to our 5-theme system so user-supplied icons don't disappear under dark/light flips. | Source 15 | **Next** | Solves a real bug class on user-uploaded SVG/PNG gear photos in light theme. |
+| R4-27 | **60m band reference card** — add 5351.5–5366.5 kHz channelization (FCC 25-60 / WRC-15) to the radio frequency seed pack; flag mode (USB) and channel limits. | Sources 16, 17 | **Now** | One-line content addition; the only post-roadmap regulatory change in our stack. |
+| R4-28 | **ARES/RACES national frequency seed** — canonical 80m/40m/20m/60m emergency net frequencies as a first-class seed pack section, not buried under "Misc". | Source 17 | **Next** | Direct fit for the preparedness-comms audience; matches existing `seeds/` pattern. |
+| R4-29 | **Competitor matrix expansion** — add refugiOS, wrolpi, mesh-api, zim-llm, civilization_node, kamrad to the OSS competitor table; capture their ZIM-handling, AI integration, and target hardware. | Source 18 | **Next** | Pure docs / roadmap maintenance; keeps the matrix honest for the next planning cycle. |
+| R4-30 | **Raspberry Pi 5 deployment guide** — community signal shows preppersvoice + multiple GitHub-topic projects targeting Pi 5; document waitress + pywebview-headless + LAN-bind path so NOMAD runs as a household appliance. | Source 19 | **Next** | We already advertise localhost-only; loosening to LAN-bind on a Pi is a docs / config flag, not a rewrite. Behind a `--bind 0.0.0.0` opt-in. |
+| R4-31 | **Pi-mode trust boundary docs** — if R4-30 ships, explicitly document the threat-model delta: a LAN-bound NOMAD is no longer single-user-localhost and the auth story has to change. | Source 19 | **Next** | Same release as R4-30 or it doesn't ship at all. |
+| R4-32 | **Per-release reproducibility receipt in CHANGELOG** — every release line gains `SHA256: …` + `Rekor: …` + `SBOM: …` triplet. | Sources 9 | **Next** | Cheap once R4-04/R4-06 land; matches what audited self-hosted peers already publish. |
+| R4-33 | **OpenTelemetry-style local-only observability hook** — emit OTLP traces into a SQLite ring buffer that Settings → Diagnostics can render; never network-egresses. | Source 6 (telemetry pattern) | **Later** | Solves the existing "user reports something weird, no logs" loop without violating no-telemetry promise. Local-only is non-negotiable. |
+| R4-34 | **Plugin/extension SDK skeleton** — formalize what a third-party seed pack or blueprint contributor has to ship; today it's tribal knowledge. | Source 6 (workspace pattern) | **Later** | Roadmap previously thin on plugin ecosystem; even a `CONTRIBUTING-plugins.md` + one reference plugin moves the needle. |
+| R4-35 | **Multi-user / read-only-guest mode** — single-user-localhost remains default; opt-in flag adds an unprivileged-viewer role for household members on Pi-mode. | Sources 14, 19 | **UC** | Only justifiable if Pi-mode (R4-30) ships; otherwise dead weight. Hard scope: no per-row ACLs, just app-wide read/write toggle. |
+| R4-36 | **Migration paths from competitor exports** — one-shot importers for Grocy stock JSON, Homebox export, Mealie recipe ZIP. Read-only first pass, write-back never. | Sources 13, 14 | **Later** | Lowers switching cost from established peers; the hard part is field-name normalization, not the import. |
+| R4-37 | **Native macOS app via Open WebUI's pattern** — they shipped a native shell that wraps a local server; we already are that. Document the macOS `.app` build path explicitly so V8-21 (signing) is the only remaining blocker. | Source 6 | **UC** | Ties off the V8-21 storyline; doesn't unblock signing but makes the post-signing path zero-rework. |
+| R4-38 | **Vision-LLM gear-photo enrichment** — drag a photo of a gear item, get a structured JSON suggestion (category, weight estimate, condition flags). User confirms before save. | Source 5 | **Later** | Depends on R4-13 + R4-14. High delight, low risk because user always confirms. |
+| R4-39 | **Schema-validated prompt templates** — every system prompt we ship is paired with a Pydantic output model checked at startup; templates fail closed if the model can't produce the schema. | Source 5 | **Next** | Keeps AI tab from silently regressing when models change. |
+| R4-40 | **Granular permission model for "outbound" features** — single Settings panel listing every feature that can hit a remote URL (NWS, Ollama remote, RSS); user can disable each independently. | Source 12 (Tauri permission model) | **Next** | Steals the right idea from Tauri without taking the dep. Aligns with localhost-first promise — makes it provable. |
+| R4-41 | **Replace deprecated alerts.weather.gov references in seed packs/docs** — grep every `alerts.weather.gov` URL across `docs/`, `seeds/`, blueprints, README; replace with `api.weather.gov` equivalent or remove. | Source 2 | **Now** | Pairs with R4-01; same sweep. |
+| R4-42 | **Reject: ship a Reticulum transport ourselves** — running a Reticulum interface inside NOMAD would make us a network-stack maintainer; orient around external clients via R4-20 instead. | Source 7 | **Rejected** | Out of scope vs. the "command center, not radio" philosophy in CLAUDE.md / README. |
+
+### Tier Roll-up
+
+- **Now (8):** R4-01, R4-02, R4-03, R4-08, R4-09, R4-13, R4-27, R4-41 — all are deadline-driven (NWS sunset, WCAG legal pressure, regulatory) or zero-cost wins (Ollama JSON, 60m band card).
+- **Next (14):** R4-04, R4-05, R4-06, R4-10, R4-11, R4-14, R4-16, R4-20, R4-25, R4-26, R4-28, R4-29, R4-30, R4-31, R4-32, R4-39, R4-40.
+- **Later (6):** R4-07, R4-15, R4-18, R4-19, R4-33, R4-34, R4-36, R4-38.
+- **Under Consideration (6):** R4-12, R4-17, R4-21, R4-22, R4-23, R4-24, R4-35, R4-37.
+- **Rejected (1):** R4-42.
+
+### Round 4 — Self-Audit (Phase 5)
+
+- **Traceability:** every R4-01..R4-42 row maps to a numbered Source above. ✅
+- **Tier justification:** every row carries a one-line "why this tier". ✅
+- **Category coverage:**
+  - Security / supply chain → R4-04..R4-07, R4-32, R4-40 ✅
+  - Accessibility → R4-08..R4-12 (WCAG 2.2 + EAA) ✅
+  - i18n / l10n → not addressed this round; existing roadmap defers. Flagged.
+  - Observability → R4-33 ✅
+  - Testing → R4-03 (regression seed), R4-09 (Playwright SC 2.4.11) ✅
+  - Docs / migration → R4-20, R4-29, R4-30, R4-31, R4-32, R4-36, R4-37 ✅
+  - Distribution / packaging → R4-04, R4-06, R4-07, R4-32, R4-37 ✅
+  - Plugin ecosystem → R4-17, R4-34 ✅
+  - Mobile → consciously excluded per existing roadmap (R3Tina noted as ecosystem-only signal in Source 8) ✅
+  - Offline / resilience → R4-18..R4-21, R4-30 ✅
+  - Multi-user / collab → R4-31, R4-35 ✅
+  - Standards / regulatory → R4-01..R4-03, R4-27, R4-28 ✅
+- **Internal consistency:** no R4 item duplicates a closed V8-/H-/P-/CE- item; R4-30/R4-31 share a release gate and are flagged as such; R4-13/R4-14/R4-38/R4-39 form a chain with R4-13 as prerequisite.
+- **Adversarial review:**
+  - "You skipped i18n." Acknowledged — i18n was deferred in prior rounds (P2-I et al.) and no new external signal landed this cycle to change the calculus. Re-open in Round 5.
+  - "WCAG 2.2 sweep is too vague." Mitigated by splitting into per-SC items (R4-08..R4-11) rather than a single bucket.
+  - "R4-30 contradicts the localhost-only promise." That is exactly why R4-30 is opt-in via flag and R4-31 is non-negotiable in the same release.
+  - "Ollama structured outputs assumes Ollama. What if user runs llama.cpp / LM Studio?" R4-13 implementation must abstract the format-enforcement call site so a future llama.cpp grammar-mode switch is a one-line change.
+- **Philosophy check:** every Now/Next item is consistent with stated principles (offline-first, localhost-first, no telemetry, no cloud sync). R4-30 is the only item that even touches "leaves localhost" and it ships with R4-31 as a guardrail.
+
+---

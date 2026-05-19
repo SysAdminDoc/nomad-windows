@@ -583,6 +583,25 @@ sudo apt install python3-gi gir1.2-webkit2-4.1
 
 Download **NOMADFieldDesk-macOS** from [Releases](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest). Uses native WebKit — no extra dependencies.
 
+#### Running alongside the upstream Crosstalk admin (macOS)
+
+If you're already running the upstream Crosstalk admin stack (e.g. via `project-nomad-macos-arm64`) on the same machine, Field Desk and Crosstalk both default to port `8080`. Override Field Desk's port and they coexist cleanly:
+
+```bash
+curl -L -o /Applications/NOMADFieldDesk-macOS \
+  https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest/download/NOMADFieldDesk-macOS
+chmod +x /Applications/NOMADFieldDesk-macOS
+
+NOMAD_PORT=8081 /Applications/NOMADFieldDesk-macOS
+```
+
+After that:
+- `:8080` → Crosstalk admin (Wikipedia / RAG / original NOMAD UX)
+- `:8081` → Field Desk (Situation Room / Loadout / NukeMap / broader preparedness suite)
+- `:11434` → one Ollama daemon, Metal-accelerated, serving both (Field Desk auto-discovers an existing Ollama)
+
+Other managed subprocesses (Kiwix / Kolibri / FlatNotes) don't collide in practice — Crosstalk runs them as Docker containers on dynamic published ports while Field Desk manages them as subprocesses on its defaults.
+
 ---
 
 ## Requirements

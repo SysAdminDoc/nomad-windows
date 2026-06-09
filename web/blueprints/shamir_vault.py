@@ -263,6 +263,26 @@ def api_shamir_delete(share_id):
 # Warrant Canary + Dead-Man's Switch
 # ═══════════════════════════════════════════════════════════════════
 
+def _canary_signature(db, statement, timestamp):
+    """HMAC-sign the canary with the node private key.
+
+    A plain SHA-256 of (statement | timestamp) is recomputable by anyone,
+    so it proves nothing. HMAC with the persistent node key (shared with
+    federation signing) proves the signer held the key at renewal time.
+    """
+    import hmac as _hmac
+    row = db.execute("SELECT value FROM settings WHERE key='node_private_key'").fetchone()
+    if row:
+        key_hex = row['value']
+    else:
+        key_hex = os.urandom(32).hex()
+        pub = hashlib.sha256(bytes.fromhex(key_hex)).hexdigest()
+        db.executemany("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                       [('node_private_key', key_hex), ('node_public_key', pub)])
+    sig_input = f'{statement}|{timestamp}'.encode('utf-8')
+    return _hmac.new(bytes.fromhex(key_hex), sig_input, hashlib.sha256).hexdigest()
+
+
 @shamir_vault_bp.route('/api/canary')
 def api_canary_status():
     """Get current warrant canary status."""
@@ -319,15 +339,11 @@ def api_canary_configure():
 
     now = datetime.now(timezone.utc).isoformat()
 
-    # Sign the canary with a hash of statement + timestamp
-    sig_input = f'{statement}|{now}'.encode('utf-8')
-    signature = hashlib.sha256(sig_input).hexdigest()
-
     canary = {
         'statement': statement,
         'interval_hours': interval_hours,
         'last_renewed': now,
-        'signature': signature,
+        'signature': '',
         'created_at': data.get('created_at', now),
         'renewal_count': 0,
     }
@@ -345,6 +361,7 @@ def api_canary_configure():
             except (json.JSONDecodeError, TypeError):
                 pass
 
+        canary['signature'] = _canary_signature(db, statement, now)
         db.execute(
             "INSERT OR REPLACE INTO settings (key, value) VALUES ('warrant_canary', ?)",
             (json.dumps(canary),)
@@ -373,10 +390,9 @@ def api_canary_renew():
             return jsonify({'error': 'Canary data corrupted'}), 500
 
         now = datetime.now(timezone.utc).isoformat()
-        sig_input = f'{canary["statement"]}|{now}'.encode('utf-8')
 
         canary['last_renewed'] = now
-        canary['signature'] = hashlib.sha256(sig_input).hexdigest()
+        canary['signature'] = _canary_signature(db, canary.get('statement', ''), now)
         canary['renewal_count'] = canary.get('renewal_count', 0) + 1
 
         db.execute(

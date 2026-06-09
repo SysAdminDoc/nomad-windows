@@ -367,21 +367,23 @@ def get_qdrant_asset_filter() -> str:
 # ─── System Power Commands ──────────────────────────────────────────
 
 def system_shutdown():
+    import subprocess
     if IS_WINDOWS:
-        os.system('shutdown /s /t 5 /c "NOMAD initiated shutdown"')
+        subprocess.run(['shutdown', '/s', '/t', '5', '/c', 'NOMAD initiated shutdown'], check=False)
     elif IS_MACOS:
-        os.system('sudo shutdown -h +1')
+        subprocess.run(['sudo', 'shutdown', '-h', '+1'], check=False)
     else:
-        os.system('sudo shutdown -h now')
+        subprocess.run(['sudo', 'shutdown', '-h', 'now'], check=False)
 
 
 def system_reboot():
+    import subprocess
     if IS_WINDOWS:
-        os.system('shutdown /r /t 5 /c "NOMAD initiated reboot"')
+        subprocess.run(['shutdown', '/r', '/t', '5', '/c', 'NOMAD initiated reboot'], check=False)
     elif IS_MACOS:
-        os.system('sudo shutdown -r +1')
+        subprocess.run(['sudo', 'shutdown', '-r', '+1'], check=False)
     else:
-        os.system('sudo shutdown -r now')
+        subprocess.run(['sudo', 'shutdown', '-r', 'now'], check=False)
 
 
 # ─── Config/Data Paths ──────────────────────────────────────────────

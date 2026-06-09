@@ -14,7 +14,10 @@ from html import escape as _html_escape
 
 log = logging.getLogger('nomad.web')
 _PBKDF2_PREFIX = 'pbkdf2$'
-_PBKDF2_ITERATIONS = 100_000
+_PBKDF2_ITERATIONS = 600_000
+# Hashes written before the iteration count was embedded in the stored
+# format ('pbkdf2$<salt>$<digest>', 3 parts) were always 100k iterations.
+_PBKDF2_LEGACY_ITERATIONS = 100_000
 
 
 def is_loopback_addr(addr: str) -> bool:
@@ -205,12 +208,23 @@ def hash_local_secret(value):
     """Hash a local auth secret using PBKDF2-SHA256 with a random salt."""
     salt = os.urandom(16)
     digest = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, _PBKDF2_ITERATIONS)
-    return f'{_PBKDF2_PREFIX}{salt.hex()}${digest.hex()}'
+    return f'{_PBKDF2_PREFIX}{_PBKDF2_ITERATIONS}${salt.hex()}${digest.hex()}'
 
 
 def local_secret_needs_rehash(stored_hash):
-    """Return True when a stored local auth secret uses the legacy SHA-256 format."""
-    return bool(stored_hash) and not str(stored_hash).startswith(_PBKDF2_PREFIX)
+    """Return True when a stored secret uses legacy SHA-256 or a weaker PBKDF2 cost."""
+    if not stored_hash:
+        return False
+    stored_hash = str(stored_hash)
+    if not stored_hash.startswith(_PBKDF2_PREFIX):
+        return True
+    parts = stored_hash.split('$')
+    if len(parts) != 4:
+        return True
+    try:
+        return int(parts[1]) < _PBKDF2_ITERATIONS
+    except ValueError:
+        return True
 
 
 def verify_local_secret(value, stored_hash):
@@ -220,14 +234,24 @@ def verify_local_secret(value, stored_hash):
     stored_hash = str(stored_hash)
     if stored_hash.startswith(_PBKDF2_PREFIX):
         parts = stored_hash.split('$')
-        if len(parts) != 3:
-            return False
-        try:
-            salt = bytes.fromhex(parts[1])
-        except ValueError:
-            return False
-        digest = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, _PBKDF2_ITERATIONS).hex()
-        return hmac.compare_digest(digest, parts[2])
+        if len(parts) == 4:
+            try:
+                iterations = int(parts[1])
+                salt = bytes.fromhex(parts[2])
+            except ValueError:
+                return False
+            if not 1 <= iterations <= 10_000_000:
+                return False
+            digest = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, iterations).hex()
+            return hmac.compare_digest(digest, parts[3])
+        if len(parts) == 3:
+            try:
+                salt = bytes.fromhex(parts[1])
+            except ValueError:
+                return False
+            digest = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, _PBKDF2_LEGACY_ITERATIONS).hex()
+            return hmac.compare_digest(digest, parts[2])
+        return False
     legacy = hashlib.sha256(value.encode()).hexdigest()
     return hmac.compare_digest(legacy, stored_hash)
 

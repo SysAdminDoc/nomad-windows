@@ -358,10 +358,24 @@ def api_motion_start(camera_id):
                             _cv2.imwrite(filepath, frame)
 
                             # Log to motion_events table
+                            stale = []
                             with db_session() as _db:
                                 _db.execute('INSERT INTO motion_events (camera_id, mean_diff, image_path, created_at) VALUES (?, ?, ?, datetime("now"))',
                                     (cid, mean_diff, filepath))
+                                # Retention: without pruning, every detection adds a
+                                # row + JPEG forever (a busy camera fills the disk).
+                                stale = _db.execute(
+                                    "SELECT image_path FROM motion_events WHERE created_at < datetime('now', '-30 days')"
+                                ).fetchall()
+                                if stale:
+                                    _db.execute("DELETE FROM motion_events WHERE created_at < datetime('now', '-30 days')")
                                 _db.commit()
+                            for _row in stale:
+                                if _row['image_path']:
+                                    try:
+                                        os.remove(_row['image_path'])
+                                    except OSError:
+                                        pass
                 prev_gray = gray
                 stop_flag.wait(_motion_config['check_interval'])
         except Exception as e:

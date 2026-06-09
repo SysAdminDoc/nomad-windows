@@ -155,6 +155,19 @@ def download_file(url: str, dest: str, service_id: str = '',
         total = int(resp.headers.get('content-length', 0)) + partial_size
         if total > cap:
             raise ValueError(f'File too large ({total} bytes > {cap} byte limit)')
+        # Fail fast when the disk clearly can't hold the remaining bytes —
+        # otherwise a 2 GB service download dies halfway with a cryptic
+        # OSError and leaves the user to diagnose a full disk.
+        if total > partial_size:
+            try:
+                free = shutil.disk_usage(dest_dir or '.').free
+            except OSError:
+                free = None
+            if free is not None and (total - partial_size) > free - 256 * 1024 * 1024:
+                raise ValueError(
+                    f'Insufficient disk space: need {(total - partial_size) // (1024 * 1024)} MB, '
+                    f'only {free // (1024 * 1024)} MB free'
+                )
         downloaded = partial_size
         start_time = time.time()
 

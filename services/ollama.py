@@ -344,11 +344,14 @@ def pull_model(model_name: str):
 
     resp = None
     try:
+        # Tuple timeout: (connect, read). A scalar 1800 let a stalled socket
+        # read block for 30 minutes before failing; Ollama streams progress
+        # lines continuously, so 60s of silence means the pull is dead.
         resp = requests.post(
             f'http://localhost:{OLLAMA_PORT}/api/pull',
             json={'name': model_name, 'stream': True},
             stream=True,
-            timeout=1800,
+            timeout=(30, 60),
         )
         resp.raise_for_status()
 

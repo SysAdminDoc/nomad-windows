@@ -24,6 +24,18 @@
   --sr-accent: #4aedc4;
   --sr-accent-dim: #0f5040;
   --sr-accent-bg: rgba(74,237,196,0.12);
+  /* Top-chrome surfaces (header / workspace bar / preset bar / breaking
+     ticker). Tokenized so the e-ink theme can go flat-light; every dark
+     theme inherits these exact values. */
+  --sr-chrome-bg: linear-gradient(180deg, rgba(14, 17, 20, 0.94), rgba(8, 10, 12, 0.94));
+  --sr-chrome-bg-soft: linear-gradient(180deg, rgba(10, 14, 17, 0.9), rgba(7, 10, 13, 0.86));
+  --sr-chrome-bg-faint: linear-gradient(180deg, rgba(7, 10, 13, 0.78), rgba(6, 9, 12, 0.88));
+  --sr-chrome-border: #20242a;
+  --sr-chrome-border-soft: #1b2229;
+  --sr-chrome-border-faint: #151d24;
+  --sr-breaking-bg: linear-gradient(90deg,#1a0808,#2a0808 30%,#1a0808);
+  --sr-breaking-border: #3a1515;
+  --sr-breaking-text: #e8a0a0;
 
   background:
     radial-gradient(circle at top right, rgba(74, 237, 196, 0.08), transparent 32%),
@@ -123,6 +135,17 @@
   --sr-accent: #006644;
   --sr-accent-dim: #e0f0e8;
   --sr-accent-bg: rgba(0,102,68,0.08);
+  /* Flat light chrome — the dark gradients above are illegible against
+     the e-ink theme's white panels and gray text tokens. */
+  --sr-chrome-bg: #f0f0f0;
+  --sr-chrome-bg-soft: #f5f5f5;
+  --sr-chrome-bg-faint: #fafafa;
+  --sr-chrome-border: #999999;
+  --sr-chrome-border-soft: #aaaaaa;
+  --sr-chrome-border-faint: #bbbbbb;
+  --sr-breaking-bg: #f5e8e8;
+  --sr-breaking-border: #cc2020;
+  --sr-breaking-text: #7a1010;
 }
 #tab-situation-room > * {
   position: relative;
@@ -226,8 +249,8 @@ body.situation-room-active #quick-actions-menu {
 /* ─── Breaking News ─── */
 .sr-breaking {
   display: flex; align-items: center; gap: 10px; padding: 0 12px; height: 26px;
-  background: linear-gradient(90deg,#1a0808,#2a0808 30%,#1a0808);
-  border-bottom: 1px solid #3a1515; overflow: hidden; flex-shrink: 0;
+  background: var(--sr-breaking-bg);
+  border-bottom: 1px solid var(--sr-breaking-border); overflow: hidden; flex-shrink: 0;
 }
 .sr-breaking-badge {
   flex-shrink: 0; font-size: var(--text-2xs, 9px); font-weight: 800; letter-spacing: 0.15em;
@@ -236,7 +259,7 @@ body.situation-room-active #quick-actions-menu {
 }
 @keyframes sr-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 .sr-breaking-scroll {
-  flex: 1; white-space: nowrap; overflow: hidden; font-size: var(--text-sm, 11px); color: #e8a0a0;
+  flex: 1; white-space: nowrap; overflow: hidden; font-size: var(--text-sm, 11px); color: var(--sr-breaking-text);
   animation: sr-marquee 80s linear infinite;
 }
 @keyframes sr-marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -245,8 +268,8 @@ body.situation-room-active #quick-actions-menu {
 .sr-header {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
   gap: 12px 16px; padding: 14px 18px 12px; min-height: 62px;
-  border-bottom: 1px solid #20242a;
-  background: linear-gradient(180deg, rgba(14, 17, 20, 0.94), rgba(8, 10, 12, 0.94));
+  border-bottom: 1px solid var(--sr-chrome-border);
+  background: var(--sr-chrome-bg);
   flex-shrink: 0;
 }
 .sr-header-left { display: grid; gap: 4px; flex: 1 1 320px; min-width: 0; }
@@ -264,8 +287,8 @@ body.situation-room-active #quick-actions-menu {
   gap: 12px 16px;
   align-items: center;
   padding: 12px 18px 10px;
-  border-bottom: 1px solid #1b2229;
-  background: linear-gradient(180deg, rgba(10, 14, 17, 0.9), rgba(7, 10, 13, 0.86));
+  border-bottom: 1px solid var(--sr-chrome-border-soft);
+  background: var(--sr-chrome-bg-soft);
 }
 .sr-view-nav,
 .sr-newsdesk-nav {
@@ -286,8 +309,8 @@ body.situation-room-active #quick-actions-menu {
   flex-wrap: wrap;
   gap: 8px;
   padding: 10px 18px 12px;
-  border-bottom: 1px solid #151d24;
-  background: linear-gradient(180deg, rgba(7, 10, 13, 0.78), rgba(6, 9, 12, 0.88));
+  border-bottom: 1px solid var(--sr-chrome-border-faint);
+  background: var(--sr-chrome-bg-faint);
 }
 .sr-desk-preset-label,
 .sr-layer-preset-label {
@@ -2865,6 +2888,21 @@ body.situation-room-active .sr-market-ribbon {
 }
 @media (prefers-reduced-motion: reduce) {
   .sitroom-skeleton-bar { animation: none; opacity: 0.7; }
+  /* Infinite flourishes (pulse badges, marquee/ribbon tickers, radar
+     sweeps, shimmer skeletons) must stop under reduced motion; the
+     short one-shot entrance transitions are fine to keep. */
+  .sr-breaking-badge,
+  .sr-breaking-scroll,
+  .sr-refresh-bar.active::after,
+  .sr-threat-badge[data-level="1"],
+  .sr-status-dot.live,
+  .sr-market-ribbon-inner,
+  .sr-shimmer,
+  .sr-skeleton,
+  .sr-badge-new,
+  .sr-badge-live {
+    animation: none;
+  }
 }
 
 /* ─── Proximity Board (Near You) ─── */

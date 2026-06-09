@@ -63,7 +63,9 @@ input, textarea, select, [contenteditable="true"] {
   caret-color: var(--accent);
 }
 ::placeholder {
-  color: color-mix(in srgb, var(--text-muted) 88%, transparent);
+  /* --text-muted is already the lowest-contrast text tone; fading it
+     further dropped placeholders below readable contrast in dark themes. */
+  color: var(--text-muted);
   opacity: 1;
   font-weight: 400;
 }

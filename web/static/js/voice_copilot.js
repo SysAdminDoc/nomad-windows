@@ -115,15 +115,19 @@ const NomadVoiceCopilot = (() => {
 
     // askCopilot writes the answer into #copilot-answer via innerHTML.
     // We read it back out as plain text for TTS after the promise resolves.
+    // Guard on _active: if the user stops the session while the answer is
+    // pending, the resolved promise must not start TTS or flip the UI state.
     Promise.resolve(window.askCopilot(question))
-      .then(() => _speakLatestAnswer())
+      .then(() => { if (_active) _speakLatestAnswer(); })
       .catch(() => {
+        if (!_active) return;
         _setState('listening');
         _restartRecognition();
       });
   }
 
   function _speakLatestAnswer() {
+    if (!_active) return;
     const answerEl = document.getElementById('copilot-answer');
     if (!answerEl) { _restartRecognition(); return; }
     const body = answerEl.querySelector('.copilot-answer-body') || answerEl;

@@ -407,10 +407,14 @@ async function createNoteWithTitle(title) {
 }
 
 let _noteTemplatesCache = [];
+let _noteTemplatesCloser = null;
 async function toggleNoteTemplates() {
   const dd = document.getElementById('note-template-dropdown');
   const list = document.getElementById('note-template-list');
   if (!dd || !list) return;
+  // Always detach the previous outside-click closer — closing via the
+  // toggle button left it attached, so reopening stacked listeners.
+  if (_noteTemplatesCloser) { document.removeEventListener('click', _noteTemplatesCloser); _noteTemplatesCloser = null; }
   if (dd.style.display === 'block') { dd.style.display = 'none'; return; }
   dd.style.display = 'block';
   _noteTemplatesCache = await safeFetch('/api/notes/templates', {}, []);
@@ -420,9 +424,15 @@ async function toggleNoteTemplates() {
       <span class="note-template-item-label">${escapeHtml(t.name)}</span>
     </div>
   `).join('');
-  setTimeout(() => document.addEventListener('click', function closer(e) {
-    if (!dd.contains(e.target)) { dd.style.display = 'none'; document.removeEventListener('click', closer); }
-  }), 10);
+  const closer = (e) => {
+    if (!dd.contains(e.target)) {
+      dd.style.display = 'none';
+      document.removeEventListener('click', closer);
+      if (_noteTemplatesCloser === closer) _noteTemplatesCloser = null;
+    }
+  };
+  _noteTemplatesCloser = closer;
+  setTimeout(() => document.addEventListener('click', closer), 10);
 }
 
 async function applyNoteTemplateByIndex(idx) {
@@ -1303,7 +1313,7 @@ async function loadKBDocs() {
   el.innerHTML = docs.map(d => {
     const statusClass = d.status === 'ready' ? 'kb-doc-status-success' : d.status === 'error' ? 'kb-doc-status-danger' : 'kb-doc-status-warning';
     const cat = d.doc_category || '';
-    const catBadge = cat ? `<span class="kb-doc-category" style="--kb-doc-category-tone:${catColors[cat]||'var(--surface3)'};">${cat}</span>` : '';
+    const catBadge = cat ? `<span class="kb-doc-category" style="--kb-doc-category-tone:${catColors[cat]||'var(--surface3)'};">${escapeHtml(cat)}</span>` : '';
     const summary = d.summary ? `<div class="kb-doc-summary" title="${escapeAttr(d.summary)}">${escapeHtml(d.summary.slice(0,100))}</div>` : '';
     const analyzeBtn = d.status === 'ready' && !d.doc_category ? `<button type="button" class="kb-doc-action" data-chat-action="analyze-kb-doc" data-doc-id="${d.id}" title="AI: classify, summarize, extract entities">Analyze</button>` : '';
     const detailBtn = d.doc_category ? `<button type="button" class="kb-doc-action" data-chat-action="show-doc-details" data-doc-id="${d.id}" title="View analysis details">Details</button>` : '';

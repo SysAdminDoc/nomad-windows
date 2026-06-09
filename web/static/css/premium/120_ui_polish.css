@@ -189,3 +189,54 @@ body.situation-room-active:not([data-theme]) {
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   color: #e6edf5 !important;
 }
+
+/* Breaking-news ticker on the light theme: the blanket
+ * [class*="sr-"] transparency rule above strips the badge's red chip
+ * and forces inherited dark text, but the bar's dark-red gradient is a
+ * background-IMAGE and survives — near-black text on near-black.
+ * Re-flatten the ticker to light-theme colors. */
+:root[data-theme="nomad"] #tab-situation-room .sr-breaking {
+  background: #f5e8e8 !important;
+  border-bottom: 1px solid #cc2020 !important;
+}
+:root[data-theme="nomad"] #tab-situation-room .sr-breaking-badge {
+  background: #cc2020 !important;
+  color: #ffffff !important;
+}
+:root[data-theme="nomad"] #tab-situation-room .sr-breaking-scroll {
+  color: #7a1010 !important;
+}
+
+/* E-ink exception: the solid-black flattening above is theme-agnostic,
+ * but e-ink panels are white by design (--sr-* tokens in
+ * 45_situation_room.css) — full-black bars ghost badly on e-paper.
+ * Re-flatten the same surfaces to the light chrome tokens. */
+:root[data-theme="eink"] #tab-situation-room .sr-header,
+:root[data-theme="eink"] #tab-situation-room .sr-saved-desk-bar,
+:root[data-theme="eink"] #tab-situation-room .sr-posture-bar,
+:root[data-theme="eink"] #tab-situation-room .sr-saved-desk-empty,
+:root[data-theme="eink"] #tab-situation-room .sr-posture-empty,
+:root[data-theme="eink"] #tab-situation-room .sr-watchlist-bar,
+:root[data-theme="eink"] #tab-situation-room .sr-current-posture,
+:root[data-theme="eink"] #tab-situation-room .sr-newsdesk-brief,
+:root[data-theme="eink"] #tab-situation-room .sr-newsdesk-nav,
+:root[data-theme="eink"] #tab-situation-room .sr-actions-bar {
+  background: var(--sr-chrome-bg, #f0f0f0) !important;
+  border: 1px solid var(--sr-chrome-border, #999999) !important;
+  color: var(--sr-text, #000000) !important;
+}
+:root[data-theme="eink"] #tab-situation-room .sr-saved-desk-bar input,
+:root[data-theme="eink"] #tab-situation-room .sr-posture-bar input,
+:root[data-theme="eink"] #tab-situation-room .sr-watchlist-bar input,
+:root[data-theme="eink"] #tab-situation-room .sr-input {
+  background: #ffffff !important;
+  border: 1px solid var(--sr-chrome-border, #999999) !important;
+  color: #000000 !important;
+}
+:root[data-theme="eink"] #tab-situation-room .sr-saved-desk-bar .sr-btn,
+:root[data-theme="eink"] #tab-situation-room .sr-posture-bar .sr-btn,
+:root[data-theme="eink"] #tab-situation-room .sr-actions-bar .sr-btn {
+  background: #ffffff !important;
+  border: 1px solid #666666 !important;
+  color: #000000 !important;
+}

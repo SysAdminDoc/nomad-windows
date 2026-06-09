@@ -69,3 +69,7 @@ docs/schema.md
 .claude/
 .factory/
 *.bak
+
+# Markdown files local-only (except README)
+*.md
+!README.md

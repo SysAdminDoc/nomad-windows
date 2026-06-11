@@ -11,6 +11,7 @@ import logging
 import os
 import threading
 import zipfile
+from contextlib import contextmanager
 
 import requests
 
@@ -40,6 +41,22 @@ def _get_packs_dir():
     packs_dir = os.path.join(data_dir, 'packs')
     os.makedirs(packs_dir, exist_ok=True)
     return packs_dir
+
+
+@contextmanager
+def _import_transaction():
+    """Run destructive data-pack table refreshes as one all-or-nothing unit."""
+    with db_session() as db:
+        try:
+            db.execute('BEGIN IMMEDIATE')
+            yield db
+            db.commit()
+        except Exception:
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            raise
 
 
 # ─── Status / trigger routes ─────────────────────────────────────
@@ -153,7 +170,7 @@ def _import_fema_nri():
         _set_state(pack_id, detail=f'Importing {total} counties...', total=total)
         _log.info('FEMA NRI: %d county rows to import', total)
 
-        with db_session() as db:
+        with _import_transaction() as db:
             # Clear existing data for clean re-import
             db.execute('DELETE FROM fema_nri_counties')
 
@@ -209,7 +226,6 @@ def _import_fema_nri():
             _mark_installed(db, 'fema_nri', 'FEMA National Risk Index',
                             'County-level hazard risk scores for 18 natural hazards',
                             1, 'hazards', 52_428_800, 20_971_520, '2023.11')
-            db.commit()
 
         county_count = total
         _set_state(pack_id, status='complete', progress=total, detail=f'Imported {county_count} counties')
@@ -260,7 +276,7 @@ def _import_usda_sr_legacy():
         _set_state(pack_id, detail=f'Importing {total} foods...', total=total)
         _log.info('USDA SR Legacy: %d foods to import', total)
 
-        with db_session() as db:
+        with _import_transaction() as db:
             db.execute('DELETE FROM nutrition_nutrients')
             db.execute('DELETE FROM nutrition_foods')
 
@@ -361,7 +377,6 @@ def _import_usda_sr_legacy():
             _mark_installed(db, 'usda_sr_legacy', 'USDA FoodData SR Legacy',
                             'Nutritional data for 7,793 common foods',
                             1, 'nutrition', 78_643_200, 26_214_400, '2018.04')
-            db.commit()
 
         _set_state(pack_id, status='complete', progress=total, detail=f'Imported {total} foods')
         log_activity('data_pack_imported', detail=f'USDA SR Legacy: {total} foods')
@@ -393,7 +408,7 @@ def _import_noaa_stations():
         total = len(rows)
         _set_state(pack_id, detail=f'Importing {total} US stations...', total=total)
 
-        with db_session() as db:
+        with _import_transaction() as db:
             db.execute('DELETE FROM noaa_stations')
             batch = []
             for i, r in enumerate(rows):
@@ -435,7 +450,6 @@ def _import_noaa_stations():
             _mark_installed(db, 'noaa_weather_stations', 'NOAA Weather Station Directory',
                             'US weather station locations and identifiers',
                             1, 'weather', 4_194_304, 1_048_576, '2024.01')
-            db.commit()
 
         _set_state(pack_id, status='complete', progress=total, detail=f'Imported {total} stations')
         log_activity('data_pack_imported', detail=f'NOAA Stations: {total}')
@@ -531,7 +545,7 @@ def _import_noaa_frost_dates():
         total = len(stations)
         _set_state(pack_id, detail=f'Computing frost dates for {total} stations...', total=total)
 
-        with db_session() as db:
+        with _import_transaction() as db:
             db.execute('DELETE FROM noaa_frost_dates')
             batch = []
 
@@ -585,7 +599,6 @@ def _import_noaa_frost_dates():
             _mark_installed(db, 'noaa_frost_dates', 'NOAA Frost Date Normals',
                             'Last spring / first fall frost dates by station',
                             1, 'weather', 8_388_608, 2_097_152, '2023.01')
-            db.commit()
 
         _set_state(pack_id, status='complete', progress=total, detail=f'Imported {total} stations')
         log_activity('data_pack_imported', detail=f'NOAA Frost Dates: {total} stations')
@@ -649,7 +662,7 @@ def _import_usda_hardiness():
         total = len(rows)
         _set_state(pack_id, detail=f'Importing {total} ZIP codes...', total=total)
 
-        with db_session() as db:
+        with _import_transaction() as db:
             db.execute('DELETE FROM usda_hardiness_zones')
             batch = []
 
@@ -684,7 +697,6 @@ def _import_usda_hardiness():
             _mark_installed(db, 'usda_hardiness_zones', 'USDA Plant Hardiness Zones',
                             'ZIP-code-level hardiness zone lookup',
                             1, 'agriculture', 3_145_728, 1_048_576, '2023.11')
-            db.commit()
 
         _set_state(pack_id, status='complete', progress=total, detail=f'Imported {total} ZIP codes')
         log_activity('data_pack_imported', detail=f'USDA Hardiness: {total} ZIP codes')

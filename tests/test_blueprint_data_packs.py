@@ -13,9 +13,8 @@ Tests pin two well-known pack_ids: 'usda_sr_legacy' (tier 1) and
 break loudly — that's by design; the contract is the pack_id surface.
 """
 
-import pytest
-
 from db import db_session
+from web.blueprints import pack_importers as pack_importers_mod
 
 
 # ── /api/data-packs (list, catalog + install status) ──────────────────────
@@ -161,3 +160,40 @@ class TestSummary:
         # Sum of catalog sizes for the two installed
         assert body['installed_size_bytes'] == 78_643_200 + 3_145_728
         assert 'MB' in body['installed_size_display']
+
+
+class TestDataPackImporterTransactions:
+    def test_noaa_station_import_rolls_back_when_pack_marking_fails(self, db, monkeypatch):
+        db.execute(
+            'INSERT INTO noaa_stations '
+            '(station_id, name, state, country, lat, lng, elevation_m, wban_id, icao, station_type) '
+            'VALUES (?,?,?,?,?,?,?,?,?,?)',
+            ('old-001', 'Old Station', 'TX', 'US', 30.0, -97.0, 200.0, '00001', 'KOLD', 'isd'),
+        )
+        db.commit()
+
+        class _FakeResponse:
+            text = (
+                'USAF,WBAN,STATION NAME,CTRY,STATE,LAT,LON,ELEV(M),ICAO\n'
+                '123456,99999,New Station,US,TX,31.0,-98.0,220.0,KNEW\n'
+            )
+
+            def raise_for_status(self):
+                return None
+
+        def _fail_mark_installed(*args, **kwargs):
+            raise RuntimeError('mark installed failed')
+
+        with pack_importers_mod._import_lock:
+            pack_importers_mod._import_state.clear()
+        monkeypatch.setattr(pack_importers_mod.requests, 'get', lambda *args, **kwargs: _FakeResponse())
+        monkeypatch.setattr(pack_importers_mod, '_mark_installed', _fail_mark_installed)
+
+        pack_importers_mod._import_noaa_stations()
+
+        rows = db.execute('SELECT station_id, name FROM noaa_stations ORDER BY station_id').fetchall()
+        assert [(row['station_id'], row['name']) for row in rows] == [('old-001', 'Old Station')]
+
+        with pack_importers_mod._import_lock:
+            state = dict(pack_importers_mod._import_state['noaa_weather_stations'])
+        assert state['status'] == 'error'

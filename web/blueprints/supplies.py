@@ -7,10 +7,75 @@ from flask import Blueprint, request, jsonify, Response
 from db import db_session, log_activity
 from web.auth import require_auth
 from web.utils import require_json_body as _require_json_body, validate_bulk_ids as _validate_bulk_ids
+from web.validation import validate_json
 
 _log = logging.getLogger(__name__)
 
 supplies_bp = Blueprint('supplies', __name__)
+
+_TEXT = {'type': str}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_INT_INPUT = {'type': (int, str)}
+_BOOLISH_INPUT = {'type': (bool, int, str)}
+
+_VAULT_SCHEMA = {
+    'title': _TEXT,
+    'encrypted_data': _TEXT,
+    'iv': _TEXT,
+    'salt': _TEXT,
+}
+_SKILL_SCHEMA = {
+    'name': _TEXT,
+    'category': _TEXT,
+    'proficiency': _TEXT,
+    'notes': _TEXT,
+    'last_practiced': _TEXT,
+}
+_AMMO_SCHEMA = {
+    'caliber': _TEXT,
+    'brand': _TEXT,
+    'bullet_weight': _TEXT,
+    'bullet_type': _TEXT,
+    'quantity': _INT_INPUT,
+    'location': _TEXT,
+    'notes': _TEXT,
+}
+_COMMUNITY_SCHEMA = {
+    'name': _TEXT,
+    'distance_mi': _NUMBER_INPUT,
+    'skills': {'type': (list, str)},
+    'equipment': {'type': (list, str)},
+    'contact': _TEXT,
+    'notes': _TEXT,
+    'trust_level': _TEXT,
+}
+_RADIATION_SCHEMA = {
+    'dose_rate_rem': _NUMBER_INPUT,
+    'duration_hours': _NUMBER_INPUT,
+    'location': _TEXT,
+    'notes': _TEXT,
+}
+_FUEL_SCHEMA = {
+    'fuel_type': _TEXT,
+    'quantity': _NUMBER_INPUT,
+    'unit': _TEXT,
+    'container': _TEXT,
+    'location': _TEXT,
+    'stabilizer_added': _BOOLISH_INPUT,
+    'date_stored': _TEXT,
+    'expires': _TEXT,
+    'notes': _TEXT,
+}
+_EQUIPMENT_SCHEMA = {
+    'name': _TEXT,
+    'category': _TEXT,
+    'last_service': _TEXT,
+    'next_service': _TEXT,
+    'service_notes': _TEXT,
+    'status': _TEXT,
+    'location': _TEXT,
+    'notes': _TEXT,
+}
 
 
 # ─── Vault ─────────────────────────────────────────────────────────
@@ -30,6 +95,7 @@ def api_vault_list():
     return jsonify([dict(r) for r in rows])
 
 @supplies_bp.route('/api/vault', methods=['POST'])
+@validate_json(_VAULT_SCHEMA)
 def api_vault_create():
     data = request.get_json() or {}
     for field in ('encrypted_data', 'iv', 'salt'):
@@ -54,6 +120,7 @@ def api_vault_get(eid):
     return jsonify(dict(row))
 
 @supplies_bp.route('/api/vault/<int:eid>', methods=['PUT'])
+@validate_json(_VAULT_SCHEMA)
 def api_vault_update(eid):
     data = request.get_json() or {}
     for field in ('encrypted_data', 'iv', 'salt'):
@@ -102,6 +169,7 @@ def api_skills_list():
         return jsonify([dict(r) for r in rows])
 
 @supplies_bp.route('/api/skills', methods=['POST'])
+@validate_json(_SKILL_SCHEMA)
 def api_skills_create():
     d = request.json or {}
     if len(d.get('name', '') or '') > 200:
@@ -119,6 +187,7 @@ def api_skills_create():
     return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/skills/<int:sid>', methods=['PUT'])
+@validate_json(_SKILL_SCHEMA)
 def api_skills_update(sid):
     d = request.json or {}
     if len(d.get('name', '') or '') > 200:
@@ -271,6 +340,7 @@ def api_ammo_list():
     return jsonify([dict(r) for r in rows])
 
 @supplies_bp.route('/api/ammo', methods=['POST'])
+@validate_json(_AMMO_SCHEMA)
 def api_ammo_create():
     d = request.json or {}
     if len(d.get('caliber', '') or '') > 200:
@@ -290,6 +360,7 @@ def api_ammo_create():
     return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/ammo/<int:aid>', methods=['PUT'])
+@validate_json(_AMMO_SCHEMA)
 def api_ammo_update(aid):
     d = request.json or {}
     if len(d.get('caliber', '') or '') > 200:
@@ -392,6 +463,7 @@ def api_community_list():
         return jsonify([dict(r) for r in rows])
 
 @supplies_bp.route('/api/community', methods=['POST'])
+@validate_json(_COMMUNITY_SCHEMA)
 def api_community_create():
     d = request.json or {}
     if len(d.get('name', '') or '') > 200:
@@ -414,6 +486,7 @@ def api_community_create():
     return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/community/<int:cid>', methods=['PUT'])
+@validate_json(_COMMUNITY_SCHEMA)
 def api_community_update(cid):
     d = request.json or {}
     if len(d.get('name', '') or '') > 200:
@@ -467,6 +540,7 @@ def api_radiation_list():
         return jsonify({'readings': [dict(r) for r in rows], 'total_rem': round(total, 4)})
 
 @supplies_bp.route('/api/radiation', methods=['POST'])
+@validate_json(_RADIATION_SCHEMA)
 def api_radiation_create():
     d = request.json or {}
     try:
@@ -518,6 +592,7 @@ def api_fuel_list():
         return jsonify([dict(r) for r in rows])
 
 @supplies_bp.route('/api/fuel', methods=['POST'])
+@validate_json(_FUEL_SCHEMA)
 def api_fuel_create():
     d = request.json or {}
     if len(d.get('fuel_type', '') or '') > 200:
@@ -545,6 +620,7 @@ def api_fuel_create():
     return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/fuel/<int:fid>', methods=['PUT'])
+@validate_json(_FUEL_SCHEMA)
 def api_fuel_update(fid):
     d = request.json or {}
     if len(d.get('fuel_type', '') or '') > 200:
@@ -620,6 +696,7 @@ def api_equipment_list():
         return jsonify([dict(r) for r in rows])
 
 @supplies_bp.route('/api/equipment', methods=['POST'])
+@validate_json(_EQUIPMENT_SCHEMA)
 def api_equipment_create():
     d = request.json or {}
     if len(d.get('name', '') or '') > 200:
@@ -639,6 +716,7 @@ def api_equipment_create():
     return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/equipment/<int:eid>', methods=['PUT'])
+@validate_json(_EQUIPMENT_SCHEMA)
 def api_equipment_update(eid):
     d = request.json or {}
     if len(d.get('name', '') or '') > 200:

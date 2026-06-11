@@ -52,6 +52,21 @@ class TestVault:
         assert resp.status_code == 400
         assert resp.get_json()['error'] == 'Missing required field: salt'
 
+    def test_vault_rejects_malformed_json(self, client):
+        resp = client.post('/api/vault', data='not-json', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_vault_rejects_non_string_ciphertext(self, client):
+        resp = client.post('/api/vault', json={
+            'title': 'Bad vault',
+            'encrypted_data': {'bad': 'shape'},
+            'iv': 'iv',
+            'salt': 'salt',
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
 
 class TestSkills:
     def test_seed_default_skills_is_idempotent(self, client):
@@ -116,6 +131,11 @@ class TestSkills:
         malformed = client.post('/api/skills/import', data='{bad', content_type='application/json')
         assert malformed.status_code == 400
         assert malformed.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_skills_create_rejects_non_object_body(self, client):
+        resp = client.post('/api/skills', json=['First Aid'])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
 
 
 class TestFuel:
@@ -182,6 +202,11 @@ class TestFuel:
         resp = client.post('/api/fuel', json={'quantity': 5})
         assert resp.status_code == 400
         assert resp.get_json()['error'] == 'fuel_type is required'
+
+    def test_create_fuel_rejects_container_quantity(self, client):
+        resp = client.post('/api/fuel', json={'fuel_type': 'gasoline', 'quantity': ['20']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
 
 class TestEquipment:
@@ -260,6 +285,11 @@ class TestEquipment:
         assert resp.status_code == 400
         assert resp.get_json()['error'] == 'name is required'
 
+    def test_create_equipment_rejects_container_name(self, client):
+        resp = client.post('/api/equipment', json={'name': ['Generator']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
 
 class TestAmmo:
     def test_list_ammo(self, client):
@@ -333,6 +363,11 @@ class TestAmmo:
         assert resp.status_code == 400
         assert resp.get_json()['error'] == 'caliber too long (max 200)'
 
+    def test_create_ammo_rejects_container_quantity(self, client):
+        resp = client.post('/api/ammo', json={'caliber': '9mm', 'quantity': ['500']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
 
 class TestCommunity:
     def test_community_create_update_delete_and_json_fields(self, client):
@@ -376,6 +411,14 @@ class TestCommunity:
         assert missing.status_code == 400
         assert missing.get_json()['error'] == 'name is required'
 
+    def test_community_rejects_container_distance(self, client):
+        resp = client.post('/api/community', json={
+            'name': 'Bad distance',
+            'distance_mi': ['3.5'],
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
 
 class TestRadiation:
     def test_radiation_cumulative_total_and_clear(self, client):
@@ -409,3 +452,11 @@ class TestRadiation:
         })
         assert resp.status_code == 201
         assert resp.get_json()['cumulative_rem'] == 0.0
+
+    def test_radiation_rejects_container_dose_rate(self, client):
+        resp = client.post('/api/radiation', json={
+            'dose_rate_rem': ['bad'],
+            'duration_hours': 1,
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'

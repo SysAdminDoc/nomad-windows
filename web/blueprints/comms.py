@@ -26,10 +26,53 @@ from web.utils import (
     get_query_int as _get_query_int,
     safe_json_list as _safe_json_list,
 )
+from web.validation import validate_json
 
 log = logging.getLogger('nomad.web')
 
 comms_bp = Blueprint('comms', __name__)
+
+_TEXT_50 = {'type': str, 'max_length': 50}
+_TEXT_100 = {'type': str, 'max_length': 100}
+_TEXT_200 = {'type': str, 'max_length': 200}
+_TEXT_500 = {'type': str, 'max_length': 500}
+_TEXT_2000 = {'type': str, 'max_length': 2000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_INT_INPUT = {'type': (int, str)}
+_BOOL_INPUT = {'type': (bool, int)}
+
+_LAN_MESSAGE_SCHEMA = {
+    'content': {**_TEXT_2000, 'required': True},
+    'sender': _TEXT_50,
+    'msg_type': _TEXT_50,
+}
+_FREQUENCY_SCHEMA = {
+    'frequency': _NUMBER_INPUT,
+    'mode': _TEXT_50,
+    'bandwidth': _TEXT_50,
+    'service': _TEXT_200,
+    'description': _TEXT_500,
+    'region': _TEXT_50,
+    'license_required': {'type': (bool, int, str)},
+    'priority': _INT_INPUT,
+    'notes': _TEXT_2000,
+}
+_PACE_TEXT_FIELDS = {
+    field: _TEXT_500
+    for field in (
+        'name', 'scenario', 'notes',
+        'primary_method', 'primary_freq', 'primary_equipment',
+        'primary_callsign', 'primary_schedule', 'primary_notes',
+        'alternate_method', 'alternate_freq', 'alternate_equipment',
+        'alternate_callsign', 'alternate_schedule', 'alternate_notes',
+        'contingency_method', 'contingency_freq', 'contingency_equipment',
+        'contingency_callsign', 'contingency_schedule', 'contingency_notes',
+        'emergency_method', 'emergency_freq', 'emergency_equipment',
+        'emergency_callsign', 'emergency_schedule', 'emergency_notes',
+    )
+}
+_PACE_SCHEMA = {**_PACE_TEXT_FIELDS, 'is_active': _BOOL_INPUT}
+_PACE_CREATE_SCHEMA = {**_PACE_SCHEMA, 'name': {**_TEXT_500, 'required': True}}
 
 
 def _normalize_radio_channels(value):
@@ -221,6 +264,7 @@ def api_lan_messages():
 
 
 @comms_bp.route('/api/lan/messages', methods=['POST'])
+@validate_json(_LAN_MESSAGE_SCHEMA)
 def api_lan_send():
     data = request.get_json() or {}
     content = (data.get('content', '') or '').strip()
@@ -262,6 +306,7 @@ def api_lan_channels():
 
 
 @comms_bp.route('/api/lan/channels', methods=['POST'])
+@validate_json({'name': {**_TEXT_100, 'required': True}, 'description': _TEXT_500})
 def api_lan_channel_create():
     """Create a LAN chat channel."""
     d = request.json or {}
@@ -286,6 +331,7 @@ def api_lan_presence():
 
 
 @comms_bp.route('/api/lan/presence/heartbeat', methods=['POST'])
+@validate_json({'name': _TEXT_100, 'version': _TEXT_100, 'ip': _TEXT_100})
 def api_lan_heartbeat():
     """Register/update LAN presence."""
     d = request.json or {}
@@ -320,6 +366,7 @@ def api_comms_frequencies():
     return jsonify([dict(r) for r in rows])
 
 @comms_bp.route('/api/comms/frequencies', methods=['POST'])
+@validate_json(_FREQUENCY_SCHEMA)
 def api_comms_freq_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -666,6 +713,15 @@ def api_comms_schedules_list():
 
 
 @comms_bp.route('/api/comms/schedules', methods=['POST'])
+@validate_json({
+    'frequency': _TEXT_100,
+    'mode': _TEXT_50,
+    'net_name': _TEXT_200,
+    'check_in_time': _TEXT_50,
+    'assigned_operator': _TEXT_200,
+    'priority': _INT_INPUT,
+    'notes': _TEXT_2000,
+})
 def api_comms_schedules_create():
     d = request.json or {}
     with db_session() as db:
@@ -710,6 +766,7 @@ def api_comms_freq_priority():
 # ─── Mesh/LAN Bridging ──────────────────────────────────────────
 
 @comms_bp.route('/api/comms/bridge', methods=['POST'])
+@validate_json({'message': _TEXT_2000, 'source': {'type': str, 'choices': ['lan', 'mesh']}, 'sender': _TEXT_50})
 def api_comms_bridge():
     d = request.json or {}
     msg = d.get('message', '')
@@ -757,6 +814,7 @@ def api_comms_profiles_list():
 
 
 @comms_bp.route('/api/comms/radio-profiles', methods=['POST'])
+@validate_json({'radio_model': _TEXT_200, 'name': _TEXT_200, 'channels': {'type': list}})
 def api_comms_profiles_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -785,6 +843,7 @@ def api_broadcast_get():
     return jsonify(get_broadcast())
 
 @comms_bp.route('/api/broadcast', methods=['POST'])
+@validate_json({'message': _TEXT_500, 'severity': _TEXT_50})
 def api_broadcast_set():
     data = request.get_json() or {}
     msg = (data.get('message', '') or '')[:500]
@@ -818,6 +877,13 @@ def api_comms_log_list():
 
 
 @comms_bp.route('/api/comms-log', methods=['POST'])
+@validate_json({
+    'freq': _TEXT_100,
+    'callsign': _TEXT_100,
+    'direction': {'type': str, 'choices': ['rx', 'tx']},
+    'message': _TEXT_2000,
+    'signal_quality': _TEXT_100,
+})
 def api_comms_log_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -860,6 +926,11 @@ def api_serial_ports():
         return jsonify({'ports': [], 'pyserial_available': False, 'note': 'Install pyserial: pip install pyserial'})
 
 @comms_bp.route('/api/serial/connect', methods=['POST'])
+@validate_json({
+    'port': {'type': str, 'required': True, 'max_length': 200},
+    'baud': _INT_INPUT,
+    'protocol': _TEXT_50,
+})
 def api_serial_connect():
     """Connect to a serial port."""
     data = request.get_json() or {}
@@ -930,6 +1001,7 @@ def api_mesh_status():
 
 
 @comms_bp.route('/api/mesh/start', methods=['POST'])
+@validate_json({'transport': _BOOL_INPUT})
 def api_mesh_start():
     """Start the Reticulum mesh transport."""
     from services import reticulum as rns_svc
@@ -963,6 +1035,7 @@ def api_mesh_stop():
 
 
 @comms_bp.route('/api/mesh/announce', methods=['POST'])
+@validate_json({'name': _TEXT_100})
 def api_mesh_announce():
     """Announce this node on the mesh network."""
     from services import reticulum as rns_svc
@@ -988,6 +1061,12 @@ def api_mesh_messages_list():
 
 
 @comms_bp.route('/api/mesh/messages', methods=['POST'])
+@validate_json({
+    'message': {**_TEXT_2000, 'required': True},
+    'channel': _TEXT_100,
+    'to_node': _TEXT_200,
+    'title': _TEXT_200,
+})
 def api_mesh_messages_send():
     """Send a mesh message via LXMF (or store locally if mesh not running)."""
     from services import reticulum as rns_svc
@@ -1174,6 +1253,7 @@ def api_pace_list():
 
 
 @comms_bp.route('/api/comms/pace', methods=['POST'])
+@validate_json(_PACE_CREATE_SCHEMA)
 def api_pace_create():
     """Create a new PACE communications plan."""
     d = request.get_json() or {}
@@ -1244,6 +1324,7 @@ def api_pace_get(pid):
 
 
 @comms_bp.route('/api/comms/pace/<int:pid>', methods=['PUT'])
+@validate_json(_PACE_SCHEMA)
 def api_pace_update(pid):
     """Update a PACE plan."""
     data = request.get_json() or {}

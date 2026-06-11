@@ -33,6 +33,20 @@ class TestFrequenciesCRUD:
         })
         assert resp.status_code in (200, 201)
 
+    def test_create_frequency_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/comms/frequencies',
+            data='not-json',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_create_frequency_rejects_container_frequency(self, client):
+        resp = client.post('/api/comms/frequencies', json={'frequency': ['146.520']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_delete_frequency(self, client):
         client.post('/api/comms/frequencies', json={
             'frequency': 888.888,
@@ -78,6 +92,14 @@ class TestRadioProfiles:
         resp = client.post('/api/comms/radio-profiles', json={'name': 'Minimal'})
         assert resp.status_code in (200, 201)
 
+    def test_create_profile_rejects_non_list_channels(self, client):
+        resp = client.post('/api/comms/radio-profiles', json={
+            'name': 'Bad Channels',
+            'channels': '462.5625,462.5875',
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_list_profiles_recovers_from_corrupted_channels(self, client):
         with db_session() as db:
             db.execute(
@@ -119,3 +141,57 @@ class TestPrintFreqCard:
     def test_freq_card_print(self, client):
         resp = client.get('/api/print/freq-card')
         assert resp.status_code == 200
+
+
+class TestCommsPayloadValidation:
+    def test_lan_message_rejects_non_string_content(self, client):
+        resp = client.post('/api/lan/messages', json={'content': {'bad': 'shape'}})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_lan_channel_rejects_non_object_body(self, client):
+        resp = client.post('/api/lan/channels', json=['General'])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_schedule_rejects_container_priority(self, client):
+        resp = client.post('/api/comms/schedules', json={
+            'frequency': '146.520',
+            'priority': ['high'],
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_comms_log_rejects_unknown_direction(self, client):
+        resp = client.post('/api/comms-log', json={
+            'freq': '146.520',
+            'direction': 'sideways',
+            'message': 'Check-in',
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_pace_create_rejects_wrong_type_name(self, client):
+        resp = client.post('/api/comms/pace', json={'name': ['bad']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_pace_create_accepts_valid_minimal_plan(self, client):
+        resp = client.post('/api/comms/pace', json={'name': 'Storm Net'})
+        assert resp.status_code == 201
+        assert resp.get_json()['name'] == 'Storm Net'
+
+    def test_serial_connect_requires_port_before_backend_connect(self, client):
+        resp = client.post('/api/serial/connect', json={})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_mesh_message_rejects_non_string_message(self, client):
+        resp = client.post('/api/mesh/messages', json={'message': ['bad']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_broadcast_rejects_non_string_message(self, client):
+        resp = client.post('/api/broadcast', json={'message': {'bad': 'shape'}})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'

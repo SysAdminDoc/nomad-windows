@@ -14,6 +14,8 @@ import requests
 import zipfile
 import shutil
 import logging
+import hashlib
+import re
 from collections import deque
 from urllib.parse import urlparse
 from db import get_db, log_activity
@@ -100,14 +102,263 @@ def get_ollama_gpu_env() -> dict:
 # ─── Download with Resume ─────────────────────────────────────────────
 
 MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB default cap (P2-I19)
+_SHA256_RE = re.compile(r'(?i)\b[a-f0-9]{64}\b')
+_CHECKSUM_ASSET_HINTS = (
+    'sha256',
+    'sha256sum',
+    'sha256sums',
+    'checksums',
+    'checksum',
+    'shasums',
+)
+
+
+def _normalize_sha256(expected_sha256: str | None) -> str | None:
+    if expected_sha256 is None:
+        return None
+    digest = str(expected_sha256).strip()
+    if not digest:
+        return None
+    if digest.lower().startswith('sha256:'):
+        digest = digest.split(':', 1)[1].strip()
+    if not re.fullmatch(r'(?i)[a-f0-9]{64}', digest):
+        raise ValueError('Invalid SHA256 checksum format')
+    return digest.lower()
+
+
+def file_sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_file_sha256(path: str, expected_sha256: str) -> bool:
+    expected = _normalize_sha256(expected_sha256)
+    if expected is None:
+        return True
+    actual = file_sha256(path)
+    if actual != expected:
+        raise ValueError(
+            f'SHA256 checksum mismatch for {os.path.basename(path)}: '
+            f'expected {expected}, got {actual}'
+        )
+    return True
+
+
+def _asset_basename(name: str) -> str:
+    return os.path.basename(str(name or '').replace('\\', '/')).lower()
+
+
+def parse_sha256_checksum_text(
+    text: str,
+    asset_name: str,
+    *,
+    allow_single_hash: bool = False,
+) -> str | None:
+    """Return the SHA256 digest in a checksum sidecar/manifest for asset_name."""
+    target = _asset_basename(asset_name)
+    fallback = None
+    digest_lines = 0
+
+    for raw_line in str(text or '').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#'):
+            continue
+
+        bsd = re.search(
+            r'(?i)^SHA256\s*\((?P<name>[^)]+)\)\s*=\s*(?P<hash>[a-f0-9]{64})',
+            line,
+        )
+        if bsd:
+            digest_lines += 1
+            digest = _normalize_sha256(bsd.group('hash'))
+            if _asset_basename(bsd.group('name')) == target:
+                return digest
+            if fallback is None:
+                fallback = digest
+            continue
+
+        hashes = _SHA256_RE.findall(line)
+        if not hashes:
+            continue
+        digest_lines += 1
+        digest = _normalize_sha256(hashes[0])
+
+        remainder = _SHA256_RE.sub('', line).strip()
+        tokens = [
+            token.strip(' *\t\r\n')
+            for token in re.split(r'\s+', remainder)
+            if token.strip(' *\t\r\n')
+        ]
+        if any(_asset_basename(token) == target for token in tokens):
+            return digest
+        if not tokens and fallback is None:
+            fallback = digest
+
+    if allow_single_hash and digest_lines == 1:
+        return fallback
+    return None
+
+
+def _response_text(resp) -> str:
+    text = getattr(resp, 'text', None)
+    if isinstance(text, str):
+        return text
+    content = getattr(resp, 'content', b'')
+    if isinstance(content, bytes):
+        return content.decode('utf-8', errors='replace')
+    return str(content or '')
+
+
+def _close_response(resp):
+    try:
+        resp.close()
+    except Exception:
+        pass
+
+
+def _asset_download_url(asset: dict) -> str:
+    return str(asset.get('browser_download_url') or asset.get('url') or '')
+
+
+def _asset_digest(asset: dict, asset_name: str) -> str | None:
+    if _asset_basename(asset.get('name', '')) != _asset_basename(asset_name):
+        return None
+    digest = asset.get('digest')
+    try:
+        return _normalize_sha256(digest)
+    except ValueError:
+        return None
+
+
+def _is_checksum_asset_name(name: str) -> bool:
+    lowered = str(name or '').lower()
+    return any(hint in lowered for hint in _CHECKSUM_ASSET_HINTS)
+
+
+def _is_sidecar_checksum_name(checksum_name: str, asset_name: str) -> bool:
+    checksum_base = _asset_basename(checksum_name)
+    asset_base = _asset_basename(asset_name)
+    sidecars = {
+        f'{asset_base}.sha256',
+        f'{asset_base}.sha256sum',
+        f'{asset_base}.sha256.txt',
+        f'{asset_base}.digest',
+    }
+    return checksum_base in sidecars or (
+        checksum_base.startswith(f'{asset_base}.')
+        and _is_checksum_asset_name(checksum_base)
+    )
+
+
+def resolve_release_asset_checksum(
+    assets: list[dict],
+    asset_name: str,
+    *,
+    request_get=None,
+) -> str | None:
+    """Resolve a SHA256 for a selected release asset when metadata publishes one."""
+    if not asset_name or not isinstance(assets, list):
+        return None
+
+    for asset in assets:
+        if not isinstance(asset, dict):
+            continue
+        digest = _asset_digest(asset, asset_name)
+        if digest:
+            return digest
+
+    candidates = []
+    for asset in assets:
+        if not isinstance(asset, dict):
+            continue
+        name = str(asset.get('name', '') or '')
+        url = _asset_download_url(asset)
+        if not name or not url or not _is_checksum_asset_name(name):
+            continue
+        candidates.append((0 if _is_sidecar_checksum_name(name, asset_name) else 1, asset))
+
+    if not candidates:
+        return None
+
+    getter = request_get or requests.get
+    for score, asset in sorted(candidates, key=lambda entry: entry[0]):
+        name = str(asset.get('name', '') or '')
+        url = _asset_download_url(asset)
+        resp = None
+        try:
+            resp = getter(url, timeout=15, headers=GITHUB_API_HEADERS)
+            if getattr(resp, 'status_code', 200) == 404:
+                continue
+            resp.raise_for_status()
+            digest = parse_sha256_checksum_text(
+                _response_text(resp),
+                asset_name,
+                allow_single_hash=(score == 0),
+            )
+            if digest:
+                return digest
+            if score == 0:
+                raise ValueError(
+                    f'Checksum sidecar {name} did not contain a SHA256 for {asset_name}'
+                )
+        finally:
+            if resp is not None:
+                _close_response(resp)
+    return None
+
+
+def resolve_url_sidecar_checksum(
+    url: str,
+    asset_name: str | None = None,
+    *,
+    request_get=None,
+) -> str | None:
+    """Best-effort SHA256 sidecar lookup for direct binary URLs."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        return None
+    target_name = asset_name or os.path.basename(parsed.path)
+    if not target_name:
+        return None
+
+    getter = request_get or requests.get
+    for sidecar_url in (
+        f'{url}.sha256',
+        f'{url}.sha256sum',
+        f'{url}.sha256.txt',
+    ):
+        resp = None
+        try:
+            resp = getter(sidecar_url, timeout=15, headers={'User-Agent': GITHUB_USER_AGENT})
+            if getattr(resp, 'status_code', 200) in (403, 404):
+                continue
+            resp.raise_for_status()
+            digest = parse_sha256_checksum_text(
+                _response_text(resp),
+                target_name,
+                allow_single_hash=True,
+            )
+            if digest:
+                return digest
+        except Exception as exc:
+            log.debug('Checksum sidecar lookup failed for %s: %s', sidecar_url, exc)
+        finally:
+            if resp is not None:
+                _close_response(resp)
+    return None
 
 
 def download_file(url: str, dest: str, service_id: str = '',
-                  max_bytes: int = 0) -> str:
-    """Download a file with progress tracking, speed display, and resume support."""
+                  max_bytes: int = 0,
+                  expected_sha256: str | None = None) -> str:
+    """Download a file with progress tracking, speed display, resume, and optional SHA256 verification."""
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
         raise ValueError(f'Unsupported URL scheme: {parsed.scheme}')
+    expected_sha256 = _normalize_sha256(expected_sha256)
     cap = max_bytes or MAX_DOWNLOAD_BYTES
     dest_dir = os.path.dirname(dest)
     if dest_dir:
@@ -117,6 +368,19 @@ def download_file(url: str, dest: str, service_id: str = '',
     partial_size = 0
     if os.path.isfile(dest):
         partial_size = os.path.getsize(dest)
+        if expected_sha256 and partial_size > 0:
+            try:
+                verify_file_sha256(dest, expected_sha256)
+                with _dl_progress_lock:
+                    _download_progress[service_id] = {
+                        'percent': 100, 'status': 'complete', 'error': None,
+                        'speed': '', 'downloaded': partial_size, 'total': partial_size,
+                        '_finished_at': time.time(),
+                    }
+                return dest
+            except ValueError:
+                os.remove(dest)
+                partial_size = 0
 
     with _dl_progress_lock:
         _download_progress[service_id] = {
@@ -140,6 +404,8 @@ def download_file(url: str, dest: str, service_id: str = '',
         )
 
         if resp.status_code == 416:
+            if expected_sha256:
+                verify_file_sha256(dest, expected_sha256)
             with _dl_progress_lock:
                 _download_progress[service_id] = {
                     'percent': 100, 'status': 'complete', 'error': None,
@@ -196,6 +462,9 @@ def download_file(url: str, dest: str, service_id: str = '',
                         'total': total,
                     })
 
+        if expected_sha256:
+            verify_file_sha256(dest, expected_sha256)
+
         with _dl_progress_lock:
             _download_progress[service_id] = {
                 'percent': 100, 'status': 'complete', 'error': None,
@@ -210,8 +479,15 @@ def download_file(url: str, dest: str, service_id: str = '',
                 'speed': '', 'downloaded': 0, 'total': 0,
                 '_finished_at': time.time(),
             }
-        # Keep partial file for resume on next attempt
-        log.warning(f'Download failed for {service_id}, partial file kept for resume: {e}')
+        if expected_sha256 and os.path.isfile(dest):
+            try:
+                os.remove(dest)
+            except OSError:
+                pass
+            log.warning(f'Download failed for {service_id}; removed unverified partial file: {e}')
+        else:
+            # Keep partial file for resume on next attempt
+            log.warning(f'Download failed for {service_id}, partial file kept for resume: {e}')
         raise
 
 

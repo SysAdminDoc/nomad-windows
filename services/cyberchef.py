@@ -7,6 +7,7 @@ import logging
 import requests
 from services.manager import (
     get_services_dir, download_file, check_port, _download_progress, _dl_progress_lock,
+    resolve_release_asset_checksum,
 )
 from db import get_db
 
@@ -71,6 +72,7 @@ def install(callback=None):
         _api_resp.raise_for_status()
         release = _safe_response_payload(_api_resp, {})
         zip_url = None
+        zip_name = ''
         assets = release.get('assets', []) if isinstance(release, dict) else []
         for asset in assets:
             if not isinstance(asset, dict):
@@ -78,6 +80,7 @@ def install(callback=None):
             asset_name = str(asset.get('name', '') or '')
             if asset_name.endswith('.zip') and 'CyberChef' in asset_name:
                 zip_url = asset.get('browser_download_url', '')
+                zip_name = asset_name
                 break
         if not zip_url:
             if not assets:
@@ -86,7 +89,13 @@ def install(callback=None):
             if not first_asset:
                 raise RuntimeError('No CyberChef release assets found')
             zip_url = first_asset['browser_download_url']
-        download_file(zip_url, zip_path, SERVICE_ID)
+            zip_name = str(first_asset.get('name', '') or os.path.basename(zip_url))
+        download_file(
+            zip_url,
+            zip_path,
+            SERVICE_ID,
+            expected_sha256=resolve_release_asset_checksum(assets, zip_name),
+        )
 
         with _dl_progress_lock:
             _download_progress[SERVICE_ID]['status'] = 'extracting'

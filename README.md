@@ -1,7 +1,7 @@
 <div align="center">
 <img src="logo.png" width="140" height="140"/>
 
-# NOMAD Field Desk v7.66.7
+# NOMAD Field Desk v7.66.8
 
 ### Your Personal Intelligence & Preparedness Command Center
 
@@ -522,7 +522,7 @@ NOMAD manages 8 external services automatically. Each is optional — install wh
 | **FlatNotes** | 8890 | Markdown note-taking |
 | **BitTorrent** | dynamic | Media content downloading (via libtorrent) |
 
-All services feature auto-start, health monitoring (crash detection + auto-restart), download resume, and ordered shutdown.
+All services feature auto-start, health monitoring (crash detection + auto-restart), download resume, SHA256 verification when upstream release metadata or sidecars publish checksums, and ordered shutdown.
 
 ---
 

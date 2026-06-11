@@ -7,7 +7,7 @@ import logging
 import requests as req
 from services.manager import (
     get_services_dir, download_file, stop_process, is_running, check_port,
-    _download_progress, _dl_progress_lock,
+    resolve_release_asset_checksum, _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -91,19 +91,26 @@ def install(callback=None):
         resp.raise_for_status()
         release = _safe_response_payload(resp, {})
         zip_url = None
+        zip_name = ''
         asset_keyword = get_qdrant_asset_filter()
         assets = release.get('assets', []) if isinstance(release, dict) else []
         for asset in assets:
             if not isinstance(asset, dict):
                 continue
-            asset_name = str(asset.get('name', '') or '').lower()
-            if asset_keyword in asset_name:
+            asset_name = str(asset.get('name', '') or '')
+            if asset_keyword in asset_name.lower():
                 zip_url = asset.get('browser_download_url', '')
+                zip_name = asset_name
                 break
         if not zip_url:
             raise RuntimeError('Could not find Qdrant download for this platform. Check your internet connection and try again.')
 
-        download_file(zip_url, zip_path, SERVICE_ID)
+        download_file(
+            zip_url,
+            zip_path,
+            SERVICE_ID,
+            expected_sha256=resolve_release_asset_checksum(assets, zip_name),
+        )
 
         with _dl_progress_lock:
             _download_progress[SERVICE_ID]['status'] = 'extracting'

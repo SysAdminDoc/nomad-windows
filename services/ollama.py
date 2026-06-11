@@ -8,7 +8,8 @@ import threading
 import requests
 from services.manager import (
     get_services_dir, download_file, start_process, stop_process,
-    is_running, check_port, _download_progress, _dl_progress_lock,
+    is_running, check_port, resolve_url_sidecar_checksum,
+    _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -142,7 +143,13 @@ def install(callback=None):
     try:
         arc_ext = '.zip' if IS_WINDOWS else '.tgz'
         arc_path = os.path.join(install_dir, 'ollama' + arc_ext)
-        download_file(_get_ollama_url(), arc_path, SERVICE_ID)
+        url = _get_ollama_url()
+        download_file(
+            url,
+            arc_path,
+            SERVICE_ID,
+            expected_sha256=resolve_url_sidecar_checksum(url),
+        )
         with _dl_progress_lock:
             _download_progress[SERVICE_ID]['status'] = 'extracting'
         extract_archive(arc_path, install_dir)

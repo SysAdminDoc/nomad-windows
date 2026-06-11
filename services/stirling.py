@@ -8,6 +8,7 @@ import logging
 import requests as req
 from services.manager import (
     get_services_dir, download_file, stop_process, is_running, check_port,
+    resolve_release_asset_checksum, resolve_url_sidecar_checksum,
     _download_progress, _dl_progress_lock,
 )
 from db import get_db
@@ -108,22 +109,13 @@ def _auto_install_java():
 
     log.info('Auto-downloading portable Java JRE 21 from Adoptium...')
     try:
-        resp = None
-        try:
-            # Explicit close in finally so the response socket is freed
-            # even if writing the chunk stream raises. Avoids the ``with``
-            # form so test-fixture mocks without a __exit__ still work.
-            resp = req.get(_get_jre_url(), stream=True, timeout=30, allow_redirects=True)
-            resp.raise_for_status()
-            with open(zip_path, 'wb') as f:
-                for chunk in resp.iter_content(chunk_size=65536):
-                    f.write(chunk)
-        finally:
-            if resp is not None:
-                try:
-                    resp.close()
-                except Exception:
-                    pass
+        jre_url = _get_jre_url()
+        download_file(
+            jre_url,
+            zip_path,
+            f'{SERVICE_ID}-jre',
+            expected_sha256=resolve_url_sidecar_checksum(jre_url, os.path.basename(zip_path)),
+        )
 
         log.info('Extracting JRE...')
         extract_archive(zip_path, jre_dir)
@@ -166,6 +158,7 @@ def install(callback=None):
         resp.raise_for_status()
         release = _safe_response_payload(resp, {})
         jar_url = None
+        jar_name = ''
         assets = release.get('assets', []) if isinstance(release, dict) else []
         for asset in assets:
             if not isinstance(asset, dict):
@@ -174,6 +167,7 @@ def install(callback=None):
             asset_name = str(asset.get('name', '') or '')
             if asset_name == 'Stirling-PDF.jar':
                 jar_url = asset.get('browser_download_url', '')
+                jar_name = asset_name
                 break
         if not jar_url:
             # Fallback: any jar that isn't -with-login or -server
@@ -183,11 +177,17 @@ def install(callback=None):
                 name = str(asset.get('name', '') or '')
                 if name.endswith('.jar') and 'login' not in name.lower() and 'server' not in name.lower():
                     jar_url = asset.get('browser_download_url', '')
+                    jar_name = name
                     break
         if not jar_url:
             raise RuntimeError('Could not find Stirling-PDF download. Check your internet connection and try again.')
 
-        download_file(jar_url, jar_path, SERVICE_ID)
+        download_file(
+            jar_url,
+            jar_path,
+            SERVICE_ID,
+            expected_sha256=resolve_release_asset_checksum(assets, jar_name),
+        )
 
         # Auto-install Java if not found
         if not _find_java():

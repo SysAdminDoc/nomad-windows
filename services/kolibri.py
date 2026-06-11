@@ -7,7 +7,8 @@ import time
 import logging
 import shutil
 from services.manager import (
-    get_services_dir, stop_process, is_running, check_port,
+    get_services_dir, download_file, stop_process, is_running, check_port,
+    resolve_url_sidecar_checksum,
     _download_progress, _dl_progress_lock,
 )
 from db import get_db
@@ -53,7 +54,6 @@ def _python_exe():
 def _auto_install_python():
     """Download portable Python embeddable package and set up pip."""
     from platform_utils import extract_archive, python_binary, IS_WINDOWS
-    import requests
 
     url = _get_python_url()
     if not url:
@@ -67,22 +67,15 @@ def _auto_install_python():
 
     log.info('Auto-downloading portable Python 3.12...')
     try:
-        # Download embeddable Python. Explicit close in finally so the
-        # response socket is released even if writing the chunk stream
-        # raises — and so mock responses without a __exit__ still work.
-        resp = None
-        try:
-            resp = requests.get(url, stream=True, timeout=30)
-            resp.raise_for_status()
-            with open(zip_path, 'wb') as f:
-                for chunk in resp.iter_content(chunk_size=65536):
-                    f.write(chunk)
-        finally:
-            if resp is not None:
-                try:
-                    resp.close()
-                except Exception:
-                    pass
+        # Download embeddable Python through the shared service downloader so
+        # size caps, progress, resume behavior, and optional SHA256 sidecars
+        # are applied consistently with other managed services.
+        download_file(
+            url,
+            zip_path,
+            f'{SERVICE_ID}-python',
+            expected_sha256=resolve_url_sidecar_checksum(url),
+        )
 
         log.info('Extracting Python...')
         extract_archive(zip_path, py_dir)
@@ -106,18 +99,12 @@ def _auto_install_python():
         # Install pip
         log.info('Installing pip...')
         get_pip = os.path.join(py_dir, 'get-pip.py')
-        resp = None
-        try:
-            resp = requests.get(GET_PIP_URL, timeout=30)
-            resp.raise_for_status()
-            with open(get_pip, 'wb') as f:
-                f.write(resp.content)
-        finally:
-            if resp is not None:
-                try:
-                    resp.close()
-                except Exception:
-                    pass
+        download_file(
+            GET_PIP_URL,
+            get_pip,
+            f'{SERVICE_ID}-get-pip',
+            expected_sha256=resolve_url_sidecar_checksum(GET_PIP_URL),
+        )
 
         from platform_utils import run_kwargs
         result = subprocess.run(

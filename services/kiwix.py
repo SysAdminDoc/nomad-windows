@@ -9,7 +9,8 @@ import logging
 import requests
 from services.manager import (
     get_services_dir, download_file, start_process, stop_process,
-    is_running, check_port, _download_progress, _dl_progress_lock,
+    is_running, check_port, resolve_url_sidecar_checksum,
+    _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -658,7 +659,13 @@ def install(callback=None):
         }
 
     try:
-        download_file(_get_kiwix_url(), arc_path, SERVICE_ID)
+        url = _get_kiwix_url()
+        download_file(
+            url,
+            arc_path,
+            SERVICE_ID,
+            expected_sha256=resolve_url_sidecar_checksum(url),
+        )
 
         with _dl_progress_lock:
             _download_progress[SERVICE_ID]['status'] = 'extracting'
@@ -733,7 +740,7 @@ def get_catalog_flat():
     return items
 
 
-def download_zim(url: str, filename: str = None):
+def download_zim(url: str, filename: str = None, expected_sha256: str | None = None):
     """Download a ZIM file to the library directory."""
     if not url.startswith(('http://', 'https://')):
         raise ValueError('Only HTTP/HTTPS URLs are supported')
@@ -768,7 +775,12 @@ def download_zim(url: str, filename: str = None):
     dest = os.path.abspath(os.path.join(lib_dir, filename))
     if not dest.startswith(lib_dir + os.sep):
         raise ValueError(f'Path traversal detected in filename: {filename}')
-    download_file(url, dest, f'kiwix-zim-{filename}')
+    download_file(
+        url,
+        dest,
+        f'kiwix-zim-{filename}',
+        expected_sha256=expected_sha256 or resolve_url_sidecar_checksum(url),
+    )
     return dest
 
 

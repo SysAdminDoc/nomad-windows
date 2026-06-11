@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import shutil
+import sqlite3
 import platform
 import threading
 import logging
@@ -71,6 +72,31 @@ def _safe_response_json(response, fallback=None):
     if isinstance(parsed, (dict, list)):
         return parsed
     return _clone_json_fallback(fallback)
+
+
+_SQLITE_SECURITY_FLOOR = (3, 50, 2)
+_SQLITE_SECURITY_FLOOR_TEXT = '.'.join(str(part) for part in _SQLITE_SECURITY_FLOOR)
+
+
+def _sqlite_runtime_diagnostics():
+    runtime_info = tuple(int(part) for part in sqlite3.sqlite_version_info[:3])
+    floor_met = runtime_info >= _SQLITE_SECURITY_FLOOR
+    return {
+        'runtime_version': sqlite3.sqlite_version,
+        'runtime_version_info': list(runtime_info),
+        'security_floor': _SQLITE_SECURITY_FLOOR_TEXT,
+        'security_floor_met': floor_met,
+        'security_floor_status': 'ok' if floor_met else 'upgrade_recommended',
+        'cve': 'CVE-2025-6965',
+        'detail': (
+            f'SQLite runtime {sqlite3.sqlite_version} meets the '
+            f'{_SQLITE_SECURITY_FLOOR_TEXT}+ security floor'
+            if floor_met else
+            f'SQLite runtime {sqlite3.sqlite_version} is below the '
+            f'{_SQLITE_SECURITY_FLOOR_TEXT}+ security floor; upgrade the Python/SQLite runtime'
+        ),
+    }
+
 
 STARTUP_VALUE_NAME = APP_EXECUTABLE_BASENAME
 LEGACY_STARTUP_VALUE_NAMES = ('ProjectNOMAD',)
@@ -532,6 +558,7 @@ def api_system():
         'disk_free_bytes': disk_free,
         'disk_total': format_size(disk_total),
         'disk_devices': disk_devices,
+        'sqlite': _sqlite_runtime_diagnostics(),
         'uptime': uptime_str,
     })
 
@@ -1054,6 +1081,7 @@ def api_health_detailed():
 
         # Python version
         result['python'] = platform.python_version()
+        result['sqlite'] = _sqlite_runtime_diagnostics()
 
         # Service status
         services_status = {}
@@ -2075,6 +2103,19 @@ def api_self_test():
                 check['detail'] = f'{svc_id} process alive (no HTTP health endpoint)'
             results['checks'].append(check)
 
+    sqlite_diag = _sqlite_runtime_diagnostics()
+    sqlite_check_status = 'pass' if sqlite_diag['security_floor_met'] else 'warn'
+    results['checks'].append({
+        'name': 'sqlite_runtime_security_floor',
+        'status': sqlite_check_status,
+        'detail': sqlite_diag['detail'],
+        'runtime_version': sqlite_diag['runtime_version'],
+        'security_floor': sqlite_diag['security_floor'],
+        'cve': sqlite_diag['cve'],
+    })
+    if sqlite_check_status == 'warn' and results['status'] == 'ok':
+        results['status'] = 'attention'
+
     # Backup freshness
     with db_session() as db:
         try:
@@ -2390,4 +2431,3 @@ def api_ollama_host_set():
 
 # ─── Print / Status / PDF Routes ─────────────────────────────────
 # [EXTRACTED to print_routes blueprint]
-

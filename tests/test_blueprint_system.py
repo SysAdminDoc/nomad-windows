@@ -87,11 +87,31 @@ class TestI18nLanguages:
 
 
 class TestSystemInfo:
+    def test_system_includes_sqlite_runtime_diagnostics(self, client):
+        resp = client.get('/api/system')
+        assert resp.status_code == 200
+        sqlite_info = resp.get_json()['sqlite']
+        assert sqlite_info['runtime_version']
+        assert sqlite_info['security_floor'] == '3.50.2'
+        assert sqlite_info['security_floor_status'] in ('ok', 'upgrade_recommended')
+        assert isinstance(sqlite_info['security_floor_met'], bool)
+
+    def test_health_detailed_includes_sqlite_runtime_diagnostics(self, client):
+        resp = client.get('/api/health/detailed')
+        assert resp.status_code == 200
+        sqlite_info = resp.get_json()['sqlite']
+        assert sqlite_info['cve'] == 'CVE-2025-6965'
+        assert sqlite_info['security_floor'] == '3.50.2'
+
     def test_system_self_test(self, client):
         resp = client.get('/api/system/self-test')
         assert resp.status_code == 200
         data = resp.get_json()
         assert 'checks' in data or isinstance(data, dict)
+        sqlite_check = next((check for check in data['checks'] if check['name'] == 'sqlite_runtime_security_floor'), None)
+        assert sqlite_check is not None
+        assert sqlite_check['status'] in ('pass', 'warn')
+        assert sqlite_check['security_floor'] == '3.50.2'
 
     def test_system_db_check(self, client):
         resp = client.post('/api/system/db-check')

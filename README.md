@@ -1,7 +1,7 @@
 <div align="center">
 <img src="logo.png" width="140" height="140"/>
 
-# NOMAD Field Desk v7.66.5
+# NOMAD Field Desk v7.66.6
 
 ### Your Personal Intelligence & Preparedness Command Center
 
@@ -617,6 +617,8 @@ pinned at `>=3.1.3,<4.0` as the supported security floor.
 
 System diagnostics report the linked Python SQLite runtime and flag versions below
 SQLite `3.50.2`, the current minimum security floor for bundled database runtimes.
+CI and release builds run `pip-audit` against Python requirement files before tests or
+packaging so vulnerable dependency ranges fail early.
 
 ---
 

@@ -59,7 +59,10 @@ jobs:
           node-version: '20'
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt "pyinstaller>=6.0,<7.0" pytest pytest-cov
+        run: pip install -r requirements.txt "pyinstaller>=6.0,<7.0" "pip-audit>=2.10.1,<3.0" pytest pytest-cov
+
+      - name: Audit Python runtime dependencies
+        run: python -m pip_audit -r requirements.txt --strict
 
       - name: Install xvfb (Linux only — pywebview/Xlib needs a display to import)
         if: runner.os == 'Linux'

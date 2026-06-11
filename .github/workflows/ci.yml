@@ -38,6 +38,9 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt -r requirements-dev.txt
 
+      - name: Audit Python dependencies
+        run: python -m pip_audit -r requirements.txt -r requirements-dev.txt --strict
+
       - name: Install Node dependencies
         run: npm ci
 

@@ -25,6 +25,16 @@ class TestSettingsEndpoint:
         data = client.get('/api/settings').get_json()
         assert 'workspace_memory' in data
 
+    def test_settings_update_rejects_malformed_json(self, client):
+        resp = client.put('/api/settings', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_settings_update_rejects_non_object_json(self, client):
+        resp = client.put('/api/settings', json=['theme', 'dark'])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
 
 class TestOllamaHostSettings:
     def test_get_ollama_host(self, client):
@@ -36,6 +46,11 @@ class TestOllamaHostSettings:
     def test_set_ollama_host(self, client):
         resp = client.put('/api/settings/ollama-host', json={'host': 'http://192.168.1.100:11434'})
         assert resp.status_code == 200
+
+    def test_set_ollama_host_rejects_malformed_json(self, client):
+        resp = client.put('/api/settings/ollama-host', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
 
 
 class TestI18nLanguages:
@@ -212,6 +227,21 @@ class TestDashboardAndBackupConfigFallbacks:
         assert data['categories']['planning']['score'] >= 0
         assert 'checklists' in data['categories']['planning']['detail']
 
+    def test_system_backup_create_rejects_malformed_json(self, client):
+        resp = client.post('/api/system/backup/create', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_system_backup_create_rejects_wrong_encrypt_type(self, client):
+        resp = client.post('/api/system/backup/create', json={'encrypt': 'yes'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'encrypt must be bool'
+
+    def test_backup_configure_rejects_invalid_interval(self, client):
+        resp = client.post('/api/system/backup/configure', json={'interval': 'hourly'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
 
 class TestSimpleLanAuth:
     def test_set_password_stores_pbkdf2_hash(self, client, db):
@@ -222,6 +252,11 @@ class TestSimpleLanAuth:
         assert row is not None
         assert row['value'].startswith('pbkdf2$')
         assert row['value'] != hashlib.sha256(b'field-pass').hexdigest()
+
+    def test_set_password_rejects_non_object_json(self, client):
+        resp = client.post('/api/auth/set-password', json=['field-pass'])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
 
     def test_auth_check_accepts_valid_remote_token(self, client):
         client.post('/api/auth/set-password', json={'password': 'field-pass'})
@@ -307,3 +342,20 @@ class TestPowerActions:
 
         assert resp.status_code == 400
         assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+
+class TestSystemSchemaValidation:
+    def test_startup_toggle_rejects_non_bool(self, client):
+        resp = client.put('/api/startup', json={'enabled': 'true'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_backup_restore_rejects_missing_filename(self, client):
+        resp = client.post('/api/system/backup/restore', json={})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_qr_generate_rejects_bool_size(self, client):
+        resp = client.post('/api/qr/generate', json={'text': 'field note', 'size': True})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'

@@ -24,6 +24,7 @@ from services.manager import (
 )
 import config
 from web.auth import require_auth
+from web.validation import validate_json
 from web.utils import (
     clone_json_fallback as _clone_json_fallback,
     get_query_int as _get_query_int,
@@ -72,6 +73,21 @@ def _safe_response_json(response, fallback=None):
     if isinstance(parsed, (dict, list)):
         return parsed
     return _clone_json_fallback(fallback)
+
+
+def _require_json_object():
+    data, error = _require_json_body(request)
+    if error:
+        return None, error
+    if not isinstance(data, dict):
+        return None, (jsonify({'error': 'Request body must be a JSON object'}), 400)
+    return data, None
+
+
+def _optional_json_object():
+    if not request.content_length:
+        return {}, None
+    return _require_json_object()
 
 
 _SQLITE_SECURITY_FLOOR = (3, 50, 2)
@@ -184,7 +200,9 @@ SETTINGS_WHITELIST = {
 
 @system_bp.route('/api/settings', methods=['PUT'])
 def api_settings_update():
-    data = request.get_json() or {}
+    data, error = _require_json_object()
+    if error:
+        return error
     with db_session() as db:
         rejected = [key for key in data if key not in SETTINGS_WHITELIST]
         allowed = [(key, str(value)) for key, value in data.items() if key in SETTINGS_WHITELIST]
@@ -272,6 +290,7 @@ def api_drives():
     return jsonify(drives)
 
 @system_bp.route('/api/settings/data-dir', methods=['POST'])
+@validate_json({'path': {'type': str, 'required': True, 'min_length': 1, 'max_length': 1000}})
 def api_set_data_dir():
     """Set custom data directory (wizard only)."""
     data = request.get_json() or {}
@@ -295,6 +314,11 @@ def api_set_data_dir():
 # ─── Wizard Setup API ─────────────────────────────────────────────
 
 @system_bp.route('/api/wizard/setup', methods=['POST'])
+@validate_json({
+    'services': {'type': list},
+    'zims': {'type': list},
+    'models': {'type': list},
+})
 def api_wizard_setup():
     """Full turnkey setup — installs services, downloads content, pulls models."""
     # Guard: prevent re-triggering if wizard is already running or setup is complete
@@ -767,6 +791,7 @@ def api_startup_get():
         return jsonify({'enabled': False, 'platform': sys.platform})
 
 @system_bp.route('/api/startup', methods=['PUT'])
+@validate_json({'enabled': {'type': bool, 'required': True}})
 def api_startup_set():
     """Enable or disable start at login (cross-platform)."""
     data = request.get_json() or {}
@@ -915,6 +940,10 @@ def api_backups_list():
     return jsonify(backups)
 
 @system_bp.route('/api/backups/restore', methods=['POST'])
+@validate_json({
+    'filename': {'type': str, 'required': True, 'min_length': 1, 'max_length': 255},
+    'confirmed': {'type': bool},
+})
 def api_backups_restore():
     """Restore database from an automatic backup file.
 
@@ -988,6 +1017,7 @@ def api_backup_create_simple():
 
 
 @system_bp.route('/api/backup/restore', methods=['POST'])
+@validate_json({'filename': {'type': str, 'required': True, 'min_length': 1, 'max_length': 255}})
 def api_backup_restore_alt():
     """Alias for /api/backups/restore — accepts {"filename": "..."}."""
     import re
@@ -1501,7 +1531,13 @@ def api_backup_create():
     import sqlite3 as _sqlite3
     from datetime import datetime
 
-    data = request.get_json() or {}
+    data, error = _optional_json_object()
+    if error:
+        return error
+    if 'encrypt' in data and not isinstance(data['encrypt'], bool):
+        return jsonify({'error': 'encrypt must be bool'}), 400
+    if 'password' in data and not isinstance(data['password'], str):
+        return jsonify({'error': 'password must be str'}), 400
     encrypt = data.get('encrypt', False)
     password = data.get('password', '')
 
@@ -1595,6 +1631,10 @@ def api_backup_list():
     return jsonify(backups[:50])
 
 @system_bp.route('/api/system/backup/restore', methods=['POST'])
+@validate_json({
+    'filename': {'type': str, 'required': True, 'min_length': 1, 'max_length': 255},
+    'password': {'type': str, 'max_length': 1024},
+})
 def api_backup_restore():
     """Restore database from a backup file."""
     import sqlite3 as _sqlite3
@@ -1734,6 +1774,13 @@ def api_backup_delete(filename):
         return jsonify({'error': 'Delete failed'}), 500
 
 @system_bp.route('/api/system/backup/configure', methods=['POST'])
+@validate_json({
+    'enabled': {'type': bool},
+    'interval': {'type': str, 'choices': ['daily', 'weekly']},
+    'keep_count': {'type': int, 'min': 1, 'max': 30},
+    'encrypt': {'type': bool},
+    'password': {'type': str, 'max_length': 1024},
+})
 def api_backup_configure():
     """Configure auto-backup schedule."""
     data = request.get_json() or {}
@@ -1831,6 +1878,7 @@ def api_auth_check():
     return jsonify({'enabled': enabled, 'authenticated': (is_local or token_valid or not enabled)})
 
 @system_bp.route('/api/auth/set-password', methods=['POST'])
+@validate_json({'password': {'type': str, 'max_length': 1024}})
 def api_auth_set_password():
     data = request.get_json() or {}
     password = data.get('password', '').strip()
@@ -2264,6 +2312,10 @@ else:
 
 
 @system_bp.route('/api/qr/generate', methods=['POST'])
+@validate_json({
+    'text': {'type': str, 'required': True, 'min_length': 1, 'max_length': 4096},
+    'size': {'type': int, 'min': 64, 'max': 2048},
+})
 def api_qr_generate():
     """Generate a QR code as SVG."""
     data = request.get_json() or {}
@@ -2403,6 +2455,7 @@ def api_ollama_host_get():
 
 
 @system_bp.route('/api/settings/ollama-host', methods=['PUT'])
+@validate_json({'host': {'type': str, 'max_length': 500}})
 def api_ollama_host_set():
     data = request.get_json() or {}
     host = (data.get('host', '') or '').strip()

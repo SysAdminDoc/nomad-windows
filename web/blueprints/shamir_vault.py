@@ -14,9 +14,32 @@ import time
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json
 
 shamir_vault_bp = Blueprint('shamir_vault', __name__)
 _log = logging.getLogger('nomad.shamir_vault')
+
+_TEXT = {'type': str}
+_INT_INPUT = {'type': (int, str)}
+
+_SHAMIR_SPLIT_SCHEMA = {
+    'secret': _TEXT,
+    'threshold': _INT_INPUT,
+    'num_shares': _INT_INPUT,
+    'label': _TEXT,
+}
+_SHAMIR_RECONSTRUCT_SCHEMA = {
+    'shares': {'type': list},
+    'share_id': _TEXT,
+}
+_CANARY_SCHEMA = {
+    'statement': {'type': str, 'max_length': 2000},
+    'interval_hours': _INT_INPUT,
+    'created_at': _TEXT,
+}
+_DEADMAN_ACTIONS_SCHEMA = {
+    'actions': {'type': list},
+}
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -146,6 +169,7 @@ def reconstruct_secret(shares):
 # ═══════════════════════════════════════════════════════════════════
 
 @shamir_vault_bp.route('/api/shamir/split', methods=['POST'])
+@validate_json(_SHAMIR_SPLIT_SCHEMA)
 def api_shamir_split():
     """Split a secret into shares. Returns hex-encoded shares."""
     data = request.get_json() or {}
@@ -200,6 +224,7 @@ def api_shamir_split():
 
 
 @shamir_vault_bp.route('/api/shamir/reconstruct', methods=['POST'])
+@validate_json(_SHAMIR_RECONSTRUCT_SCHEMA)
 def api_shamir_reconstruct():
     """Reconstruct a secret from shares. Accepts hex-encoded shares."""
     data = request.get_json() or {}
@@ -209,8 +234,12 @@ def api_shamir_reconstruct():
         return jsonify({'error': 'Need at least 2 shares'}), 400
 
     try:
-        shares = [(s['index'], bytes.fromhex(s['hex'])) for s in share_list]
-    except (KeyError, ValueError) as e:
+        shares = []
+        for s in share_list:
+            if not isinstance(s, dict):
+                raise ValueError('share must be an object')
+            shares.append((int(s['index']), bytes.fromhex(s['hex'])))
+    except (KeyError, TypeError, ValueError) as e:
         return jsonify({'error': f'Invalid share format: {e}'}), 400
 
     try:
@@ -321,6 +350,7 @@ def api_canary_status():
 
 
 @shamir_vault_bp.route('/api/canary', methods=['POST'])
+@validate_json(_CANARY_SCHEMA)
 def api_canary_configure():
     """Configure or update the warrant canary."""
     from datetime import datetime, timezone
@@ -438,6 +468,7 @@ def api_deadman_actions():
 
 
 @shamir_vault_bp.route('/api/canary/deadman-actions', methods=['POST'])
+@validate_json(_DEADMAN_ACTIONS_SCHEMA)
 def api_deadman_actions_save():
     """Configure dead-man's switch actions (what happens when canary expires)."""
     data = request.get_json() or {}

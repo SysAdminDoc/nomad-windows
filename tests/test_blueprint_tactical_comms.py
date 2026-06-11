@@ -43,6 +43,16 @@ class TestRadioEquipment:
                            json={'radio_type': 'handheld'})
         assert resp.status_code == 400
 
+    def test_create_rejects_malformed_json(self, client):
+        resp = client.post('/api/radio-equipment', data='not-json', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_create_rejects_container_name(self, client):
+        resp = client.post('/api/radio-equipment', json={'name': ['Baofeng']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_create_and_list(self, client):
         _make_radio(client)
         rows = client.get('/api/radio-equipment').get_json()
@@ -83,6 +93,11 @@ class TestAuthCodes:
     def test_create_requires_all_four_fields(self, client):
         resp = client.post('/api/auth-codes', json={'code_set_name': 'X'})
         assert resp.status_code == 400
+
+    def test_create_rejects_non_object_body(self, client):
+        resp = client.post('/api/auth-codes', json=['ALPHA'])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
 
     def test_create_and_filter_by_set(self, client):
         _make_auth_code(client, code_set_name='ALPHA')
@@ -125,6 +140,14 @@ class TestNetSchedules:
         resp = client.post('/api/net-schedules', json={'net_type': 'daily'})
         assert resp.status_code == 400
 
+    def test_create_rejects_wrong_type_call_order(self, client):
+        resp = client.post('/api/net-schedules', json={
+            'name': 'Daily Check-In',
+            'call_order': 42,
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_create_and_filter_active(self, client):
         _make_net(client, name='Alive', is_active=1)
         _make_net(client, name='Dormant', is_active=0)
@@ -166,6 +189,14 @@ class TestCommsChecks:
         resp = client.post('/api/comms-checks', json={'operator': 'W1AW'})
         assert resp.status_code == 400
 
+    def test_create_rejects_wrong_type_stations_checked(self, client):
+        resp = client.post('/api/comms-checks', json={
+            'check_date': '2025-04-18',
+            'stations_checked': 3,
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_create_and_filter_by_net_schedule(self, client):
         net = _make_net(client)
         client.post('/api/comms-checks', json={
@@ -204,6 +235,14 @@ class TestMessageTemplates:
         })
         assert resp.status_code == 400
 
+    def test_custom_create_rejects_wrong_type_fields(self, client):
+        resp = client.post('/api/message-templates', json={
+            'name': 'Local Format',
+            'fields': 123,
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_custom_create_and_delete(self, client):
         resp = client.post('/api/message-templates', json={
             'name': 'Local Format', 'template_type': 'CUSTOM',
@@ -227,6 +266,11 @@ class TestSentMessages:
         assert resp.status_code == 201
         rows = client.get('/api/sent-messages').get_json()
         assert len(rows) == 1
+
+    def test_create_rejects_wrong_type_content(self, client):
+        resp = client.post('/api/sent-messages', json={'content': 123})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
     def test_filter_by_type(self, client):
         client.post('/api/sent-messages', json={'template_type': 'SITREP'})
@@ -267,6 +311,11 @@ class TestWeatherCalculators:
         assert data['distance_miles'] == 1.0
         assert data['danger_zone'] is True
 
+    def test_lightning_distance_rejects_non_object_body(self, client):
+        resp = client.post('/api/weather/lightning-distance', json=['5'])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
     def test_lightning_distance_rejects_negative(self, client):
         resp = client.post('/api/weather/lightning-distance',
                            json={'seconds': -3})
@@ -301,6 +350,14 @@ class TestWeatherCalculators:
         data = resp.get_json()
         # Formula only applies below 50°F and above 3 mph — both satisfied here
         assert data['wind_chill_f'] < 20
+
+    def test_wind_chill_rejects_container_temp(self, client):
+        resp = client.post('/api/weather/wind-chill', json={
+            'temp_f': ['20'],
+            'wind_mph': 15,
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
     def test_wind_chill_above_50_degrees_returns_actual_temp(self, client):
         # Above 50°F the formula isn't defined; endpoint should handle gracefully

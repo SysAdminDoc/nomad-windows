@@ -7,6 +7,7 @@ from datetime import datetime, date
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json
 from web.utils import get_query_int as _get_query_int
 
 _log = logging.getLogger(__name__)
@@ -33,6 +34,91 @@ _AUTH_CODES_ALLOWED_FIELDS = frozenset({
     'running_password', 'number_combination', 'duress_code',
     'is_active', 'notes',
 })
+
+_TEXT = {'type': str}
+_TEXT_2000 = {'type': str, 'max_length': 2000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_INT_INPUT = {'type': (int, str)}
+_BOOLISH_INPUT = {'type': (bool, int, str)}
+_JSONISH_INPUT = {'type': (list, dict, str)}
+
+_RADIO_EQUIPMENT_SCHEMA = {
+    'name': _TEXT,
+    'model': _TEXT,
+    'serial_number': _TEXT,
+    'radio_type': _TEXT,
+    'freq_range_low': _NUMBER_INPUT,
+    'freq_range_high': _NUMBER_INPUT,
+    'power_watts': _NUMBER_INPUT,
+    'battery_type': _TEXT,
+    'battery_count': _INT_INPUT,
+    'antenna': _TEXT,
+    'firmware_version': _TEXT,
+    'programmed_channels': _JSONISH_INPUT,
+    'condition': _TEXT,
+    'assigned_to': _TEXT,
+    'location': _TEXT,
+    'last_tested': _TEXT,
+    'notes': _TEXT_2000,
+}
+_AUTH_CODE_SCHEMA = {
+    'code_set_name': _TEXT,
+    'valid_date': _TEXT,
+    'challenge': _TEXT,
+    'response': _TEXT,
+    'running_password': _TEXT,
+    'number_combination': _TEXT,
+    'duress_code': _TEXT,
+    'is_active': _BOOLISH_INPUT,
+    'notes': _TEXT_2000,
+}
+_NET_SCHEDULE_SCHEMA = {
+    'name': _TEXT,
+    'net_type': _TEXT,
+    'frequency': {'type': (str, int, float)},
+    'backup_frequency': {'type': (str, int, float)},
+    'day_of_week': _TEXT,
+    'start_time': _TEXT,
+    'duration_min': _INT_INPUT,
+    'net_control': _TEXT,
+    'call_order': _JSONISH_INPUT,
+    'protocol': _TEXT,
+    'is_active': _BOOLISH_INPUT,
+    'notes': _TEXT_2000,
+}
+_COMMS_CHECK_SCHEMA = {
+    'net_schedule_id': _INT_INPUT,
+    'check_date': _TEXT,
+    'check_time': _TEXT,
+    'operator': _TEXT,
+    'stations_checked': _JSONISH_INPUT,
+    'stations_missed': _JSONISH_INPUT,
+    'signal_quality': _TEXT,
+    'propagation_notes': _TEXT_2000,
+    'issues': _TEXT_2000,
+    'notes': _TEXT_2000,
+}
+_MESSAGE_TEMPLATE_SCHEMA = {
+    'name': _TEXT,
+    'template_type': _TEXT,
+    'fields': _JSONISH_INPUT,
+    'example': _TEXT_2000,
+    'instructions': _TEXT_2000,
+    'notes': _TEXT_2000,
+}
+_SENT_MESSAGE_SCHEMA = {
+    'template_id': _INT_INPUT,
+    'template_type': _TEXT,
+    'content': _JSONISH_INPUT,
+    'formatted_text': _TEXT_2000,
+    'sent_via': _TEXT,
+    'sent_to': _TEXT,
+    'notes': _TEXT_2000,
+}
+_LIGHTNING_SCHEMA = {'seconds': _NUMBER_INPUT}
+_GDD_SCHEMA = {'high_f': _NUMBER_INPUT, 'low_f': _NUMBER_INPUT, 'base_f': _NUMBER_INPUT}
+_WIND_CHILL_SCHEMA = {'temp_f': _NUMBER_INPUT, 'wind_mph': _NUMBER_INPUT}
+_HEAT_INDEX_SCHEMA = {'temp_f': _NUMBER_INPUT, 'humidity_pct': _NUMBER_INPUT}
 
 # Built-in military message format templates
 BUILTIN_TEMPLATES = [
@@ -207,6 +293,7 @@ def api_radio_equipment_list():
 
 
 @tactical_comms_bp.route('/api/radio-equipment', methods=['POST'])
+@validate_json(_RADIO_EQUIPMENT_SCHEMA)
 def api_radio_equipment_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -238,6 +325,7 @@ def api_radio_equipment_create():
 
 
 @tactical_comms_bp.route('/api/radio-equipment/<int:rid>', methods=['PUT'])
+@validate_json(_RADIO_EQUIPMENT_SCHEMA)
 def api_radio_equipment_update(rid):
     data = request.get_json() or {}
     allowed = _RADIO_EQUIPMENT_ALLOWED_FIELDS
@@ -293,6 +381,7 @@ def api_auth_codes_list():
 
 
 @tactical_comms_bp.route('/api/auth-codes', methods=['POST'])
+@validate_json(_AUTH_CODE_SCHEMA)
 def api_auth_codes_create():
     data = request.get_json() or {}
     code_set = (data.get('code_set_name') or '').strip()
@@ -321,6 +410,7 @@ def api_auth_codes_create():
 
 
 @tactical_comms_bp.route('/api/auth-codes/<int:aid>', methods=['PUT'])
+@validate_json(_AUTH_CODE_SCHEMA)
 def api_auth_codes_update(aid):
     data = request.get_json() or {}
     allowed = _AUTH_CODES_ALLOWED_FIELDS
@@ -381,6 +471,7 @@ def api_net_schedules_list():
 
 
 @tactical_comms_bp.route('/api/net-schedules', methods=['POST'])
+@validate_json(_NET_SCHEDULE_SCHEMA)
 def api_net_schedules_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -409,6 +500,7 @@ def api_net_schedules_create():
 
 
 @tactical_comms_bp.route('/api/net-schedules/<int:nid>', methods=['PUT'])
+@validate_json(_NET_SCHEDULE_SCHEMA)
 def api_net_schedules_update(nid):
     data = request.get_json() or {}
     allowed = _NET_SCHEDULES_ALLOWED_FIELDS
@@ -464,6 +556,7 @@ def api_comms_checks_list():
 
 
 @tactical_comms_bp.route('/api/comms-checks', methods=['POST'])
+@validate_json(_COMMS_CHECK_SCHEMA)
 def api_comms_checks_create():
     data = request.get_json() or {}
     check_date = (data.get('check_date') or '').strip()
@@ -541,6 +634,7 @@ def api_message_templates_seed():
 
 
 @tactical_comms_bp.route('/api/message-templates', methods=['POST'])
+@validate_json(_MESSAGE_TEMPLATE_SCHEMA)
 def api_message_templates_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -594,6 +688,7 @@ def api_sent_messages_list():
 
 
 @tactical_comms_bp.route('/api/sent-messages', methods=['POST'])
+@validate_json(_SENT_MESSAGE_SCHEMA)
 def api_sent_messages_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -680,6 +775,7 @@ def api_moon_phase():
 
 
 @tactical_comms_bp.route('/api/weather/lightning-distance', methods=['POST'])
+@validate_json(_LIGHTNING_SCHEMA)
 def api_lightning_distance():
     """Calculate lightning distance from flash-to-bang time."""
     data = request.get_json() or {}
@@ -715,6 +811,7 @@ def api_beaufort_scale():
 
 
 @tactical_comms_bp.route('/api/weather/growing-degree-days', methods=['POST'])
+@validate_json(_GDD_SCHEMA)
 def api_growing_degree_days():
     """Calculate Growing Degree Days (GDD) from daily temps."""
     data = request.get_json() or {}
@@ -736,6 +833,7 @@ def api_growing_degree_days():
 
 
 @tactical_comms_bp.route('/api/weather/wind-chill', methods=['POST'])
+@validate_json(_WIND_CHILL_SCHEMA)
 def api_wind_chill():
     """Calculate wind chill index."""
     data = request.get_json() or {}
@@ -766,6 +864,7 @@ def api_wind_chill():
 
 
 @tactical_comms_bp.route('/api/weather/heat-index', methods=['POST'])
+@validate_json(_HEAT_INDEX_SCHEMA)
 def api_heat_index():
     """Calculate heat index from temperature and humidity."""
     data = request.get_json() or {}

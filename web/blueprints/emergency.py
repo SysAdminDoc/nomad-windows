@@ -33,6 +33,7 @@ from flask import Blueprint, request, jsonify, current_app
 from db import db_session, log_activity
 from web.blueprints import get_pagination
 from web.utils import coerce_int as _ci
+from web.validation import validate_json
 
 emergency_bp = Blueprint('emergency', __name__)
 log = logging.getLogger('nomad.emergency')
@@ -51,6 +52,55 @@ ALLOWED_EVAC_RALLY_FIELDS = frozenset({
 ALLOWED_EVAC_ASSIGNMENT_FIELDS = frozenset({
     'person_name', 'role', 'vehicle', 'go_bag', 'notes',
 })
+
+_TEXT_100 = {'type': str, 'max_length': 100}
+_TEXT_200 = {'type': str, 'max_length': 200}
+_TEXT_500 = {'type': str, 'max_length': 500}
+_TEXT_2000 = {'type': str, 'max_length': 2000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_INT_INPUT = {'type': (int, str)}
+_BOOL_INPUT = {'type': (bool, int)}
+
+_EVAC_PLAN_SCHEMA = {
+    'name': _TEXT_200,
+    'plan_type': _TEXT_100,
+    'is_active': _BOOL_INPUT,
+    'destination': _TEXT_500,
+    'primary_route': _TEXT_2000,
+    'alternate_route': _TEXT_2000,
+    'distance_miles': _NUMBER_INPUT,
+    'estimated_time_min': _INT_INPUT,
+    'trigger_conditions': _TEXT_2000,
+    'notes': _TEXT_2000,
+}
+_EVAC_PLAN_CREATE_SCHEMA = {
+    **_EVAC_PLAN_SCHEMA,
+    'name': {**_TEXT_200, 'required': True},
+}
+_RALLY_POINT_SCHEMA = {
+    'name': _TEXT_200,
+    'location': _TEXT_500,
+    'lat': _NUMBER_INPUT,
+    'lng': _NUMBER_INPUT,
+    'point_type': _TEXT_100,
+    'sequence_order': _INT_INPUT,
+    'notes': _TEXT_2000,
+}
+_RALLY_POINT_CREATE_SCHEMA = {
+    **_RALLY_POINT_SCHEMA,
+    'name': {**_TEXT_200, 'required': True},
+}
+_ASSIGNMENT_SCHEMA = {
+    'person_name': _TEXT_200,
+    'role': _TEXT_200,
+    'vehicle': _TEXT_200,
+    'go_bag': _TEXT_200,
+    'notes': _TEXT_2000,
+}
+_ASSIGNMENT_CREATE_SCHEMA = {
+    **_ASSIGNMENT_SCHEMA,
+    'person_name': {**_TEXT_200, 'required': True},
+}
 
 _STATE_KEYS = {
     'emergency_active':     'False',
@@ -141,6 +191,7 @@ def api_emergency_status():
 
 
 @emergency_bp.route('/api/emergency/enter', methods=['POST'])
+@validate_json({'reason': {'type': str}})
 def api_emergency_enter():
     """Enter emergency mode. Idempotent — returns current state if
     already active. Body: ``{reason}`` (optional, default 'Emergency').
@@ -190,6 +241,7 @@ def api_emergency_enter():
 
 
 @emergency_bp.route('/api/emergency/exit', methods=['POST'])
+@validate_json({'closeout_note': {'type': str}})
 def api_emergency_exit():
     """Exit emergency mode. Idempotent — no-op if not currently active.
     Body: ``{closeout_note}`` (optional) gets logged to the incident.
@@ -247,6 +299,7 @@ def api_evac_plans_list():
 
 
 @emergency_bp.route('/api/emergency/evac-plans', methods=['POST'])
+@validate_json(_EVAC_PLAN_CREATE_SCHEMA)
 def api_evac_plans_create():
     """Create a new evacuation plan. If is_active=1, deactivate all others."""
     data = request.get_json() or {}
@@ -330,6 +383,7 @@ def api_evac_plan_detail(pid):
 
 
 @emergency_bp.route('/api/emergency/evac-plans/<int:pid>', methods=['PUT'])
+@validate_json(_EVAC_PLAN_SCHEMA)
 def api_evac_plan_update(pid):
     """Update an existing evacuation plan."""
     data = request.get_json() or {}
@@ -430,6 +484,7 @@ def api_rally_points_list(pid):
 
 
 @emergency_bp.route('/api/emergency/evac-plans/<int:pid>/rally-points', methods=['POST'])
+@validate_json(_RALLY_POINT_CREATE_SCHEMA)
 def api_rally_point_create(pid):
     """Create a rally point for a plan."""
     data = request.get_json() or {}
@@ -487,6 +542,7 @@ def api_rally_point_create(pid):
 
 
 @emergency_bp.route('/api/emergency/rally-points/<int:rid>', methods=['PUT'])
+@validate_json(_RALLY_POINT_SCHEMA)
 def api_rally_point_update(rid):
     """Update a rally point."""
     data = request.get_json() or {}
@@ -567,6 +623,7 @@ def api_assignments_list(pid):
 
 
 @emergency_bp.route('/api/emergency/evac-plans/<int:pid>/assignments', methods=['POST'])
+@validate_json(_ASSIGNMENT_CREATE_SCHEMA)
 def api_assignment_create(pid):
     """Create a personnel assignment for a plan."""
     data = request.get_json() or {}
@@ -610,6 +667,7 @@ def api_assignment_create(pid):
 
 
 @emergency_bp.route('/api/emergency/assignments/<int:aid>', methods=['PUT'])
+@validate_json(_ASSIGNMENT_SCHEMA)
 def api_assignment_update(aid):
     """Update a personnel assignment."""
     data = request.get_json() or {}

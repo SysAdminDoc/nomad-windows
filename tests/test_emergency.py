@@ -89,3 +89,74 @@ class TestEmergencyMode:
         resp = client.post('/api/emergency/enter', json={'reason': long_reason})
         assert resp.status_code == 201
         assert len(resp.get_json()['reason']) == 500
+
+    def test_enter_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/emergency/enter',
+            data='not-json',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_enter_rejects_non_string_reason(self, client):
+        resp = client.post('/api/emergency/enter', json={'reason': {'bad': 'shape'}})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_exit_rejects_non_object_body(self, client):
+        resp = client.post('/api/emergency/exit', json=['closeout'])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+
+class TestEmergencyPayloadValidation:
+    def test_evac_plan_rejects_wrong_type_name(self, client):
+        resp = client.post('/api/emergency/evac-plans', json={'name': ['bad']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_evac_plan_rejects_non_object_update(self, client):
+        create = client.post('/api/emergency/evac-plans', json={'name': 'Go North'})
+        plan_id = create.get_json()['id']
+
+        resp = client.put(f'/api/emergency/evac-plans/{plan_id}', json=['bad'])
+
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_rally_point_preserves_numeric_string_coordinates(self, client):
+        create = client.post('/api/emergency/evac-plans', json={'name': 'Bugout'})
+        plan_id = create.get_json()['id']
+
+        resp = client.post(f'/api/emergency/evac-plans/{plan_id}/rally-points', json={
+            'name': 'North gate',
+            'lat': '44.98',
+            'lng': '-93.26',
+        })
+
+        assert resp.status_code == 201
+        assert resp.get_json()['name'] == 'North gate'
+
+    def test_rally_point_rejects_container_coordinates(self, client):
+        create = client.post('/api/emergency/evac-plans', json={'name': 'Bugout'})
+        plan_id = create.get_json()['id']
+
+        resp = client.post(f'/api/emergency/evac-plans/{plan_id}/rally-points', json={
+            'name': 'Bad gate',
+            'lat': ['44.98'],
+        })
+
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_assignment_rejects_wrong_type_person_name(self, client):
+        create = client.post('/api/emergency/evac-plans', json={'name': 'Accountability'})
+        plan_id = create.get_json()['id']
+
+        resp = client.post(f'/api/emergency/evac-plans/{plan_id}/assignments', json={
+            'person_name': ['bad'],
+        })
+
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'

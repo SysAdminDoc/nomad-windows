@@ -6,6 +6,7 @@ from datetime import datetime, date, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json
 
 security_opsec_bp = Blueprint('security_opsec', __name__, url_prefix='/api/security-ops')
 
@@ -35,6 +36,141 @@ _SIGNATURE_ASSESSMENT_ALLOWED_FIELDS = frozenset({
     'location', 'assessment_date', 'overall_score', 'recommendations', 'assessed_by', 'status',
 }) | _SIGNATURE_ASSESSMENT_JSON_COLS
 
+_TEXT = {'type': str}
+_TEXT_2000 = {'type': str, 'max_length': 2000}
+_INT_INPUT = {'type': (int, str)}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_BOOLISH_INPUT = {'type': (bool, int, str)}
+_LIST_INPUT = {'type': list}
+_DICT_INPUT = {'type': dict}
+
+_COMPARTMENT_SCHEMA = {
+    'name': _TEXT,
+    'description': _TEXT_2000,
+    'classification': _TEXT,
+    'authorized_persons': _LIST_INPUT,
+    'cover_story': _TEXT_2000,
+    'duress_signal': _TEXT,
+    'review_date': _TEXT,
+    'status': _TEXT,
+    'notes': _TEXT_2000,
+}
+_CHECKLIST_SCHEMA = {
+    'compartment_id': _INT_INPUT,
+    'title': _TEXT,
+    'category': _TEXT,
+    'items': _LIST_INPUT,
+    'last_audit_date': _TEXT,
+    'next_audit_date': _TEXT,
+    'audited_by': _TEXT,
+    'score': _NUMBER_INPUT,
+    'status': _TEXT,
+}
+_THREAT_SCHEMA = {
+    'threat_name': _TEXT,
+    'threat_type': _TEXT,
+    'likelihood': _NUMBER_INPUT,
+    'impact': _NUMBER_INPUT,
+    'vulnerability': _TEXT_2000,
+    'countermeasure': _TEXT_2000,
+    'status': _TEXT,
+    'assigned_to': _TEXT,
+    'review_date': _TEXT,
+}
+_OBSERVATION_POST_SCHEMA = {
+    'name': _TEXT,
+    'location': _TEXT,
+    'coordinates': _TEXT,
+    'type': _TEXT,
+    'fields_of_fire': _TEXT_2000,
+    'dead_space': _TEXT_2000,
+    'sectors': _LIST_INPUT,
+    'equipment': _LIST_INPUT,
+    'communication': _TEXT,
+    'status': _TEXT,
+    'assigned_to': _TEXT,
+    'notes': _TEXT_2000,
+}
+_OP_LOG_SCHEMA = {
+    'post_id': _INT_INPUT,
+    'observer': _TEXT,
+    'entry_time': _TEXT,
+    'category': _TEXT,
+    'direction': _TEXT,
+    'distance': _NUMBER_INPUT,
+    'description': _TEXT_2000,
+    'threat_level': _TEXT,
+    'action_taken': _TEXT_2000,
+    'reported_to': _TEXT,
+}
+_SIGNATURE_SCHEMA = {
+    'location': _TEXT,
+    'assessment_date': _TEXT,
+    'visual_signatures': _LIST_INPUT,
+    'audio_signatures': _LIST_INPUT,
+    'electronic_signatures': _LIST_INPUT,
+    'thermal_signatures': _LIST_INPUT,
+    'overall_score': _NUMBER_INPUT,
+    'recommendations': _TEXT_2000,
+    'assessed_by': _TEXT,
+    'status': _TEXT,
+}
+_NIGHT_OPS_SCHEMA = {
+    'name': _TEXT,
+    'operation_date': _TEXT,
+    'moonrise': _TEXT,
+    'moonset': _TEXT,
+    'moon_phase': _TEXT,
+    'moon_illumination': _NUMBER_INPUT,
+    'ambient_light_level': _TEXT,
+    'dark_adaptation_minutes': _INT_INPUT,
+    'nvg_required': _BOOLISH_INPUT,
+    'movement_routes': _LIST_INPUT,
+    'rally_points': _LIST_INPUT,
+    'signals': _DICT_INPUT,
+    'notes': _TEXT_2000,
+    'status': _TEXT,
+}
+_CBRN_EQUIPMENT_SCHEMA = {
+    'equipment_name': _TEXT,
+    'equipment_type': _TEXT,
+    'model': _TEXT,
+    'serial_number': _TEXT,
+    'calibration_date': _TEXT,
+    'calibration_due': _TEXT,
+    'condition': _TEXT,
+    'assigned_to': _TEXT,
+    'location': _TEXT,
+    'quantity': _NUMBER_INPUT,
+    'notes': _TEXT_2000,
+}
+_CBRN_PROCEDURE_SCHEMA = {
+    'title': _TEXT,
+    'procedure_type': _TEXT,
+    'threat_agent': _TEXT,
+    'mopp_level': _INT_INPUT,
+    'steps': _LIST_INPUT,
+    'equipment_required': _LIST_INPUT,
+    'time_estimate_minutes': _NUMBER_INPUT,
+    'warnings': _TEXT_2000,
+    'reference': _TEXT,
+    'is_builtin': _BOOLISH_INPUT,
+}
+_EMP_INVENTORY_SCHEMA = {
+    'item_name': _TEXT,
+    'category': _TEXT,
+    'description': _TEXT_2000,
+    'protection_method': _TEXT,
+    'is_protected': _BOOLISH_INPUT,
+    'grid_dependent': _BOOLISH_INPUT,
+    'manual_alternative': _TEXT_2000,
+    'priority': _TEXT,
+    'location': _TEXT,
+    'quantity': _NUMBER_INPUT,
+    'tested_date': _TEXT,
+    'notes': _TEXT_2000,
+}
+
 
 def _jp(val):
     """Parse a JSON array column."""
@@ -50,6 +186,16 @@ def _jo(val):
         return json.loads(val)
     except Exception:
         return {}
+
+
+def _coerce_number(value, default=0):
+    if value is None or isinstance(value, bool):
+        return default
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    return int(number) if number.is_integer() else number
 
 
 # ─── Built-in Data ───────────────────────────────────────────────
@@ -184,6 +330,7 @@ def api_compartments_list():
 
 
 @security_opsec_bp.route('/opsec/compartments', methods=['POST'])
+@validate_json(_COMPARTMENT_SCHEMA)
 def api_compartments_create():
     data = request.get_json() or {}
     if not data.get('name'):
@@ -210,6 +357,7 @@ def api_compartments_create():
 
 
 @security_opsec_bp.route('/opsec/compartments/<int:cid>', methods=['PUT'])
+@validate_json(_COMPARTMENT_SCHEMA)
 def api_compartments_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -276,6 +424,7 @@ def api_checklists_list():
 
 
 @security_opsec_bp.route('/opsec/checklists', methods=['POST'])
+@validate_json(_CHECKLIST_SCHEMA)
 def api_checklists_create():
     data = request.get_json() or {}
     if not data.get('title'):
@@ -302,6 +451,7 @@ def api_checklists_create():
 
 
 @security_opsec_bp.route('/opsec/checklists/<int:cid>', methods=['PUT'])
+@validate_json(_CHECKLIST_SCHEMA)
 def api_checklists_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -320,7 +470,7 @@ def api_checklists_update(cid):
         # Auto-compute score from items if items were provided
         if 'items' in data and isinstance(data['items'], list):
             total = len(data['items'])
-            checked = sum(1 for i in data['items'] if i.get('checked'))
+            checked = sum(1 for i in data['items'] if isinstance(i, dict) and i.get('checked'))
             score = round((checked / total) * 100) if total > 0 else 0
             sets.append('score = ?')
             vals.append(score)
@@ -385,12 +535,13 @@ def api_threat_matrix_list():
 
 
 @security_opsec_bp.route('/threat-matrix', methods=['POST'])
+@validate_json(_THREAT_SCHEMA)
 def api_threat_matrix_create():
     data = request.get_json() or {}
     if not data.get('threat_name'):
         return jsonify({'error': 'Threat name required'}), 400
-    likelihood = data.get('likelihood', 1)
-    impact = data.get('impact', 1)
+    likelihood = _coerce_number(data.get('likelihood', 1), 1)
+    impact = _coerce_number(data.get('impact', 1), 1)
     risk_score = likelihood * impact
     with db_session() as db:
         cur = db.execute(
@@ -411,6 +562,7 @@ def api_threat_matrix_create():
 
 
 @security_opsec_bp.route('/threat-matrix/<int:tid>', methods=['PUT'])
+@validate_json(_THREAT_SCHEMA)
 def api_threat_matrix_update(tid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -426,8 +578,8 @@ def api_threat_matrix_update(tid):
         # Recompute risk_score
         if 'likelihood' in data or 'impact' in data:
             cur_row = db.execute('SELECT likelihood, impact FROM threat_matrix WHERE id = ?', (tid,)).fetchone()
-            lk = data.get('likelihood', cur_row['likelihood'])
-            imp = data.get('impact', cur_row['impact'])
+            lk = _coerce_number(data.get('likelihood', cur_row['likelihood']), cur_row['likelihood'])
+            imp = _coerce_number(data.get('impact', cur_row['impact']), cur_row['impact'])
             sets.append('risk_score = ?')
             vals.append(lk * imp)
         if not sets:
@@ -479,6 +631,7 @@ def api_observation_posts_list():
 
 
 @security_opsec_bp.route('/observation-posts', methods=['POST'])
+@validate_json(_OBSERVATION_POST_SCHEMA)
 def api_observation_posts_create():
     data = request.get_json() or {}
     if not data.get('name'):
@@ -507,6 +660,7 @@ def api_observation_posts_create():
 
 
 @security_opsec_bp.route('/observation-posts/<int:pid>', methods=['PUT'])
+@validate_json(_OBSERVATION_POST_SCHEMA)
 def api_observation_posts_update(pid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -560,6 +714,7 @@ def api_op_log_list():
 
 
 @security_opsec_bp.route('/op-log', methods=['POST'])
+@validate_json(_OP_LOG_SCHEMA)
 def api_op_log_create():
     data = request.get_json() or {}
     if not data.get('description'):
@@ -626,6 +781,7 @@ def api_signatures_list():
 
 
 @security_opsec_bp.route('/signatures', methods=['POST'])
+@validate_json(_SIGNATURE_SCHEMA)
 def api_signatures_create():
     data = request.get_json() or {}
     if not data.get('location'):
@@ -659,6 +815,7 @@ def api_signatures_create():
 
 
 @security_opsec_bp.route('/signatures/<int:sid>', methods=['PUT'])
+@validate_json(_SIGNATURE_SCHEMA)
 def api_signatures_update(sid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -709,7 +866,7 @@ def _compute_sig_score(data):
         if isinstance(sigs, list):
             for s in sigs:
                 if isinstance(s, dict) and 'intensity_1_5' in s:
-                    all_intensities.append(s['intensity_1_5'])
+                    all_intensities.append(_coerce_number(s.get('intensity_1_5'), 0))
     if not all_intensities:
         return 0
     avg = sum(all_intensities) / len(all_intensities)
@@ -737,6 +894,7 @@ def api_night_ops_list():
 
 
 @security_opsec_bp.route('/night-ops', methods=['POST'])
+@validate_json(_NIGHT_OPS_SCHEMA)
 def api_night_ops_create():
     data = request.get_json() or {}
     if not data.get('name'):
@@ -770,6 +928,7 @@ def api_night_ops_create():
 
 
 @security_opsec_bp.route('/night-ops/<int:nid>', methods=['PUT'])
+@validate_json(_NIGHT_OPS_SCHEMA)
 def api_night_ops_update(nid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -894,6 +1053,7 @@ def api_cbrn_equipment_list():
 
 
 @security_opsec_bp.route('/cbrn/equipment', methods=['POST'])
+@validate_json(_CBRN_EQUIPMENT_SCHEMA)
 def api_cbrn_equipment_create():
     data = request.get_json() or {}
     if not data.get('equipment_name'):
@@ -919,6 +1079,7 @@ def api_cbrn_equipment_create():
 
 
 @security_opsec_bp.route('/cbrn/equipment/<int:eid>', methods=['PUT'])
+@validate_json(_CBRN_EQUIPMENT_SCHEMA)
 def api_cbrn_equipment_update(eid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -972,6 +1133,7 @@ def api_cbrn_procedures_list():
 
 
 @security_opsec_bp.route('/cbrn/procedures', methods=['POST'])
+@validate_json(_CBRN_PROCEDURE_SCHEMA)
 def api_cbrn_procedures_create():
     data = request.get_json() or {}
     if not data.get('title'):
@@ -1106,6 +1268,7 @@ def api_emp_inventory_list():
 
 
 @security_opsec_bp.route('/emp/inventory', methods=['POST'])
+@validate_json(_EMP_INVENTORY_SCHEMA)
 def api_emp_inventory_create():
     data = request.get_json() or {}
     if not data.get('item_name'):
@@ -1133,6 +1296,7 @@ def api_emp_inventory_create():
 
 
 @security_opsec_bp.route('/emp/inventory/<int:eid>', methods=['PUT'])
+@validate_json(_EMP_INVENTORY_SCHEMA)
 def api_emp_inventory_update(eid):
     data = request.get_json() or {}
     with db_session() as db:

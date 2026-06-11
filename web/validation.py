@@ -48,6 +48,34 @@ def validate_json(schema):
     return decorator
 
 
+def validate_optional_json(schema):
+    """Validate JSON when a request body is present.
+
+    Some legacy mutation routes accept an empty POST/PUT body as a no-op or
+    defaulted operation. This keeps that behavior while still rejecting
+    malformed, non-object, or wrong-type JSON when clients do send a body.
+    """
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            if not request.content_length:
+                return f(*args, **kwargs)
+
+            data = request.get_json(silent=True)
+            if data is None:
+                return jsonify({'error': 'Request body must be valid JSON'}), 400
+            if not isinstance(data, dict):
+                return jsonify({'error': 'Request body must be a JSON object'}), 400
+
+            errors = _validate_data(data, schema)
+            if errors:
+                return jsonify({'error': 'Validation failed', 'details': errors}), 400
+
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 def _validate_data(data, schema):
     """Validate data dict against schema. Returns list of error strings."""
     import re

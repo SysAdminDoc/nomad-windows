@@ -55,6 +55,11 @@ class TestSyncPush:
         assert resp.status_code == 400
         assert 'No peer IP' in resp.get_json()['error']
 
+    def test_sync_push_rejects_malformed_json(self, client):
+        resp = client.post('/api/node/sync-push', data='not-json', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
     def test_sync_push_invalid_ip(self, client):
         resp = client.post('/api/node/sync-push', json={'ip': '127.0.0.1'})
         assert resp.status_code == 400
@@ -95,6 +100,19 @@ class TestSyncReceive:
         resp = client.post('/api/node/sync-receive', json={'tables': {}})
         assert resp.status_code == 400
         assert 'source_node_id' in resp.get_json()['error']
+
+    def test_sync_receive_rejects_non_object_body(self, client):
+        resp = client.post('/api/node/sync-receive', json=['bad-sync'])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_sync_receive_rejects_container_tables(self, client):
+        resp = client.post('/api/node/sync-receive', json={
+            'source_node_id': 'trusted-node-1',
+            'tables': [],
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
     def test_sync_receive_blocked_peer(self, client, db):
         # Insert a blocked peer so the check fails with 403
@@ -224,6 +242,14 @@ class TestConflicts:
         assert resp.status_code == 400
         assert 'resolution' in resp.get_json()['error']
 
+    def test_conflict_resolve_rejects_container_merged_data(self, client):
+        resp = client.post('/api/node/conflicts/999/resolve', json={
+            'resolution': 'merged',
+            'merged_data': [],
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_conflict_diff_recovers_from_corrupted_conflict_details(self, client):
         with db_session() as db:
             cur = db.execute(
@@ -270,11 +296,41 @@ class TestDeadDrop:
         assert resp.status_code == 400
         assert 'format' in resp.get_json()['error'].lower()
 
+    def test_dead_drop_decrypt_rejects_container_payload(self, client):
+        resp = client.post('/api/deaddrop/decrypt', json={
+            'payload': ['bad-envelope'],
+            'secret': 'hunter2',
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_dead_drop_messages(self, client):
         resp = client.get('/api/deaddrop/messages')
         assert resp.status_code == 200
         data = resp.get_json()
         assert isinstance(data, list)
+
+
+class TestSyncExportValidation:
+    def test_sync_export_allows_empty_body_defaults(self, client):
+        resp = client.post('/api/sync/export')
+        assert resp.status_code == 200
+        assert resp.mimetype == 'application/zip'
+
+    def test_sync_export_rejects_wrong_type_include(self, client):
+        resp = client.post('/api/sync/export', json={'include': 'inventory'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+
+class TestFederationRelayAlertValidation:
+    def test_relay_alert_rejects_container_message(self, client):
+        resp = client.post('/api/federation/relay-alert', json={
+            'title': 'Weather warning',
+            'message': ['bad'],
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
 
 class TestGroupExercises:

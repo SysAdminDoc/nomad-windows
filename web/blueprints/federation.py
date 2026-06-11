@@ -14,11 +14,107 @@ from flask import Blueprint, request, jsonify, Response
 from config import Config
 from db import db_session, log_activity
 from web.state import _discovered_peers, broadcast_event
+from web.validation import validate_json, validate_optional_json
 from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object, safe_json_list as _safe_json_list, check_origin as _check_origin, get_node_id as _get_node_id, get_node_name as _get_node_name
 
 log = logging.getLogger('nomad.web')
 
 federation_bp = Blueprint('federation', __name__)
+
+_TEXT = {'type': str}
+_TEXT_2000 = {'type': str, 'max_length': 2000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_INT_INPUT = {'type': (int, str)}
+_BOOLISH_INPUT = {'type': (bool, int, str)}
+
+_SYNC_PEER_SCHEMA = {
+    'ip': _TEXT,
+    'port': _INT_INPUT,
+    'since': _TEXT,
+    'peer_id': _TEXT,
+}
+_SYNC_RECEIVE_SCHEMA = {
+    'source_node_id': _TEXT,
+    'source_node_name': _TEXT,
+    'tables': {'type': dict},
+    'vector_clocks': {'type': dict},
+    '_public_key': _TEXT,
+    '_signature': _TEXT,
+}
+_CONFLICT_RESOLUTION_SCHEMA = {
+    'resolution': _TEXT,
+    'merged_data': {'type': dict},
+}
+_SYNC_EXPORT_SCHEMA = {
+    'include': {'type': list},
+}
+_PEER_SCHEMA = {
+    'node_id': _TEXT,
+    'node_name': _TEXT,
+    'trust_level': _TEXT,
+    'ip': _TEXT,
+    'port': _INT_INPUT,
+    'lat': _NUMBER_INPUT,
+    'lng': _NUMBER_INPUT,
+    'public_key': _TEXT,
+}
+_PEER_VERIFY_SCHEMA = {
+    'challenge': _TEXT,
+    'response': _TEXT,
+    'self_verify': _BOOLISH_INPUT,
+}
+_OFFER_SCHEMA = {
+    'item_type': _TEXT,
+    'item_id': _INT_INPUT,
+    'quantity': _NUMBER_INPUT,
+    'node_id': _TEXT,
+    'notes': _TEXT_2000,
+}
+_REQUEST_SCHEMA = {
+    'item_type': _TEXT,
+    'description': _TEXT_2000,
+    'quantity': _NUMBER_INPUT,
+    'urgency': _TEXT,
+    'node_id': _TEXT,
+}
+_TRANSACTION_SCHEMA = {
+    'offer_id': _INT_INPUT,
+    'request_id': _INT_INPUT,
+    'from_node_id': _TEXT,
+    'to_node_id': _TEXT,
+    'item_type': _TEXT,
+    'quantity': _NUMBER_INPUT,
+    'notes': _TEXT_2000,
+}
+_MUTUAL_AID_SCHEMA = {
+    'peer_node_id': _TEXT,
+    'peer_name': _TEXT,
+    'title': _TEXT,
+    'description': _TEXT_2000,
+    'our_commitments': {'type': (list, str)},
+    'their_commitments': {'type': (list, str)},
+    'status': _TEXT,
+    'effective_date': _TEXT,
+    'expiry_date': _TEXT,
+    'signed_by_us': _BOOLISH_INPUT,
+}
+_DEADDROP_COMPOSE_SCHEMA = {
+    'message': _TEXT_2000,
+    'recipient': _TEXT,
+    'secret': {'type': str, 'max_length': 1024},
+}
+_DEADDROP_DECRYPT_SCHEMA = {
+    'payload': {'type': dict},
+    'secret': {'type': str, 'max_length': 1024},
+}
+_DEADDROP_IMPORT_SCHEMA = {
+    'payload': {'type': dict},
+}
+_RELAY_ALERT_SCHEMA = {
+    'title': _TEXT,
+    'message': _TEXT_2000,
+    'severity': _TEXT,
+}
 
 
 # ─── Version (read from app module at import time if possible) ──────
@@ -151,8 +247,9 @@ def api_node_identity():
 
 
 @federation_bp.route('/api/node/identity', methods=['PUT'])
+@validate_optional_json({'name': _TEXT})
 def api_node_identity_update():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     name = data.get('name', '').strip()
     if name:
         with db_session() as db:
@@ -217,6 +314,7 @@ def api_node_announce():
 # ─── Sync Push/Pull/Receive ────────────────────────────────────────
 
 @federation_bp.route('/api/node/sync-push', methods=['POST'])
+@validate_json(_SYNC_PEER_SCHEMA)
 def api_node_sync_push():
     """Push data TO a peer node. Supports delta sync via optional 'since' parameter."""
     data = request.get_json() or {}
@@ -319,6 +417,7 @@ def api_node_sync_push():
 
 
 @federation_bp.route('/api/node/sync-receive', methods=['POST'])
+@validate_json(_SYNC_RECEIVE_SCHEMA)
 def api_node_sync_receive():
     """Receive data FROM a peer node (merge mode)."""
     data = request.get_json() or {}
@@ -475,6 +574,7 @@ def api_node_sync_receive():
 
 
 @federation_bp.route('/api/node/sync-pull', methods=['POST'])
+@validate_json(_SYNC_PEER_SCHEMA)
 def api_node_sync_pull():
     """Pull data FROM a peer node."""
     data = request.get_json() or {}
@@ -554,6 +654,7 @@ def api_node_conflicts():
 
 
 @federation_bp.route('/api/node/conflicts/<int:conflict_id>/resolve', methods=['POST'])
+@validate_json(_CONFLICT_RESOLUTION_SCHEMA)
 def api_node_conflict_resolve(conflict_id):
     """Resolve a sync conflict."""
     _check_origin(request)
@@ -686,9 +787,10 @@ def api_sync_status(peer_id):
 # ─── Sneakernet Sync ────────────────────────────────────────────────
 
 @federation_bp.route('/api/sync/export', methods=['POST'])
+@validate_optional_json(_SYNC_EXPORT_SCHEMA)
 def api_sync_export():
     """Export selected data as a portable content pack ZIP."""
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     ALLOWED_SYNC_TABLES = {'inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints'}
     include = [t for t in data.get('include', list(ALLOWED_SYNC_TABLES)) if t in ALLOWED_SYNC_TABLES]
     import io
@@ -781,6 +883,7 @@ def api_federation_peers():
 
 
 @federation_bp.route('/api/federation/peers', methods=['POST'])
+@validate_json(_PEER_SCHEMA)
 def api_federation_peer_add():
     data = request.get_json() or {}
     node_id = data.get('node_id', '').strip()
@@ -822,6 +925,7 @@ def api_federation_peer_add():
 
 
 @federation_bp.route('/api/federation/peers/<node_id>/trust', methods=['PUT'])
+@validate_json({'trust_level': _TEXT})
 def api_federation_peer_trust(node_id):
     data = request.get_json() or {}
     trust = data.get('trust_level', 'observer')
@@ -844,6 +948,7 @@ def api_federation_peer_remove(node_id):
 
 
 @federation_bp.route('/api/federation/peers/<peer_id>/verify', methods=['POST'])
+@validate_optional_json(_PEER_VERIFY_SCHEMA)
 def api_verify_peer(peer_id):
     """Verify a peer's identity by challenge-response using HMAC signatures."""
     with db_session() as db:
@@ -851,7 +956,7 @@ def api_verify_peer(peer_id):
     if not peer:
         return jsonify({'error': 'Peer not found'}), 404
 
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     # If this is a challenge request (no response yet), generate a nonce
     if 'response' not in data:
         nonce = os.urandom(16).hex()
@@ -947,6 +1052,7 @@ def api_federation_offers():
 
 
 @federation_bp.route('/api/federation/offers', methods=['POST'])
+@validate_json(_OFFER_SCHEMA)
 def api_federation_offer_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -966,6 +1072,7 @@ def api_federation_requests():
 
 
 @federation_bp.route('/api/federation/requests', methods=['POST'])
+@validate_json(_REQUEST_SCHEMA)
 def api_federation_request_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -988,6 +1095,7 @@ def api_federation_transactions_list():
 
 
 @federation_bp.route('/api/federation/transactions', methods=['POST'])
+@validate_json(_TRANSACTION_SCHEMA)
 def api_federation_transactions_propose():
     """Match an offer to a request, create transaction with status='proposed'."""
     data = request.get_json() or {}
@@ -1083,6 +1191,7 @@ def api_mutual_aid_list():
 
 
 @federation_bp.route('/api/federation/mutual-aid', methods=['POST'])
+@validate_json(_MUTUAL_AID_SCHEMA)
 def api_mutual_aid_create():
     data = request.get_json() or {}
     if not data.get('title'):
@@ -1105,6 +1214,7 @@ def api_mutual_aid_create():
 
 
 @federation_bp.route('/api/federation/mutual-aid/<int:aid>', methods=['PUT'])
+@validate_json(_MUTUAL_AID_SCHEMA)
 def api_mutual_aid_update(aid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -1182,6 +1292,7 @@ _DEADDROP_KDF_ITERATIONS = 600_000  # OWASP 2023 minimum for PBKDF2-HMAC-SHA256
 
 
 @federation_bp.route('/api/deaddrop/compose', methods=['POST'])
+@validate_json(_DEADDROP_COMPOSE_SCHEMA)
 def api_deaddrop_compose():
     """Compose an encrypted message for dead drop exchange."""
     import hashlib, base64, os as _os
@@ -1219,6 +1330,7 @@ def api_deaddrop_compose():
 
 
 @federation_bp.route('/api/deaddrop/decrypt', methods=['POST'])
+@validate_json(_DEADDROP_DECRYPT_SCHEMA)
 def api_deaddrop_decrypt():
     """Decrypt a dead drop message.
 
@@ -1283,6 +1395,7 @@ def api_deaddrop_messages():
 
 
 @federation_bp.route('/api/deaddrop/import', methods=['POST'])
+@validate_json(_DEADDROP_IMPORT_SCHEMA)
 def api_deaddrop_import():
     """Import a dead drop JSON file and store it."""
     data = request.get_json() or {}
@@ -1434,6 +1547,7 @@ def api_federation_skill_search():
 # ─── Distributed Alert Relay (moved from routes_advanced) ────────
 
 @federation_bp.route('/api/federation/relay-alert', methods=['POST'])
+@validate_json(_RELAY_ALERT_SCHEMA)
 def api_federation_relay_alert():
     """Send an alert to all trusted federation peers."""
     from datetime import datetime

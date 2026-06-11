@@ -1,7 +1,7 @@
 <div align="center">
 <img src="logo.png" width="140" height="140"/>
 
-# NOMAD Field Desk v7.66.3
+# NOMAD Field Desk v7.66.4
 
 ### Your Personal Intelligence & Preparedness Command Center
 
@@ -611,6 +611,9 @@ Other managed subprocesses (Kiwix / Kolibri / FlatNotes) don't collide in practi
 | **Windows 10/11** | WebView2 Runtime (included in Windows 11) |
 | **Linux** | Python 3.10+, GTK WebKit (`python3-gi gir1.2-webkit2-4.1`) |
 | **macOS** | Python 3.10+ (uses native WebKit) |
+
+Python runtime dependencies are installed from `requirements.txt`; Flask is intentionally
+pinned at `>=3.1.3,<4.0` as the supported security floor.
 
 ---
 

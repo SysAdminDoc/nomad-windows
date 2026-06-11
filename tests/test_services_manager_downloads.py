@@ -35,10 +35,11 @@ def _sha256(data: bytes) -> str:
 def test_download_file_verifies_expected_sha256(monkeypatch, tmp_path):
     payload = b'verified service payload'
     calls = []
+    response = _FakeResponse(payload)
 
     def _get(url, **kwargs):
         calls.append((url, kwargs))
-        return _FakeResponse(payload)
+        return response
 
     monkeypatch.setattr(manager.requests, 'get', _get)
 
@@ -53,6 +54,7 @@ def test_download_file_verifies_expected_sha256(monkeypatch, tmp_path):
     assert result == str(dest)
     assert dest.read_bytes() == payload
     assert calls[0][1]['headers'] == {}
+    assert response.closed is True
     assert manager.get_download_progress('checksum-success')['status'] == 'complete'
 
 

@@ -388,6 +388,7 @@ def download_file(url: str, dest: str, service_id: str = '',
             'speed': '', 'downloaded': partial_size, 'total': 0,
         }
 
+    resp = None
     try:
         headers = {}
         if partial_size > 0:
@@ -489,6 +490,9 @@ def download_file(url: str, dest: str, service_id: str = '',
             # Keep partial file for resume on next attempt
             log.warning(f'Download failed for {service_id}, partial file kept for resume: {e}')
         raise
+    finally:
+        if resp is not None:
+            _close_response(resp)
 
 
 def extract_zip(zip_path: str, dest_dir: str):

@@ -8,6 +8,7 @@ class TestNodeIdentity:
         data = resp.get_json()
         assert 'node_id' in data
         assert 'node_name' in data
+        assert len(data.get('public_key', '')) == 64
 
     def test_set_identity(self, client):
         resp = client.put('/api/node/identity', json={'name': 'Test Node'})
@@ -49,6 +50,39 @@ class TestFederationPeers:
             'node_name': 'No ID'
         })
         assert resp.status_code == 400
+
+    def test_add_peer_rejects_bad_public_key(self, client):
+        resp = client.post('/api/federation/peers', json={
+            'node_id': 'bad-key-node',
+            'public_key': 'not-hex',
+            'ip': '192.168.1.101',
+        })
+        assert resp.status_code == 400
+
+    def test_add_peer_preserves_existing_public_key(self, client, db):
+        public_key = 'd' * 64
+        first = client.post('/api/federation/peers', json={
+            'node_id': 'keyed-node',
+            'node_name': 'Keyed Node',
+            'trust_level': 'member',
+            'ip': '192.168.1.102',
+            'public_key': public_key,
+        })
+        assert first.status_code in (200, 201)
+
+        second = client.post('/api/federation/peers', json={
+            'node_id': 'keyed-node',
+            'node_name': 'Renamed Keyed Node',
+            'trust_level': 'trusted',
+            'ip': '192.168.1.103',
+        })
+        assert second.status_code in (200, 201)
+
+        row = db.execute('SELECT node_name, trust_level, ip, public_key FROM federation_peers WHERE node_id = ?', ('keyed-node',)).fetchone()
+        assert row['node_name'] == 'Renamed Keyed Node'
+        assert row['trust_level'] == 'trusted'
+        assert row['ip'] == '192.168.1.103'
+        assert row['public_key'] == public_key
 
     def test_delete_peer_nonexistent(self, client):
         resp = client.delete('/api/federation/peers/nonexistent-node')

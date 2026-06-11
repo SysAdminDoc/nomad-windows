@@ -84,6 +84,13 @@ class TestSyncPull:
 
 
 class TestSyncReceive:
+    def _signed_payload(self, payload, key):
+        from web.blueprints.federation import _canonical_sync_payload, _sign_payload
+        signed = dict(payload)
+        signed['_public_key'] = key
+        signed['_signature'] = _sign_payload(_canonical_sync_payload(signed), key)
+        return signed
+
     def test_sync_receive_no_source(self, client):
         resp = client.post('/api/node/sync-receive', json={'tables': {}})
         assert resp.status_code == 400
@@ -129,6 +136,65 @@ class TestSyncReceive:
             row = db.execute('SELECT clock FROM vector_clocks WHERE table_name = ? AND row_hash = ?', ('inventory', 'row-1')).fetchone()
         assert row is not None
         assert json.loads(row['clock']) == {'trusted-node-1': 2}
+
+    def test_sync_receive_rejects_bad_signature_for_pinned_peer(self, client, db):
+        public_key = 'a' * 64
+        db.execute(
+            "INSERT INTO federation_peers (node_id, node_name, trust_level, public_key) VALUES (?, ?, ?, ?)",
+            ('signed-node-bad', 'Signed Bad', 'trusted', public_key),
+        )
+        db.commit()
+
+        resp = client.post('/api/node/sync-receive', json={
+            'source_node_id': 'signed-node-bad',
+            'source_node_name': 'Signed Bad',
+            'tables': {},
+            'vector_clocks': {},
+            '_public_key': public_key,
+            '_signature': '0' * 64,
+        })
+
+        assert resp.status_code == 403
+        assert 'signature' in resp.get_json()['error'].lower()
+
+    def test_sync_receive_accepts_valid_signature_for_pinned_peer(self, client, db):
+        public_key = 'b' * 64
+        db.execute(
+            "INSERT INTO federation_peers (node_id, node_name, trust_level, public_key) VALUES (?, ?, ?, ?)",
+            ('signed-node-good', 'Signed Good', 'trusted', public_key),
+        )
+        db.commit()
+        payload = self._signed_payload({
+            'source_node_id': 'signed-node-good',
+            'source_node_name': 'Signed Good',
+            'tables': {},
+            'vector_clocks': {'inventory': {'row-signed': {'signed-node-good': 1}}},
+        }, public_key)
+
+        resp = client.post('/api/node/sync-receive', json=payload)
+
+        assert resp.status_code == 200
+        assert resp.get_json()['status'] == 'received'
+
+    def test_sync_receive_pins_first_valid_signature_for_keyless_peer(self, client, db):
+        public_key = 'c' * 64
+        db.execute(
+            "INSERT INTO federation_peers (node_id, node_name, trust_level) VALUES (?, ?, ?)",
+            ('signed-node-new', 'Signed New', 'member'),
+        )
+        db.commit()
+        payload = self._signed_payload({
+            'source_node_id': 'signed-node-new',
+            'source_node_name': 'Signed New',
+            'tables': {},
+            'vector_clocks': {},
+        }, public_key)
+
+        resp = client.post('/api/node/sync-receive', json=payload)
+
+        assert resp.status_code == 200
+        row = db.execute('SELECT public_key FROM federation_peers WHERE node_id = ?', ('signed-node-new',)).fetchone()
+        assert row['public_key'] == public_key
 
 
 class TestConflicts:

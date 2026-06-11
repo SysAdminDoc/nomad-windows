@@ -100,20 +100,43 @@ def _get_or_create_node_key():
         return private_key, public_key
 
 
-def _sign_payload(data_str, private_key_hex):
-    """Sign a payload string using HMAC-SHA256 with the node private key."""
-    return hmac.new(bytes.fromhex(private_key_hex), data_str.encode(), hashlib.sha256).hexdigest()
+def _sign_payload(data_str, key_hex):
+    """Sign a payload string using HMAC-SHA256 with a 32-byte hex key."""
+    return hmac.new(bytes.fromhex(key_hex), data_str.encode(), hashlib.sha256).hexdigest()
+
+
+def _canonical_sync_payload(data):
+    """Return the signed sync body without transport signature metadata."""
+    unsigned = {k: v for k, v in data.items() if k not in ('_signature', '_public_key')}
+    return json.dumps(unsigned, sort_keys=True, default=str)
+
+
+def _normalize_public_key(value):
+    """Return a lower-case 32-byte hex key, or empty string if invalid."""
+    if not isinstance(value, str):
+        return ''
+    key = value.strip().lower()
+    if len(key) != 64:
+        return ''
+    try:
+        bytes.fromhex(key)
+    except ValueError:
+        return ''
+    return key
 
 
 def _verify_signature(data_str, signature, public_key_hex):
     """Verify signature against a known peer public key using HMAC-SHA256.
 
-    NOTE: This function is intentionally not called on incoming sync requests.
-    Mutual trust is enforced by requiring the peer to exist in the
-    federation_peers table with an accepted trust_level.  Full HMAC signature
-    verification is a planned hardening step once a key-exchange handshake is
-    added to the peer-add flow.
+    The current federation format uses the peer public_key value as the sync
+    HMAC verification key. It is still only accepted for peers already present
+    in federation_peers at member/trusted/admin trust.
     """
+    if not isinstance(signature, str) or not signature:
+        return False
+    public_key_hex = _normalize_public_key(public_key_hex)
+    if not public_key_hex:
+        return False
     expected = hmac.new(bytes.fromhex(public_key_hex), data_str.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, signature)
 
@@ -122,7 +145,9 @@ def _verify_signature(data_str, signature, public_key_hex):
 
 @federation_bp.route('/api/node/identity')
 def api_node_identity():
-    return jsonify({'node_id': _get_node_id(), 'node_name': _get_node_name(), 'version': _get_version()})
+    _, pub_key = _get_or_create_node_key()
+    return jsonify({'node_id': _get_node_id(), 'node_name': _get_node_name(), 'version': _get_version(),
+                    'public_key': pub_key})
 
 
 @federation_bp.route('/api/node/identity', methods=['PUT'])
@@ -259,10 +284,10 @@ def api_node_sync_push():
         for r in vc_rows:
             payload['vector_clocks'][r['table_name']][r['row_hash']] = _safe_clock(r['clock'])
 
-    # Sign the payload
-    priv_key, pub_key = _get_or_create_node_key()
-    payload_str = json.dumps(payload, sort_keys=True, default=str)
-    payload['_signature'] = _sign_payload(payload_str, priv_key)
+    # Sign the canonical sync body with the advertised sync verification key.
+    _, pub_key = _get_or_create_node_key()
+    payload_str = _canonical_sync_payload(payload)
+    payload['_signature'] = _sign_payload(payload_str, pub_key)
     payload['_public_key'] = pub_key
 
     try:
@@ -306,9 +331,23 @@ def api_node_sync_receive():
     if not source_node:
         return jsonify({'error': 'source_node_id required'}), 400
     with db_session() as db_check:
-        peer = db_check.execute("SELECT trust_level FROM federation_peers WHERE node_id = ?", (source_node,)).fetchone()
+        peer = db_check.execute("SELECT trust_level, public_key FROM federation_peers WHERE node_id = ?", (source_node,)).fetchone()
     if not peer or peer['trust_level'] not in ('trusted', 'admin', 'member'):
         return jsonify({'error': 'Unknown or untrusted peer'}), 403
+    peer_public_key = _normalize_public_key(peer['public_key'] or '')
+    incoming_public_key = _normalize_public_key(data.get('_public_key', ''))
+    incoming_signature = data.get('_signature', '')
+    signature_payload = _canonical_sync_payload(data)
+    should_pin_public_key = False
+    if peer_public_key:
+        if incoming_public_key and incoming_public_key != peer_public_key:
+            return jsonify({'error': 'Federation signing key mismatch'}), 403
+        if not _verify_signature(signature_payload, incoming_signature, peer_public_key):
+            return jsonify({'error': 'Invalid federation payload signature'}), 403
+    elif incoming_signature or incoming_public_key:
+        if not incoming_public_key or not _verify_signature(signature_payload, incoming_signature, incoming_public_key):
+            return jsonify({'error': 'Invalid federation payload signature'}), 403
+        should_pin_public_key = True
 
     ALLOWED = {'inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints'}
     # Build a lookup of incoming rows by table+hash for conflict detail
@@ -324,6 +363,16 @@ def api_node_sync_receive():
             incoming_by_hash[(tname, row_key)] = row_copy
 
     with db_session() as db:
+        if should_pin_public_key:
+            db.execute(
+                "UPDATE federation_peers SET public_key = ?, last_seen = datetime('now') WHERE node_id = ?",
+                (incoming_public_key, source_node),
+            )
+        elif peer_public_key:
+            db.execute(
+                "UPDATE federation_peers SET last_seen = datetime('now') WHERE node_id = ?",
+                (source_node,),
+            )
         imported = {}
         total = 0
         for tname, rows in tables.items():
@@ -737,6 +786,11 @@ def api_federation_peer_add():
     node_id = data.get('node_id', '').strip()
     if not node_id:
         return jsonify({'error': 'node_id required'}), 400
+    public_key = ''
+    if data.get('public_key'):
+        public_key = _normalize_public_key(data.get('public_key'))
+        if not public_key:
+            return jsonify({'error': 'Invalid public_key format'}), 400
     # Validate peer IP to prevent SSRF when relay/sync contacts peers
     peer_ip = data.get('ip', '').strip()
     if peer_ip:
@@ -748,10 +802,21 @@ def api_federation_peer_add():
         except ValueError:
             return jsonify({'error': 'Invalid IP address format'}), 400
     with db_session() as db:
-        db.execute('INSERT OR REPLACE INTO federation_peers (node_id, node_name, trust_level, ip, port, lat, lng) VALUES (?,?,?,?,?,?,?)',
-                   (node_id, data.get('node_name', ''), data.get('trust_level', 'observer'),
-                    peer_ip, data.get('port', Config.APP_PORT),
-                    data.get('lat'), data.get('lng')))
+        existing = db.execute('SELECT public_key FROM federation_peers WHERE node_id = ?', (node_id,)).fetchone()
+        if existing:
+            db.execute(
+                'UPDATE federation_peers SET node_name = ?, trust_level = ?, ip = ?, port = ?, lat = ?, lng = ?, public_key = ? WHERE node_id = ?',
+                (data.get('node_name', ''), data.get('trust_level', 'observer'),
+                 peer_ip, data.get('port', Config.APP_PORT),
+                 data.get('lat'), data.get('lng'), public_key or existing['public_key'] or '', node_id)
+            )
+        else:
+            db.execute(
+                'INSERT INTO federation_peers (node_id, node_name, trust_level, ip, port, lat, lng, public_key) VALUES (?,?,?,?,?,?,?,?)',
+                (node_id, data.get('node_name', ''), data.get('trust_level', 'observer'),
+                 peer_ip, data.get('port', Config.APP_PORT),
+                 data.get('lat'), data.get('lng'), public_key)
+            )
         db.commit()
     return jsonify({'status': 'added'})
 

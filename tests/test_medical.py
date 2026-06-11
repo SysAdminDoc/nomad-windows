@@ -25,6 +25,16 @@ class TestPatientsCreate:
         resp = client.post('/api/patients', json={'name': 'Jane'})
         assert resp.status_code == 201
 
+    def test_create_rejects_malformed_json(self, client):
+        resp = client.post('/api/patients', data='not-json', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_create_rejects_container_name(self, client):
+        resp = client.post('/api/patients', json={'name': ['Jane']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
 
 class TestPatientsUpdate:
     def test_update_patient(self, client):
@@ -70,6 +80,12 @@ class TestVitals:
             'resp_rate': 16,
         })
         assert resp.status_code == 201
+
+    def test_add_vitals_rejects_container_pulse(self, client):
+        patient = client.post('/api/patients', json={'name': 'Vitals Bad'}).get_json()
+        resp = client.post(f'/api/patients/{patient["id"]}/vitals', json={'pulse': ['72']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
     def test_list_vitals(self, client):
         patient = client.post('/api/patients', json={'name': 'V Test'}).get_json()
@@ -128,6 +144,18 @@ class TestDrugInteractions:
         })
         assert resp.status_code == 200
 
+    def test_interactions_rejects_wrong_type_medications(self, client):
+        resp = client.post('/api/medical/interactions', json={'medications': 'aspirin'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_interactions_skips_non_string_medication_items(self, client):
+        resp = client.post('/api/medical/interactions', json={
+            'medications': ['aspirin', {'name': 'ignored'}, 'warfarin'],
+        })
+        assert resp.status_code == 200
+        assert isinstance(resp.get_json(), list)
+
 
 class TestTriageBoard:
     def test_triage_board(self, client):
@@ -142,6 +170,31 @@ class TestTriageBoard:
             'care_phase': 'treatment',
         })
         assert resp.status_code == 200
+
+    def test_update_triage_rejects_container_category(self, client):
+        patient = client.post('/api/patients', json={'name': 'Triage Bad'}).get_json()
+        resp = client.put(f'/api/medical/triage/{patient["id"]}', json={
+            'triage_category': ['immediate'],
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+
+class TestMedicationLogValidation:
+    def test_medication_log_rejects_container_drug_name(self, client):
+        patient = client.post('/api/patients', json={'name': 'Med Log Bad'}).get_json()
+        resp = client.post(f'/api/patients/{patient["id"]}/medication-log', json={
+            'drug_name': ['Ibuprofen'],
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+
+class TestWoundUpdateValidation:
+    def test_wound_update_rejects_container_size(self, client):
+        resp = client.post('/api/patients/1/wounds/1/updates', json={'size_cm': ['2.5']})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
 
 class TestTCCCProtocol:

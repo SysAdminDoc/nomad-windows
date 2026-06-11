@@ -28,6 +28,14 @@ class TestDosageCalculator:
         })
         assert resp.status_code == 400
 
+    def test_dosage_calculator_rejects_container_weight(self, client):
+        resp = client.post('/api/medical/dosage-calculator', json={
+            'drug': 'Ibuprofen',
+            'weight_kg': ['70'],
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_dosage_drugs_list(self, client):
         resp = client.get('/api/medical/dosage-drugs')
         assert resp.status_code == 200
@@ -154,6 +162,22 @@ class TestHandoff:
         assert 'SBAR Handoff - Handoff Test' in data['html']
         assert 'From ___ to Dr. Smith' in data['html']
         assert 'Stable' in data['html']
+
+    def test_handoff_allows_empty_body_defaults(self, client):
+        patient = client.post('/api/patients', json={'name': 'Default Handoff'}).get_json()
+        resp = client.post(f'/api/medical/handoff/{patient["id"]}')
+        assert resp.status_code in (200, 201)
+        assert 'SBAR Handoff - Default Handoff' in resp.get_json()['html']
+
+    def test_handoff_rejects_malformed_json(self, client):
+        patient = client.post('/api/patients', json={'name': 'Bad Handoff'}).get_json()
+        resp = client.post(
+            f'/api/medical/handoff/{patient["id"]}',
+            data='not-json',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
 
     def test_handoff_print(self, client):
         patient = client.post('/api/patients', json={'name': 'Print Handoff'}).get_json()

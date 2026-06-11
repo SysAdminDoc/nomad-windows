@@ -13,10 +13,95 @@ from db import db_session, log_activity
 log = logging.getLogger('nomad.web')
 from config import get_data_dir
 from web.print_templates import render_print_document
+from web.validation import validate_json, validate_optional_json
 
 from web.utils import esc as _esc, get_query_int as _get_query_int
 
 medical_bp = Blueprint('medical', __name__)
+
+_TEXT = {'type': str}
+_TEXT_2000 = {'type': str, 'max_length': 2000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_INT_INPUT = {'type': (int, str)}
+_LIST_OR_TEXT = {'type': (list, str)}
+
+_PATIENT_SCHEMA = {
+    'contact_id': _INT_INPUT,
+    'name': _TEXT,
+    'age': _NUMBER_INPUT,
+    'weight_kg': _NUMBER_INPUT,
+    'sex': _TEXT,
+    'blood_type': _TEXT,
+    'allergies': _LIST_OR_TEXT,
+    'medications': _LIST_OR_TEXT,
+    'conditions': _LIST_OR_TEXT,
+    'notes': _TEXT_2000,
+}
+_VITALS_SCHEMA = {
+    'bp_systolic': _NUMBER_INPUT,
+    'bp_diastolic': _NUMBER_INPUT,
+    'bp_sys': _NUMBER_INPUT,
+    'bp_dia': _NUMBER_INPUT,
+    'pulse': _NUMBER_INPUT,
+    'heart_rate': _NUMBER_INPUT,
+    'resp_rate': _NUMBER_INPUT,
+    'temp_f': _NUMBER_INPUT,
+    'spo2': _NUMBER_INPUT,
+    'pain_level': _NUMBER_INPUT,
+    'gcs': _NUMBER_INPUT,
+    'notes': _TEXT_2000,
+}
+_WOUND_SCHEMA = {
+    'location': _TEXT,
+    'wound_type': _TEXT,
+    'type': _TEXT,
+    'severity': _TEXT,
+    'description': _TEXT_2000,
+    'treatment': _TEXT_2000,
+    'notes': _TEXT_2000,
+}
+_INTERACTIONS_SCHEMA = {
+    'medications': {'type': list},
+}
+_DOSAGE_SCHEMA = {
+    'drug': _TEXT,
+    'patient_id': _INT_INPUT,
+    'weight_kg': _NUMBER_INPUT,
+    'age': _NUMBER_INPUT,
+}
+_TRIAGE_SCHEMA = {
+    'triage_category': _TEXT,
+    'care_phase': _TEXT,
+    'reason': _TEXT_2000,
+    'changed_by': _TEXT,
+}
+_HANDOFF_SCHEMA = {
+    'from_provider': _TEXT,
+    'sending_provider': _TEXT,
+    'to_provider': _TEXT,
+    'receiving_provider': _TEXT,
+    'situation': _TEXT_2000,
+    'chief_concern': _TEXT_2000,
+    'background': _TEXT_2000,
+    'history': _TEXT_2000,
+    'assessment': _TEXT_2000,
+    'condition_summary': _TEXT_2000,
+    'recommendation': _TEXT_2000,
+    'plan': _TEXT_2000,
+}
+_MEDICATION_LOG_SCHEMA = {
+    'drug_name': _TEXT,
+    'dose': _TEXT,
+    'route': _TEXT,
+    'administered_by': _TEXT,
+    'notes': _TEXT_2000,
+}
+_WOUND_UPDATE_SCHEMA = {
+    'status': _TEXT,
+    'treatment': _TEXT_2000,
+    'size_cm': _NUMBER_INPUT,
+    'notes': _TEXT_2000,
+}
 
 
 def _parse_json_list(value):
@@ -40,6 +125,17 @@ def _parse_json_list(value):
                 return []
             return [item.strip() for item in stripped.split(',') if item.strip()]
     return [value]
+
+
+def _clean_medication_terms(value):
+    meds = []
+    for item in _parse_json_list(value):
+        if not isinstance(item, str):
+            continue
+        term = item.strip().lower()
+        if term:
+            meds.append(term)
+    return meds
 
 
 def _safe_response_json(response):
@@ -446,6 +542,7 @@ def api_patients_list():
 
 
 @medical_bp.route('/api/patients', methods=['POST'])
+@validate_json(_PATIENT_SCHEMA)
 def api_patients_create():
     data = request.get_json() or {}
     if not data.get('name'):
@@ -463,6 +560,7 @@ def api_patients_create():
 
 
 @medical_bp.route('/api/patients/<int:pid>', methods=['PUT'])
+@validate_json(_PATIENT_SCHEMA)
 def api_patients_update(pid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -547,6 +645,7 @@ def api_vitals_list(pid):
 
 
 @medical_bp.route('/api/patients/<int:pid>/vitals', methods=['POST'])
+@validate_json(_VITALS_SCHEMA)
 def api_vitals_create(pid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -627,6 +726,7 @@ def api_wounds_list(pid):
 
 
 @medical_bp.route('/api/patients/<int:pid>/wounds', methods=['POST'])
+@validate_json(_WOUND_SCHEMA)
 def api_wounds_create(pid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -798,10 +898,11 @@ def api_pediatric_weight_estimate():
 # ─── Drug Interactions Check ────────────────────────────────────────
 
 @medical_bp.route('/api/medical/interactions', methods=['POST'])
+@validate_json(_INTERACTIONS_SCHEMA)
 def api_drug_interactions():
     """Check drug interactions for a list of medications."""
     data = request.get_json() or {}
-    meds = [m.strip().lower() for m in data.get('medications', []) if m.strip()]
+    meds = _clean_medication_terms(data.get('medications', []))
     if len(meds) < 2:
         return jsonify([])
     meds_set = set(meds)
@@ -825,10 +926,11 @@ def api_drug_interactions():
 # ─── Dosage Calculator ──────────────────────────────────────────────
 
 @medical_bp.route('/api/medical/dosage-calculator', methods=['POST'])
+@validate_json(_DOSAGE_SCHEMA)
 def api_dosage_calculator():
     """Allergy-aware dosage calculator. Checks patient allergies and drug contraindications."""
     data = request.get_json() or {}
-    drug_name = data.get('drug', '').strip()
+    drug_name = (data.get('drug') or '').strip()
     patient_id = data.get('patient_id')
 
     # Coerce age/weight up-front — a non-numeric value would otherwise hit
@@ -962,6 +1064,7 @@ def api_triage_board():
             'counts': {k: len(v) for k, v in categories.items()},
         })
 @medical_bp.route('/api/medical/triage/<int:pid>', methods=['PUT'])
+@validate_json(_TRIAGE_SCHEMA)
 def api_triage_update(pid):
     """Update a patient's triage category and care phase."""
     data = request.get_json() or {}
@@ -991,6 +1094,7 @@ def api_triage_update(pid):
 # ─── SBAR Handoff Reports ───────────────────────────────────────────
 
 @medical_bp.route('/api/medical/handoff/<int:pid>', methods=['POST'])
+@validate_optional_json(_HANDOFF_SCHEMA)
 def api_medical_handoff(pid):
     """Generate an SBAR handoff report for a patient."""
     with db_session() as db:
@@ -1005,7 +1109,7 @@ def api_medical_handoff(pid):
         conditions = _parse_json_list(p.get('conditions'))
         medications = _parse_json_list(p.get('medications'))
 
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         now = time.strftime('%Y-%m-%d %H:%M')
 
         from_provider = data.get('from_provider') or data.get('sending_provider') or '___'
@@ -1298,10 +1402,11 @@ def api_medication_log_list(pid):
 
 
 @medical_bp.route('/api/patients/<int:pid>/medication-log', methods=['POST'])
+@validate_json(_MEDICATION_LOG_SCHEMA)
 def api_medication_log_create(pid):
     """Record a medication dose. Looks up drug in DOSAGE_GUIDE for interval to calculate next_dose_due."""
     data = request.get_json() or {}
-    drug_name = data.get('drug_name', '').strip()
+    drug_name = (data.get('drug_name') or '').strip()
     if not drug_name:
         return jsonify({'error': 'drug_name is required'}), 400
 
@@ -1456,13 +1561,14 @@ def api_wound_updates_list(pid, wid):
 
 
 @medical_bp.route('/api/patients/<int:pid>/wounds/<int:wid>/updates', methods=['POST'])
+@validate_json(_WOUND_UPDATE_SCHEMA)
 def api_wound_updates_create(pid, wid):
     """Create a wound update entry. If status is 'closed', also updates the wound_log entry."""
     data = request.get_json() or {}
-    status = data.get('status', '')
-    treatment = data.get('treatment', '')
+    status = data.get('status') or ''
+    treatment = data.get('treatment') or ''
     size_cm = data.get('size_cm')
-    notes = data.get('notes', '')
+    notes = data.get('notes') or ''
 
     with db_session() as db:
         # Verify wound exists

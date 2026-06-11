@@ -67,29 +67,24 @@ class TestTrainingJobs:
         assert 'not found' in resp.get_json()['error'].lower() or 'Job' in resp.get_json()['error']
 
     def test_training_job_path_traversal(self, client):
-        """output_model containing ../ should be sanitized."""
+        """output_model containing ../ should be rejected before file creation."""
         resp = client.post('/api/ai/training/jobs', json={
             'base_model': 'llama3.2',
             'output_model': '../../../evil-model',
             'epochs': 1,
         })
-        assert resp.status_code == 201
-        data = resp.get_json()
-        # Slashes and dots should be stripped from output_model
-        assert '/' not in data['output_model']
-        assert '..' not in data['output_model']
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
     def test_training_base_model_injection(self, client):
-        """base_model containing newlines or special chars should be sanitized."""
+        """base_model containing newlines or special chars should be rejected."""
         resp = client.post('/api/ai/training/jobs', json={
             'base_model': 'llama3.2\n; rm -rf /',
             'output_model': 'safe-model',
             'epochs': 1,
         })
-        assert resp.status_code == 201
-        data = resp.get_json()
-        assert 'id' in data
-        # The base_model should have been cleaned of dangerous characters
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
     def test_training_job_create_skips_malformed_dataset_sample_lines(self, client, db, tmp_path):
         dataset_path = tmp_path / 'mixed-dataset.jsonl'

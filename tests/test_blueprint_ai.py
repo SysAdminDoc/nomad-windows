@@ -59,6 +59,15 @@ class TestAIMemory:
         resp = client.post('/api/ai/memory', json={'fact': ''})
         assert resp.status_code == 400
 
+    def test_save_memory_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/ai/memory',
+            data='not-json',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
 
 class TestAITrainingDatasets:
     def test_list_datasets(self, client):
@@ -103,6 +112,29 @@ class TestAITrainingDatasets:
 
 
 class TestAIHttpResilience:
+    def test_pull_rejects_invalid_model_name(self, client):
+        resp = client.post('/api/ai/pull', json={'model': 'llama3\n; rm -rf /'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_pull_queue_rejects_non_string_model(self, client):
+        resp = client.post('/api/ai/pull-queue', json={'models': ['llama3.2', {'bad': 'value'}]})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Invalid model list'
+
+    def test_chat_rejects_non_list_messages(self, client):
+        resp = client.post('/api/ai/chat', json={'messages': 'hello'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_execute_action_rejects_string_confirmation(self, client):
+        resp = client.post('/api/ai/execute-action', json={
+            'action': 'add rice to inventory',
+            'confirmed': 'yes',
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
     def test_context_usage_recovers_from_malformed_model_info(self, client, monkeypatch):
         class _BadResponse:
             ok = True
@@ -199,6 +231,7 @@ class TestRAGScope:
             'table_name': 'inventory; DROP TABLE inventory', 'enabled': True,
         })
         assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
     def test_rejects_non_integer_weight(self, client):
         resp = client.post('/api/ai/rag/scope', json={

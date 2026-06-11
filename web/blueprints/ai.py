@@ -27,6 +27,9 @@ log = logging.getLogger('nomad.web')
 
 ai_bp = Blueprint('ai', __name__)
 
+_MODEL_NAME_PATTERN = r'^[a-zA-Z0-9._:/-]+$'
+_MODEL_NAME_SCHEMA = {'type': str, 'max_length': 200, 'pattern': _MODEL_NAME_PATTERN}
+
 # ─── Context Window Helpers ──────────────────────────────────────────
 
 def _estimate_tokens(text):
@@ -105,6 +108,7 @@ def api_ai_models():
     return jsonify(ollama.list_models())
 
 @ai_bp.route('/api/ai/pull', methods=['POST'])
+@validate_json({'model': _MODEL_NAME_SCHEMA})
 def api_ai_pull():
     data = request.get_json() or {}
     model_name = data.get('model', ollama.DEFAULT_MODEL)
@@ -123,12 +127,15 @@ def api_ai_pull():
     return jsonify({'status': 'pulling', 'model': model_name})
 
 @ai_bp.route('/api/ai/pull-queue', methods=['POST'])
+@validate_json({'models': {'type': list, 'required': True}})
 def api_ai_pull_queue():
     """Queue multiple models for sequential download."""
     data = request.get_json() or {}
     models = data.get('models', [])
     if not models:
         return jsonify({'error': 'No models specified'}), 400
+    if not all(isinstance(m, str) and re.match(_MODEL_NAME_PATTERN, m) and len(m) <= 200 for m in models):
+        return jsonify({'error': 'Invalid model list'}), 400
     # Filter out already-installed models
     try:
         installed = set(m['name'] for m in ollama.list_models())
@@ -175,6 +182,7 @@ def api_ai_pull_progress():
     return jsonify(progress)
 
 @ai_bp.route('/api/ai/delete', methods=['POST'])
+@validate_json({'model': {**_MODEL_NAME_SCHEMA, 'required': True}})
 def api_ai_delete():
     data = request.get_json() or {}
     model_name = data.get('model')
@@ -516,6 +524,13 @@ def get_ai_memory_text() -> str:
 
 
 @ai_bp.route('/api/ai/chat', methods=['POST'])
+@validate_json({
+    'model': _MODEL_NAME_SCHEMA,
+    'messages': {'type': list},
+    'system_prompt': {'type': str, 'max_length': 20000},
+    'knowledge_base': {'type': bool},
+    'situation_context': {'type': bool},
+})
 def api_ai_chat():
     data = request.get_json() or {}
     model = data.get('model', ollama.DEFAULT_MODEL)
@@ -625,6 +640,11 @@ def api_ai_chat():
     return Response(generate(), mimetype='text/event-stream')
 
 @ai_bp.route('/api/ai/quick-query', methods=['POST'])
+@validate_json({
+    'question': {'type': str, 'required': True, 'min_length': 1, 'max_length': 2000},
+    'session_id': {'type': str, 'max_length': 120},
+    'model': _MODEL_NAME_SCHEMA,
+})
 def api_ai_quick_query():
     """Answer a focused question using real data without full chat context.
     Designed for the dashboard copilot widget with session memory."""
@@ -726,6 +746,11 @@ def api_ai_recommended():
     return jsonify(ollama.RECOMMENDED_MODELS)
 
 @ai_bp.route('/api/ai/context-usage', methods=['POST'])
+@validate_json({
+    'messages': {'type': list},
+    'system_prompt': {'type': str, 'max_length': 20000},
+    'model': _MODEL_NAME_SCHEMA,
+})
 def api_context_usage():
     """Estimate token usage for a set of messages against a model's context window."""
     d = request.json or {}
@@ -761,6 +786,10 @@ def api_context_usage():
 # ─── Conversation Branching (v5.0 Phase 1) ──────────────────────
 
 @ai_bp.route('/api/conversations/<int:cid>/branch', methods=['POST'])
+@validate_json({
+    'message_index': {'type': int, 'min': 0},
+    'from_index': {'type': int, 'min': 0},
+})
 def api_conversation_branch(cid):
     """Fork a conversation from a specific message index."""
     d = request.json or {}
@@ -806,6 +835,7 @@ def api_conversation_branch_get(bid):
             return jsonify({'error': 'Branch not found'}), 404
         return jsonify(dict(row))
 @ai_bp.route('/api/conversations/branches/<int:bid>', methods=['PUT'])
+@validate_json({'messages': {'type': (list, str)}})
 def api_conversation_branch_update(bid):
     """Update branch messages (append new messages to branch)."""
     d = request.json or {}
@@ -900,6 +930,10 @@ def api_conversations_list():
     return jsonify(result)
 
 @ai_bp.route('/api/conversations', methods=['POST'])
+@validate_json({
+    'title': {'type': str, 'max_length': 300},
+    'model': _MODEL_NAME_SCHEMA,
+})
 def api_conversations_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -919,6 +953,12 @@ def api_conversations_get(cid):
     return jsonify(dict(convo))
 
 @ai_bp.route('/api/conversations/<int:cid>', methods=['PUT'])
+@validate_json({
+    'title': {'type': str, 'max_length': 300},
+    'model': _MODEL_NAME_SCHEMA,
+    'messages': {'type': (list, str)},
+    'tags': {'type': (list, str)},
+})
 def api_conversations_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -948,6 +988,7 @@ def api_conversations_update(cid):
     return jsonify({'status': 'saved'})
 
 @ai_bp.route('/api/conversations/<int:cid>', methods=['PATCH'])
+@validate_json({'title': {'type': str, 'required': True, 'min_length': 1, 'max_length': 300}})
 def api_conversation_rename(cid):
     data = request.get_json() or {}
     title = data.get('title', '').strip()
@@ -1155,6 +1196,12 @@ def api_training_datasets():
     return jsonify([dict(r) for r in rows])
 
 @ai_bp.route('/api/ai/training/datasets', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 1000},
+    'source': {'type': str, 'choices': ['conversations', 'upload']},
+    'base_model': _MODEL_NAME_SCHEMA,
+})
 def api_training_datasets_create():
     """Create a training dataset from conversation history or uploaded JSONL."""
     data = request.get_json() or {}
@@ -1197,6 +1244,13 @@ def api_training_jobs():
     return jsonify([dict(r) for r in rows])
 
 @ai_bp.route('/api/ai/training/jobs', methods=['POST'])
+@validate_json({
+    'dataset_id': {'type': int, 'min': 1},
+    'base_model': _MODEL_NAME_SCHEMA,
+    'output_model': {'type': str, 'max_length': 100, 'pattern': r'^[a-zA-Z0-9_-]+$'},
+    'epochs': {'type': int, 'min': 1, 'max': 20},
+    'learning_rate': {'type': float, 'min': 0.000001, 'max': 1.0},
+})
 def api_training_jobs_create():
     """Create a training job. Generates an Ollama Modelfile for the custom model."""
     data = request.get_json() or {}
@@ -1565,6 +1619,10 @@ def _parse_ai_action(action: str):
 
 
 @ai_bp.route('/api/ai/execute-action', methods=['POST'])
+@validate_json({
+    'action': {'type': str, 'required': True, 'min_length': 1, 'max_length': 500},
+    'confirmed': {'type': bool},
+})
 def api_ai_execute_action():
     """Parse and execute a natural-language action command.
 
@@ -1632,6 +1690,7 @@ def api_ai_memory_list():
 
 @ai_bp.route('/api/ai/memory', methods=['POST'])
 @require_auth('admin')
+@validate_json({'fact': {'type': str, 'required': True, 'min_length': 1, 'max_length': 2000}})
 def api_ai_memory_save():
     """Save a fact to AI memory.
 
@@ -1704,6 +1763,15 @@ def api_ai_rag_scope_list():
 
 @ai_bp.route('/api/ai/rag/scope', methods=['POST'])
 @require_auth('admin')
+@validate_json({
+    'table_name': {'type': str, 'required': True, 'max_length': 120, 'pattern': r'^[A-Za-z_][A-Za-z0-9_]*$'},
+    'label': {'type': str, 'max_length': 200},
+    'enabled': {'type': (bool, int), 'min': 0, 'max': 1},
+    'weight': {'type': int, 'min': 0, 'max': 10000},
+    'max_rows': {'type': int, 'min': 1},
+    'formatter': {'type': str, 'choices': ['builtin', 'generic']},
+    'columns_json': {'type': list},
+})
 def api_ai_rag_scope_update():
     """Update a single rag_scope row, or create a custom entry.
 

@@ -27,6 +27,15 @@ class TestConversationsCreate:
         assert resp.status_code == 201
         assert resp.get_json()['title'] == 'New Chat'
 
+    def test_create_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/conversations',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
 
 class TestConversationsGet:
     def test_get_conversation(self, client):
@@ -65,6 +74,13 @@ class TestConversationsUpdate:
         # Verify via GET
         convo = client.get(f'/api/conversations/{cid}').get_json()
         assert convo['title'] == 'New Title'
+
+    def test_rename_rejects_empty_title(self, client):
+        create = client.post('/api/conversations', json={'title': 'Old Title'})
+        cid = create.get_json()['id']
+        resp = client.patch(f'/api/conversations/{cid}', json={'title': ''})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
 
 class TestConversationsDelete:
@@ -129,6 +145,13 @@ class TestConversationBranching:
 
         assert resp.status_code in (200, 201)
         assert resp.get_json()['messages'] == []
+
+    def test_branch_rejects_negative_index(self, client):
+        create = client.post('/api/conversations', json={'title': 'Branch Index'})
+        cid = create.get_json()['id']
+        resp = client.post(f'/api/conversations/{cid}/branch', json={'from_index': -1})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
 
 
 class TestConversationExport:

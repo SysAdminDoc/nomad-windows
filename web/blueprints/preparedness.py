@@ -8,7 +8,7 @@ import queue
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request, Response
 
-from db import get_db, db_session, log_activity
+from db import db_session, log_activity
 from web.auth import require_auth
 from web.validation import validate_json
 from web.utils import (
@@ -17,7 +17,6 @@ from web.utils import (
     require_json_body as _require_json_body,
     safe_json_value as _safe_json_value,
     safe_json_list as _safe_json_list,
-    close_db_safely as _close_db_safely,
     validate_bulk_ids as _validate_bulk_ids,
 )
 from web.state import (
@@ -358,10 +357,12 @@ def _run_alert_checks():
         if _alert_stop_event.wait(timeout=30):  # Wait for app to initialize
             return
         while not _alert_stop_event.is_set():
+            session = None
             db = None
             try:
                 alerts = []
-                db = get_db()
+                session = db_session()
+                db = session.__enter__()
                 now = datetime.now()
                 today = now.strftime('%Y-%m-%d')
                 soon = (now + timedelta(days=14)).strftime('%Y-%m-%d')
@@ -376,7 +377,7 @@ def _run_alert_checks():
                     alerts.append({
                         'type': 'burn_rate', 'severity': sev,
                         'title': f'{item["name"]} running low',
-                        'message': f'{item["name"]}: {days} days remaining at current usage ({item["quantity"]} {item.get("category", "")} left, using {item["daily_usage"]}/day). Reduce consumption or resupply.',
+                        'message': f'{item["name"]}: {days} days remaining at current usage ({item["quantity"]} {item["category"] or ""} left, using {item["daily_usage"]}/day). Reduce consumption or resupply.',
                     })
 
                 # 2. Expiring items (within 14 days)
@@ -505,7 +506,11 @@ def _run_alert_checks():
             except Exception as e:
                 log.error(f'Alert engine error: {e}')
             finally:
-                _close_db_safely(db, 'alert engine')
+                if db is not None and session is not None:
+                    try:
+                        session.__exit__(None, None, None)
+                    except Exception as exc:
+                        log.debug('Alert engine DB session cleanup failed: %s', exc)
             # Check every 5 minutes; Event.wait returns True if stop was signalled.
             if _alert_stop_event.wait(timeout=300):
                 return

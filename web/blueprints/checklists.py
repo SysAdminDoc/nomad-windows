@@ -6,8 +6,8 @@ import logging
 from flask import Blueprint, request, jsonify, Response
 from werkzeug.utils import secure_filename
 
-from db import get_db, db_session, log_activity
-from web.utils import safe_json_list as _safe_json_list, close_db_safely as _close_db_safely
+from db import db_session, log_activity
+from web.utils import safe_json_list as _safe_json_list
 from web.sql_safety import safe_columns
 from web.validation import validate_json
 from web.checklist_templates_data import CHECKLIST_TEMPLATES
@@ -129,10 +129,9 @@ def api_checklist_clone(cid):
 
 @checklists_bp.route('/api/checklists/<int:cid>/export-json')
 def api_checklist_export_json(cid):
-    db = None
     try:
-        db = get_db()
-        row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
+        with db_session() as db:
+            row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
         if not row:
             return jsonify({'error': 'Not found'}), 404
         export = {'type': 'nomad_checklist', 'version': 1,
@@ -144,8 +143,6 @@ def api_checklist_export_json(cid):
     except Exception as e:
         log.error('Request failed: %s', e)
         return jsonify({'error': 'Internal server error'}), 500
-    finally:
-        _close_db_safely(db, 'checklist export')
 
 
 @checklists_bp.route('/api/checklists/import-json', methods=['POST'])
@@ -153,7 +150,6 @@ def api_checklist_import_json():
     if 'file' not in request.files:
         return jsonify({'error': 'No file'}), 400
     file = request.files['file']
-    db = None
     try:
         raw = file.read(2 * 1024 * 1024 + 1)
         if len(raw) > 2 * 1024 * 1024:
@@ -166,16 +162,15 @@ def api_checklist_import_json():
             return jsonify({'error': 'Invalid checklist file'}), 400
         items = _safe_json_list(data.get('items', []), [])
         name = str(data.get('name', '') or 'Imported Checklist').strip()[:300] or 'Imported Checklist'
-        db = get_db()
-        cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
-                         (name, str(data.get('template', 'imported') or 'imported')[:100], json.dumps(items)))
-        db.commit()
-        return jsonify({'status': 'imported', 'id': cur.lastrowid})
+        with db_session() as db:
+            cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
+                             (name, str(data.get('template', 'imported') or 'imported')[:100], json.dumps(items)))
+            db.commit()
+            imported_id = cur.lastrowid
+        return jsonify({'status': 'imported', 'id': imported_id})
     except Exception as e:
         log.warning('Checklist import failed: %s', e)
         return jsonify({'error': 'Import failed -- check file format'}), 400
-    finally:
-        _close_db_safely(db, 'checklist import')
 
 
 @checklists_bp.route('/api/dashboard/checklists')

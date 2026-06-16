@@ -514,6 +514,11 @@ window._nomadTabLeaveCallbacks['situation-room'] = function() {
   if (_sitroomResizeMap) window.removeEventListener('resize', _sitroomResizeMap);
 };
 
+function _patchInnerHTML(el, html) {
+  if (!el) return;
+  if (el.innerHTML === html) return;
+  el.innerHTML = html;
+}
 function _sitroomRefreshPanels() {
   _sitroomRefreshCritical();
   setTimeout(_sitroomRefreshStandard, 2000);
@@ -2868,8 +2873,8 @@ async function renderSitroomQuakes() {
   const d = await safeFetch('/api/sitroom/earthquakes?min_magnitude=' + minMag, {}, null);
   const list = document.getElementById('sitroom-quake-list');
   if (!list) return;
-  if (!d || !d.earthquakes?.length) { list.innerHTML = '<div class="sitroom-empty">No earthquakes above M' + minMag + '</div>'; return; }
-  list.innerHTML = d.earthquakes.map(q => {
+  if (!d || !d.earthquakes?.length) { _patchInnerHTML(list, '<div class="sitroom-empty">No earthquakes above M' + minMag + '</div>'); return; }
+  const _qhtml = d.earthquakes.map(q => {
     const mc = q.magnitude >= 6 ? 'sitroom-mag-high' : q.magnitude >= 4.5 ? 'sitroom-mag-med' : 'sitroom-mag-low';
     const det = _parseSitroomDetailJson(q.detail_json);
     return `<div class="sitroom-event-item">
@@ -2881,6 +2886,7 @@ async function renderSitroomQuakes() {
       ${q.source_url ? `<a href="${escapeAttr(q.source_url)}" target="_blank" rel="noopener" class="sitroom-event-link" aria-label="View earthquake details">&#8599;</a>` : ''}
     </div>`;
   }).join('');
+  _patchInnerHTML(list, _qhtml);
 }
 
 /* ─── Weather ─── */
@@ -2888,8 +2894,8 @@ async function loadSitroomWeather() {
   const d = await safeFetch('/api/sitroom/weather-alerts', {}, null);
   const list = document.getElementById('sitroom-weather-list');
   if (!list) return;
-  if (!d || !d.alerts?.length) { list.innerHTML = '<div class="sitroom-empty">No severe weather alerts</div>'; return; }
-  list.innerHTML = d.alerts.slice(0, 30).map(a => {
+  if (!d || !d.alerts?.length) { _patchInnerHTML(list, '<div class="sitroom-empty">No severe weather alerts</div>'); return; }
+  const _whtml = d.alerts.slice(0, 30).map(a => {
     const det = _parseSitroomDetailJson(a.detail_json);
     const sc = det.severity === 'Extreme' ? 'sitroom-sev-extreme' : 'sitroom-sev-severe';
     return `<div class="sitroom-event-item ${sc}">
@@ -2899,6 +2905,7 @@ async function loadSitroomWeather() {
       </div>
     </div>`;
   }).join('');
+  _patchInnerHTML(list, _whtml);
 }
 
 /* ─── Predictions ─── */
@@ -2987,7 +2994,7 @@ async function loadSitroomNews(append) {
     </div>
     ${a.link ? `<a href="${escapeAttr(a.link)}" target="_blank" rel="noopener" class="sr-analysis-linkout" aria-label="Open source article">&#8599;</a>` : ''}
   </div>`).join('');
-  if (append) list.insertAdjacentHTML('beforeend', html); else list.innerHTML = html;
+  if (append) list.insertAdjacentHTML('beforeend', html); else _patchInnerHTML(list, html);
   _sitroomNewsOffset += deduped.length;
   if (more) more.hidden = _sitroomNewsOffset >= (d.total || 0);
   _renderSitroomNewsDeskBriefing(_sitroomNewsArticles, d.total || 0);
@@ -3275,16 +3282,17 @@ async function loadSitroomIntelFeed() {
   if (!el) return;
   // Filter news for Defense, Cyber, Geopolitics categories
   const d = await safeFetch('/api/sitroom/news?limit=30', {}, null);
-  if (!d || !d.articles?.length) { el.innerHTML = '<div class="sr-empty">No intel data</div>'; return; }
+  if (!d || !d.articles?.length) { _patchInnerHTML(el, '<div class="sr-empty">No intel data</div>'); return; }
   const intel = d.articles.filter(a => ['Defense', 'Cyber', 'Geopolitics', 'Disaster'].includes(a.category));
-  if (!intel.length) { el.innerHTML = '<div class="sr-empty">No intel articles</div>'; return; }
-  el.innerHTML = intel.slice(0, 20).map(a => `<div class="sr-intel-item">
+  if (!intel.length) { _patchInnerHTML(el, '<div class="sr-empty">No intel articles</div>'); return; }
+  const _ihtml = intel.slice(0, 20).map(a => `<div class="sr-intel-item">
     <span class="sr-intel-src">${escapeHtml(a.category)}</span>
     <div class="sr-intel-body">
       <a href="${escapeAttr(a.link || '#')}" target="_blank" rel="noopener" class="sr-intel-title">${escapeHtml(a.title)}</a>
       <div class="sr-intel-meta">${escapeHtml(a.source_name || '')}</div>
     </div>
   </div>`).join('');
+  _patchInnerHTML(el, _ihtml);
 }
 
 /* ─── Status Dot ─── */
@@ -3420,7 +3428,7 @@ async function loadSitroomOutages() {
     el.innerHTML = buildSitroomEmptyState('No major internet disruptions tracked', 'Nothing notable is currently cached for the active watchfloor.', 'Keep the desk refreshed for new outage intelligence.', {icon: '&#128246;'});
     return;
   }
-  el.innerHTML = d.outages.map(o => {
+  const _ohtml = d.outages.map(o => {
     const det = _parseSitroomDetailJson(o.detail_json);
     return `<div class="sitroom-event-item">
       <span class="sitroom-mag sitroom-mag-net">NET</span>
@@ -3430,6 +3438,7 @@ async function loadSitroomOutages() {
       </div>
     </div>`;
   }).join('');
+  _patchInnerHTML(el, _ohtml);
 }
 
 /* ─── Fear & Greed Gauge ─── */
@@ -3513,8 +3522,8 @@ async function loadSitroomFires() {
   const d = await safeFetch('/api/sitroom/fires?limit=50', {}, null);
   const el = document.getElementById('sitroom-fires-list');
   if (!el) return;
-  if (!d || !d.fires?.length) { el.innerHTML = '<div class="sr-empty">No fire data</div>'; return; }
-  el.innerHTML = d.fires.slice(0, 30).map(f => {
+  if (!d || !d.fires?.length) { _patchInnerHTML(el, '<div class="sr-empty">No fire data</div>'); return; }
+  const _fhtml = d.fires.slice(0, 30).map(f => {
     const det = _parseSitroomDetailJson(f.detail_json);
     const bright = f.magnitude ? f.magnitude.toFixed(0) + 'K' : '?';
     return `<div class="sitroom-event-item">
@@ -3525,6 +3534,7 @@ async function loadSitroomFires() {
       </div>
     </div>`;
   }).join('');
+  _patchInnerHTML(el, _fhtml);
 }
 
 /* ─── Disease Outbreaks ─── */
@@ -3532,8 +3542,8 @@ async function loadSitroomDiseases() {
   const d = await safeFetch('/api/sitroom/diseases', {}, null);
   const el = document.getElementById('sitroom-diseases-list');
   if (!el) return;
-  if (!d || !d.outbreaks?.length) { el.innerHTML = '<div class="sr-empty">No outbreak data</div>'; return; }
-  el.innerHTML = d.outbreaks.map(o => {
+  if (!d || !d.outbreaks?.length) { _patchInnerHTML(el, '<div class="sr-empty">No outbreak data</div>'); return; }
+  const _dhtml = d.outbreaks.map(o => {
     const det = _parseSitroomDetailJson(o.detail_json);
     return `<div class="sitroom-event-item">
       <div class="sitroom-event-info">
@@ -3543,6 +3553,7 @@ async function loadSitroomDiseases() {
       ${o.source_url ? `<a href="${escapeAttr(o.source_url)}" target="_blank" rel="noopener" class="sitroom-event-link">&#8599;</a>` : ''}
     </div>`;
   }).join('');
+  _patchInnerHTML(el, _dhtml);
 }
 
 /* ─── Panel Drag Reorder ─── */
@@ -3639,7 +3650,7 @@ async function loadSitroomTimeline() {
   const el = document.getElementById('sitroom-timeline');
   if (!el) return;
   const d = await safeFetch('/api/sitroom/events?limit=50', {}, null);
-  if (!d || !d.events?.length) { el.innerHTML = '<div class="sr-empty">No events for timeline</div>'; return; }
+  if (!d || !d.events?.length) { _patchInnerHTML(el, '<div class="sr-empty">No events for timeline</div>'); return; }
 
   // Sort by cached_at descending, take latest 20
   const events = d.events.slice(0, 20);
@@ -3656,7 +3667,7 @@ async function loadSitroomTimeline() {
       <div class="sr-timeline-type">${escapeHtml(typeLabel)}</div>
     </div>`;
   }).join('') + '</div>';
-  el.innerHTML = html;
+  _patchInnerHTML(el, html);
 }
 
 /* ─── Auto-Refresh Progress Bar ─── */

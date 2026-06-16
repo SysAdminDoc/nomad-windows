@@ -81,7 +81,7 @@
             </div>
           </div>
         </div>
-        <div class="settings-panel-copy settings-mini-note">Current operating mode: <strong id="settings-mode-label" class="settings-summary-accent">Command Center</strong> &middot; Shortcuts: 1-9 switch tabs, Ctrl+K opens the command palette, Ctrl+/ opens the copilot.</div>
+        <div class="settings-panel-copy settings-mini-note">Current operating mode: <strong id="settings-mode-label" class="settings-summary-accent">Command Center</strong> &middot; Keep startup desks, pinned lanes, and return points explicit.</div>
       </div>
       <div class="settings-card settings-memory-card settings-span-full">
         <div class="settings-memory-head">
@@ -211,7 +211,7 @@
             <span class="setting-label">Theme</span>
             <span class="setting-value settings-inline-actions settings-theme-row">
               <span id="active-theme-dot" class="settings-theme-dot"></span>
-              <span id="active-theme-label" class="settings-theme-name">Atlas</span>
+              <span id="active-theme-label" class="settings-theme-name">Midnight</span>
               <div class="theme-switcher settings-theme-switcher">
                 <button type="button" class="theme-btn" data-t="nomad" data-theme-select="nomad" title="Atlas (Light)" aria-label="Atlas light theme" aria-pressed="false"></button>
                 <button type="button" class="theme-btn" data-t="nightops" data-theme-select="nightops" title="Midnight (Dark)" aria-label="Midnight dark theme" aria-pressed="false"></button>
@@ -743,8 +743,8 @@
             <div class="settings-summary-card"><strong class="settings-summary-accent">5 Preparedness Lanes</strong><br>Coordinate, Sustain, Care &amp; People, Protect &amp; Secure, and Reference &amp; Planning organize the preparedness workspace around situations instead of modules.</div>
           </div>
           <div class="settings-shortcuts-copy">
-            <strong class="settings-summary-accent">Keyboard Shortcuts:</strong>
-              Alt+1-9 primary workspaces | Alt+T timers | Alt+C chat | Alt+N new note | Ctrl+K command palette
+            <strong class="settings-summary-accent">Command Help:</strong>
+              Use the sidebar, Home shelf, command palette, and utility dock for direct navigation without memorizing controls.
           </div>
         </div>
       </div>
@@ -769,7 +769,7 @@
   </div>
   <div class="copilot-dock-bar">
     <span class="copilot-dock-label">AI Copilot</span>
-    <input type="text" id="copilot-input" name="copilot_query" data-enter-action="ask-copilot" aria-label="AI Copilot question input" autocomplete="off" placeholder="Ask about supplies, team, medical, or power… (Ctrl+/)">
+    <input type="text" id="copilot-input" name="copilot_query" data-enter-action="ask-copilot" aria-label="AI Copilot question input" autocomplete="off" placeholder="Ask about supplies, team, medical, or power...">
     <button class="btn btn-sm copilot-voice-btn" type="button" data-shell-action="voice-input" data-voice-target="copilot-input" title="Voice input (single question)" id="copilot-voice-btn" aria-label="Voice input for copilot">&#127908;</button>
     <button class="btn btn-sm copilot-handsfree-btn" type="button" data-shell-action="toggle-handsfree" title="Hands-free conversation mode" id="copilot-handsfree-btn" aria-label="Toggle hands-free voice conversation" aria-pressed="false" data-state="idle">&#128266;</button>
     <button class="btn btn-sm btn-primary copilot-ask-btn" type="button" data-shell-action="ask-copilot" aria-label="Ask AI Copilot">Ask</button>

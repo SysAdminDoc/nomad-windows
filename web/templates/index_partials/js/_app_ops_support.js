@@ -56,7 +56,7 @@ function showHelp(section) {
     <a href="#themes">13. Themes</a>
     <a href="#settings">14. Settings &amp; Backup</a>
     <a href="#benchmark">15. Diagnostics</a>
-    <a href="#keyboard">16. Keyboard Shortcuts</a>
+    <a href="#command-help">16. Command Help</a>
     <a href="#data">17. Data &amp; Privacy</a>
     <a href="#troubleshooting">18. Troubleshooting</a>
     <a href="#day-one">19. Day One Checklist</a>
@@ -278,14 +278,14 @@ function showHelp(section) {
   <h2 id="benchmark">15. Diagnostics</h2>
   <p>Test your system's CPU, memory, disk, and AI performance. Results are scored 0-100 (NOMAD Score). Run it periodically to confirm your hardware is performing well. Trend arrows show whether performance improved or declined since the last run.</p>
 
-  <h2 id="keyboard">16. Keyboard Shortcuts</h2>
-  <table><tr><th>Shortcut</th><th>Action</th></tr>
-  <tr><td><kbd>Alt+1</kbd> through <kbd>Alt+9</kbd></td><td>Switch between the primary workspaces</td></tr>
-  <tr><td><kbd>Alt+T</kbd></td><td>Open/close the timer widget</td></tr>
-  <tr><td><kbd>Alt+C</kbd></td><td>Open/close LAN chat</td></tr>
-  <tr><td><kbd>Alt+N</kbd></td><td>Create a new note</td></tr>
-  <tr><td><kbd>Ctrl+K</kbd></td><td>Open the command palette</td></tr>
-  <tr><td><kbd>Escape</kbd></td><td>Close any open overlay, panel, or dialog</td></tr></table>
+  <h2 id="command-help">16. Command Help</h2>
+  <p>NOMAD exposes primary movement through visible controls: the sidebar, Home shelf, command palette, persistent copilot dock, and utility buttons.</p>
+  <table><tr><th>Surface</th><th>Use it for</th></tr>
+  <tr><td><strong>Sidebar</strong></td><td>Move between primary workspaces and confirm the active desk.</td></tr>
+  <tr><td><strong>Home Shelf</strong></td><td>Reopen pinned desks, recent return points, and suggested next actions.</td></tr>
+  <tr><td><strong>Command Palette</strong></td><td>Search workspaces, notes, supplies, contacts, and available actions from one place.</td></tr>
+  <tr><td><strong>Utility Dock</strong></td><td>Open timers, LAN chat, and copilot tools without leaving the current desk.</td></tr>
+  <tr><td><strong>Settings</strong></td><td>Set the startup desk, theme, backups, models, and local preferences.</td></tr></table>
 
   <h2 id="data">17. Data &amp; Privacy</h2>
   <p><strong>All data stays on your computer.</strong> NOMAD has zero telemetry, zero cloud connections, and zero tracking. The only time it connects to the internet is when YOU choose to download services, content packs, or AI models.</p>
@@ -310,7 +310,7 @@ function showHelp(section) {
   <h3>Content packs are stuck downloading</h3>
   <p>Check your internet connection. Downloads resume where they left off if interrupted. If a download is truly stuck, restart the application.</p>
   <h3>Everything appears frozen / buttons do nothing</h3>
-  <p>Try pressing <kbd>Ctrl+Shift+R</kbd> to force-reload the page. If running from the portable exe, make sure you are running the latest version from the releases page.</p>
+  <p>Use your browser's reload control to refresh the page. If running from the portable exe, make sure you are running the latest version from the releases page.</p>
   <h3>LAN access from other devices</h3>
   <p>Other devices on your network can access NOMAD by opening a browser and going to <code>http://YOUR_IP:8080</code>. Your LAN address is shown in the Settings tab. Make sure your firewall allows port 8080.</p>
   <h3>Need more help?</h3>
@@ -5120,7 +5120,7 @@ function toggleCustomizePanel() {
 }
 
 function updateCustomizeTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || 'nomad';
+  const current = document.documentElement.getAttribute('data-theme') || 'nightops';
   document.querySelectorAll('.customize-theme-card').forEach(c => c.classList.toggle('active', c.dataset.theme === current));
 }
 
@@ -5186,7 +5186,7 @@ function resetCustomization() {
   localStorage.removeItem('nomad-customize');
   applyCustomizeState({});
   // Reset theme and zoom
-  setTheme('nomad');
+  setTheme('nightops');
   setUIZoom('default');
   setDensity('compact');
   setMode('command');

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#4f9cf7">
+<meta name="theme-color" content="#111827">
 <title>{{ page_title }} · NOMAD Field Desk v{{ version }}</title>
 <script>
 (() => {
@@ -17,10 +17,10 @@
   try {
     const savedTheme = localStorage.getItem('nomad-theme');
     const savedDensity = localStorage.getItem('nomad-density') || 'compact';
-    // Project default is the light "nomad" theme regardless of OS preference.
-    const theme = savedTheme || 'nomad';
+    // Project default is the dark "nightops" theme regardless of OS preference.
+    const theme = savedTheme || 'nightops';
     document.documentElement.setAttribute('data-density', savedDensity);
-    if (theme && theme !== 'nomad') {
+    if (theme) {
       document.documentElement.setAttribute('data-theme', theme);
     }
   } catch (_) {}

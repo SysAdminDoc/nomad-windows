@@ -90,21 +90,21 @@
     <!-- Page 1: Welcome -->
     <div id="wiz-page-1" class="wizard-page">
       <img src="/static/logo.png" alt="NOMAD logo" class="wizard-logo" width="100" height="100">
-      <h2 class="shimmer-text">Stand up the desk before the network becomes the problem.</h2>
-      <p class="subtitle">NOMAD brings planning, reference, maps, and local coordination into one offline-first workspace. After setup, the desk keeps working even when the connection does not.</p>
+      <h2 class="shimmer-text">Set up the field desk before the network becomes the problem.</h2>
+      <p class="subtitle">NOMAD brings planning, reference, maps, and local coordination into one offline-first workspace. Choose the essentials now; the desk keeps working when the connection does not.</p>
       <div class="wizard-capability-grid">
-        <div class="wizard-capability-card"><div class="wizard-capability-icon">&#129504;</div><strong>Private Copilot</strong><span>Local AI with your tools and context already in view</span></div>
-        <div class="wizard-capability-card"><div class="wizard-capability-icon">&#128218;</div><strong>Reference Library</strong><span>Medical, survival, and field references kept offline</span></div>
-        <div class="wizard-capability-card"><div class="wizard-capability-icon">&#127759;</div><strong>Field Maps</strong><span>Regional maps, waypoints, and route planning without cloud dependence</span></div>
-        <div class="wizard-capability-card"><div class="wizard-capability-icon">&#128203;</div><strong>Decision Support</strong><span>Checklists, inventory, and protocols organized into one desk</span></div>
-        <div class="wizard-capability-card"><div class="wizard-capability-icon">&#128225;</div><strong>Local Coordination</strong><span>LAN chat, comms references, and handoff tools for the team</span></div>
-        <div class="wizard-capability-card"><div class="wizard-capability-icon">&#128274;</div><strong>Secure Archive</strong><span>Protected storage for the documents you cannot afford to lose</span></div>
+        <div class="wizard-capability-card"><div class="wizard-capability-icon" aria-hidden="true">&#129504;</div><strong>Private Copilot</strong><span>Local AI with your tools and context already in view</span></div>
+        <div class="wizard-capability-card"><div class="wizard-capability-icon" aria-hidden="true">&#128218;</div><strong>Reference Library</strong><span>Medical, survival, and field references kept offline</span></div>
+        <div class="wizard-capability-card"><div class="wizard-capability-icon" aria-hidden="true">&#127759;</div><strong>Field Maps</strong><span>Regional maps, waypoints, and route planning without cloud dependence</span></div>
+        <div class="wizard-capability-card"><div class="wizard-capability-icon" aria-hidden="true">&#128203;</div><strong>Decision Support</strong><span>Checklists, inventory, and protocols organized into one desk</span></div>
+        <div class="wizard-capability-card"><div class="wizard-capability-icon" aria-hidden="true">&#128225;</div><strong>Local Coordination</strong><span>LAN chat, comms references, and handoff tools for the team</span></div>
+        <div class="wizard-capability-card"><div class="wizard-capability-icon" aria-hidden="true">&#128274;</div><strong>Secure Archive</strong><span>Protected storage for documents you cannot afford to lose</span></div>
       </div>
       <div class="wizard-actions wizard-actions-center">
         <button class="btn btn-primary wizard-cta-btn" type="button" data-shell-action="wiz-go-page" data-wiz-page="2">Start Guided Setup</button>
         <button class="btn" type="button" data-shell-action="skip-wizard">Skip for Now</button>
       </div>
-      <div class="wizard-note">Most desks are ready in 5-30 minutes, depending on the content you choose and the speed of the current connection.</div>
+      <div class="wizard-note">Most desks are ready in 5-30 minutes. Start with a lean baseline, then add larger packs when bandwidth allows.</div>
     </div>
 
     <!-- Page 2: Storage Location -->
@@ -121,7 +121,7 @@
         <label class="wizard-field-label">Or choose a specific folder:</label>
         <div class="wizard-inline-form">
           <input id="wiz-custom-path" name="wizard_custom_path" class="wizard-input" autocomplete="off" aria-label="Custom data path" placeholder="e.g. D:\NOMAD">
-          <button class="btn btn-sm" type="button" data-shell-action="wiz-set-custom-path">Use This Path</button>
+          <button class="btn btn-sm" type="button" data-shell-action="wiz-set-custom-path">Use Path</button>
         </div>
       </div>
       <div id="wiz-storage-status" class="wizard-status-line"></div>
@@ -161,7 +161,7 @@
       </div>
       <div class="wizard-actions wizard-actions-between">
         <button class="btn" type="button" data-shell-action="wiz-go-page" data-wiz-page="2">Back</button>
-        <button class="btn btn-primary wizard-cta-btn wizard-cta-btn-sm" type="button" data-shell-action="wiz-start-setup">Download Everything Selected</button>
+        <button class="btn btn-primary wizard-cta-btn wizard-cta-btn-sm" type="button" data-shell-action="wiz-start-setup">Download Selected Packs</button>
       </div>
     </div>
 
@@ -195,7 +195,7 @@
     <!-- Page 5: Complete -->
     <div id="wiz-page-5" class="wizard-page is-hidden">
       <h2 class="wizard-complete-title">NOMAD is ready.</h2>
-      <p class="subtitle">Everything is installed, downloaded, and running. You're fully operational — even without internet.</p>
+      <p class="subtitle">Everything selected is installed, downloaded, and running. The desk is ready to operate without internet.</p>
       <div id="wiz-summary" class="wizard-summary-grid"></div>
       <div id="wiz-error-summary" class="wizard-error-summary is-hidden"></div>
       <div class="wizard-checklist">

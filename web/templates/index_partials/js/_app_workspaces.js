@@ -1595,7 +1595,7 @@ function setMapTileSource(value) {
   localStorage.setItem('nomad-map-tiles', value);
   if (!_map) return;
   if (value === 'auto') {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'nomad';
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'nightops';
     applyMapThemeTiles(currentTheme);
     toast('Map tiles: Auto (matching app theme)', 'info');
   } else if (value === 'offline') {
@@ -1750,7 +1750,7 @@ function initMap() {
     // Keep the offline basemap style as-is
   } else {
     const tileKey = (savedTiles === 'auto')
-      ? (THEME_TO_TILE[document.documentElement.getAttribute('data-theme') || 'nomad'] || 'dark')
+      ? (THEME_TO_TILE[document.documentElement.getAttribute('data-theme') || 'nightops'] || 'dark')
       : savedTiles;
     const tileDef = MAP_TILE_THEMES[tileKey];
     if (tileDef) {

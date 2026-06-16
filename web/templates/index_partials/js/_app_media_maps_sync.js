@@ -3992,7 +3992,7 @@ function checkNightMode() {
     const hour = new Date().getHours();
     isNight = hour >= 21 || hour < 6;
   }
-  const currentTheme = localStorage.getItem('nomad-theme') || 'nomad';
+  const currentTheme = localStorage.getItem('nomad-theme') || 'nightops';
   if (isNight && !_nightModeApplied) {
     _nightModeApplied = true;
     if (currentTheme !== 'redlight') {
@@ -4002,7 +4002,7 @@ function checkNightMode() {
   } else if (!isNight && _nightModeApplied) {
     _nightModeApplied = false;
     if (currentTheme === 'redlight') {
-      const prev = localStorage.getItem('nomad-pre-night-theme') || 'nomad';
+      const prev = localStorage.getItem('nomad-pre-night-theme') || 'nightops';
       setTheme(prev);
     }
   }

@@ -1561,7 +1561,7 @@
       }
 
       function syncTheme() {
-        var theme = document.documentElement.getAttribute('data-theme') || 'nomad';
+        var theme = document.documentElement.getAttribute('data-theme') || 'nightops';
         if (themeLabel) themeLabel.textContent = themeNames[theme] || theme;
 
         if (!(window.NM && NM.LayerSwitcher && NM.LayerSwitcher.map && typeof NM.LayerSwitcher.switchTo === 'function')) {

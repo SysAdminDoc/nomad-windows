@@ -549,11 +549,11 @@ document.addEventListener('keydown', e => {
 });
 (function initTheme() {
   let saved = localStorage.getItem('nomad-theme');
-  // Project default is the light "nomad" theme regardless of OS preference.
+  // Project default is the dark "nightops" theme regardless of OS preference.
   if (!saved) {
-    saved = 'nomad';
+    saved = 'nightops';
   }
-  if (saved !== 'nomad') document.documentElement.setAttribute('data-theme', saved);
+  document.documentElement.setAttribute('data-theme', saved);
   document.querySelectorAll('.theme-btn').forEach(b => {
     const active = b.dataset.t === saved;
     b.classList.toggle('active', active);

@@ -34,7 +34,7 @@
 .home-launch-title {
   font-size: clamp(24px, 2.4vw, 34px) !important;
   line-height: 1.12 !important;
-  letter-spacing: -0.025em !important;
+  letter-spacing: 0 !important;
   max-width: 32ch !important;
 }
 .home-launch-text {
@@ -239,4 +239,277 @@ body.situation-room-active:not([data-theme]) {
   background: #ffffff !important;
   border: 1px solid #666666 !important;
   color: #000000 !important;
+}
+
+/* --------------------------------------------------------------------------
+ * Premium system pass: dark-first defaults, squared text chips, calmer states.
+ * -------------------------------------------------------------------------- */
+
+:where(.btn, .compact-action-btn, .utility-chip-btn, .command-palette-shortcuts-btn) {
+  border-radius: 8px !important;
+}
+
+:where(
+  .home-launch-chip,
+  .sidebar-context-badge,
+  .workspace-context-state-pill,
+  .workspace-context-group,
+  .workspace-context-detail,
+  .workspace-context-quick-action,
+  .workspace-inspector-action,
+  .shell-status-inline,
+  .shell-flag,
+  .shell-health-pill,
+  .shell-health-count,
+  .settings-command-pill,
+  .settings-mode-badge,
+  .settings-memory-item-badge,
+  .settings-version-pill,
+  .settings-log-badge,
+  .settings-conflict-badge,
+  .settings-sync-card #node-id-badge,
+  .settings-sync-card #offline-sync-badge,
+  .ss-pill,
+  .status-strip,
+  .badge,
+  .readiness-pill,
+  .prep-status-badge,
+  .scan-badge,
+  .chat-kb-badge,
+  .convo-branch-badge,
+  .chat-status-badge,
+  .media-torrent-badge,
+  .journal-mood-badge,
+  .journal-tag-badge,
+  .note-tag-badge,
+  .command-palette-preview-badge,
+  .copilot-voice-state-badge,
+  .chat-queued-indicator,
+  .rule-operator,
+  .wizard-storage-chip,
+  .wizard-custom-chip,
+  .sr-posture-chip,
+  .sr-newsdesk-chip,
+  .sr-summary-chip,
+  .sr-feed-badge,
+  .sr-saved-desk-chip,
+  .kb-detail-entity-chip,
+  .nukemap-theme-chip,
+  .viptrack-theme-chip,
+  .library-command-pill,
+  .benchmark-command-pill,
+  .dl-command-pill,
+  .go-command-pill,
+  .mp-command-pill,
+  .dl-sub-tab,
+  .go-sub-tab,
+  .mp-sub-tab
+) {
+  border-radius: 8px !important;
+}
+
+#tab-situation-room :where(
+  .sr-btn,
+  .sr-view-btn,
+  .sr-desk-btn,
+  .sr-posture-template-btn,
+  .sr-newsdesk-btn,
+  .sr-layer-preset-btn,
+  .sr-newsdesk-mode-btn,
+  .sr-region-btn,
+  .sr-filter-pill,
+  .sr-filter-chip,
+  .sr-source-pill,
+  .sr-mode-pill,
+  .sr-feed-chip,
+  .sr-posture-chip,
+  .sr-newsdesk-chip,
+  .sr-summary-chip
+) {
+  border-radius: 8px !important;
+  letter-spacing: 0 !important;
+}
+
+.wizard-overlay {
+  background: color-mix(in srgb, #020617 78%, transparent) !important;
+  backdrop-filter: blur(18px) saturate(118%);
+  z-index: var(--z-frame-overlay, 20000) !important;
+}
+
+body:has(#wizard:not([hidden])) .main-content {
+  z-index: var(--z-frame-overlay, 20000) !important;
+}
+
+.wizard-card-shell,
+.wizard-card {
+  border-radius: 12px !important;
+}
+
+.wizard-card-shell {
+  width: min(760px, calc(100vw - 32px)) !important;
+  max-width: min(760px, calc(100vw - 32px)) !important;
+  padding: clamp(22px, 3vw, 34px) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border)) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 94%, transparent)),
+    var(--surface-panel) !important;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.44) !important;
+}
+
+.wizard-logo {
+  width: 72px !important;
+  height: 72px !important;
+  margin-bottom: 2px !important;
+}
+
+.wizard-card h2 {
+  max-width: 22ch !important;
+  margin-inline: auto !important;
+  font-size: clamp(24px, 3vw, 32px) !important;
+  line-height: 1.12 !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
+}
+
+.wizard-card .subtitle {
+  max-width: 58ch !important;
+  margin-bottom: 16px !important;
+  color: var(--text-dim) !important;
+  font-size: 14px !important;
+  line-height: 1.62 !important;
+}
+
+.wizard-capability-grid {
+  gap: 10px !important;
+  margin: 12px 0 8px !important;
+}
+
+.wizard-capability-card {
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-items: start !important;
+  gap: 3px 10px !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  border-color: color-mix(in srgb, var(--border) 78%, var(--accent) 22%) !important;
+  background: color-mix(in srgb, var(--surface2) 88%, transparent) !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+.wizard-capability-card strong,
+.wizard-capability-card span {
+  grid-column: 2 !important;
+}
+
+.wizard-capability-icon {
+  grid-row: 1 / span 2 !important;
+  display: grid !important;
+  width: 34px !important;
+  height: 34px !important;
+  place-items: center !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--accent) 14%, transparent) !important;
+  font-size: 18px !important;
+}
+
+.wizard-note,
+.wizard-stall-note,
+.wizard-checklist,
+.wizard-progress-card,
+.wizard-tier-detail-shell,
+.wizard-custom-panel,
+.wizard-summary-card,
+.wizard-error-summary-card {
+  border-radius: 8px !important;
+}
+
+.wizard-note {
+  max-width: 58ch !important;
+  margin-inline: auto !important;
+  padding: 10px 12px !important;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--accent) 24%) !important;
+  background: color-mix(in srgb, var(--surface2) 78%, transparent) !important;
+  color: var(--text-dim) !important;
+}
+
+.wizard-drive-card,
+.wizard-tier-card,
+.wizard-progress-card,
+.wizard-summary-card,
+.settings-summary-card,
+.home-mode-card,
+.home-surface-panel,
+.command-palette-dialog,
+.shortcuts-dialog {
+  border-radius: 10px !important;
+}
+
+.wizard-drive-card:hover,
+.wizard-tier-card:hover,
+.home-mode-card:hover {
+  transform: translateY(-1px);
+}
+
+:where(button, [role="button"], a, input, select, textarea):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 72%, #ffffff 28%) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent) !important;
+}
+
+:where(
+  .ag-empty,
+  .hw-empty,
+  .ti-empty,
+  .tl-empty,
+  .water-empty,
+  .hf-empty,
+  .dl-empty,
+  .go-empty,
+  .mp-empty,
+  .media-empty,
+  .library-empty,
+  .notes-empty,
+  .readiness-empty,
+  .workspace-actions-empty,
+  .shortcuts-no-results,
+  .command-palette-empty
+) {
+  padding: 16px !important;
+  border: 1px dashed color-mix(in srgb, var(--border) 74%, var(--accent) 26%) !important;
+  border-radius: 10px !important;
+  background: color-mix(in srgb, var(--surface2) 78%, transparent) !important;
+  color: var(--text-dim) !important;
+  line-height: 1.55 !important;
+}
+
+@media (max-width: 700px) {
+  .wizard-card-shell {
+    width: min(100vw - 18px, 760px) !important;
+    max-width: calc(100vw - 18px) !important;
+    max-height: calc(100dvh - 18px) !important;
+    padding: 16px !important;
+  }
+
+  .wizard-card h2 {
+    font-size: 24px !important;
+  }
+
+  .wizard-capability-card {
+    grid-template-columns: 32px minmax(0, 1fr) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wizard-overlay,
+  .wizard-card,
+  .wizard-drive-card,
+  .wizard-tier-card,
+  .home-mode-card,
+  .command-palette-dialog,
+  .shortcuts-dialog {
+    animation: none !important;
+    transition: none !important;
+  }
 }

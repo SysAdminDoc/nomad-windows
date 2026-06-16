@@ -11,12 +11,12 @@
     <div class="command-palette-input-shell">
       <span class="command-palette-input-icon" aria-hidden="true">&#128269;</span>
       <input id="command-palette-input" class="command-palette-input" type="search" name="command_palette_query" autocomplete="off" role="combobox" aria-label="Search commands and records" aria-autocomplete="list" aria-controls="command-palette-results" aria-expanded="false" placeholder="Search commands, notes, supplies, contacts…">
-      <button class="btn btn-sm btn-ghost command-palette-shortcuts-btn" type="button" data-shell-action="toggle-shortcuts" aria-label="Open keyboard shortcuts help">?</button>
+      <button class="btn btn-sm btn-ghost command-palette-shortcuts-btn" type="button" data-shell-action="toggle-shortcuts" aria-label="Open command help">?</button>
     </div>
     <div class="command-palette-meta">
-      <span>Enter to open</span>
-      <span>&uarr;&darr; to move</span>
-      <span>Esc to close</span>
+      <span>Type to filter</span>
+      <span>Select a result to open</span>
+      <span>Preview before jumping</span>
     </div>
     <div id="command-palette-preview" class="command-palette-preview" aria-live="polite">
       <div class="command-palette-preview-card">
@@ -38,52 +38,52 @@
 <div id="shortcuts-overlay" class="shortcuts-overlay" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" aria-hidden="true" hidden>
   <div class="shortcuts-dialog">
     <div class="shortcuts-header">
-      <h3 id="shortcuts-title" class="shortcuts-title">Keyboard Shortcuts</h3>
-      <button class="btn btn-sm btn-ghost shortcuts-close" type="button" data-shell-action="toggle-shortcuts" aria-label="Close keyboard shortcuts help">&#10005;</button>
+      <h3 id="shortcuts-title" class="shortcuts-title">Command Help</h3>
+      <button class="btn btn-sm btn-ghost shortcuts-close" type="button" data-shell-action="toggle-shortcuts" aria-label="Close command help">&#10005;</button>
     </div>
-    <p class="shortcuts-copy">Keep your hands on the keyboard while moving between desks, notes, and the utility layer.</p>
-    <input id="shortcuts-search" name="shortcuts-search" class="shortcuts-search" type="search" placeholder="Filter shortcuts…" autocomplete="off" aria-label="Filter keyboard shortcuts">
+    <p class="shortcuts-copy">Use visible controls to move between desks, notes, utility panels, and search without memorizing hidden commands.</p>
+    <input id="shortcuts-search" name="shortcuts-search" class="shortcuts-search" type="search" placeholder="Filter actions..." autocomplete="off" aria-label="Filter command help">
     <div id="shortcuts-sections" class="shortcuts-sections">
       <div class="shortcuts-section" data-shortcut-section="Navigation">
         <div class="shortcuts-section-title">Navigation</div>
         <div class="shortcuts-grid">
-          <kbd class="shortcuts-key">Alt + 1</kbd><span>Home / Services</span>
-          <kbd class="shortcuts-key">Alt + 2</kbd><span>Readiness</span>
-          <kbd class="shortcuts-key">Alt + 3</kbd><span>Preparedness</span>
-          <kbd class="shortcuts-key">Alt + 4</kbd><span>AI Chat</span>
-          <kbd class="shortcuts-key">Alt + 5</kbd><span>Library</span>
-          <kbd class="shortcuts-key">Alt + 6</kbd><span>Maps</span>
-          <kbd class="shortcuts-key">Alt + 7</kbd><span>Notes</span>
-          <kbd class="shortcuts-key">Alt + 8</kbd><span>Media</span>
-          <kbd class="shortcuts-key">Alt + 9</kbd><span>Settings</span>
+          <span class="shortcuts-key">Home</span><span>Search, pinned desks, recent work, and work lanes</span>
+          <span class="shortcuts-key">Readiness</span><span>Priority gaps, dashboard scores, and next actions</span>
+          <span class="shortcuts-key">Preparedness</span><span>Inventory, checklists, protocols, and care lanes</span>
+          <span class="shortcuts-key">AI Chat</span><span>Ask local models with workspace context</span>
+          <span class="shortcuts-key">Library</span><span>Open offline reference packs and documents</span>
+          <span class="shortcuts-key">Maps</span><span>Use offline maps, waypoints, and route planning</span>
+          <span class="shortcuts-key">Notes</span><span>Capture, tag, and reopen field notes</span>
+          <span class="shortcuts-key">Media</span><span>Manage local media and offline downloads</span>
+          <span class="shortcuts-key">Settings</span><span>Backups, themes, startup desk, models, and system status</span>
         </div>
       </div>
       <div class="shortcuts-section" data-shortcut-section="Global">
         <div class="shortcuts-section-title">Global</div>
         <div class="shortcuts-grid">
-          <kbd class="shortcuts-key">Ctrl + K</kbd><span>Open command palette / global find</span>
-          <kbd class="shortcuts-key">Ctrl + /</kbd><span>Focus AI copilot dock</span>
-          <kbd class="shortcuts-key">Escape</kbd><span>Close active modal or overlay</span>
-          <kbd class="shortcuts-key">?</kbd><span>Toggle this shortcut cheat sheet</span>
+          <span class="shortcuts-key">Global Find</span><span>Open the command palette from Home or the sidebar</span>
+          <span class="shortcuts-key">Copilot Dock</span><span>Ask the assistant from the persistent bottom bar</span>
+          <span class="shortcuts-key">Close</span><span>Use visible close buttons on overlays and dialogs</span>
+          <span class="shortcuts-key">Help</span><span>Open this guide from the command palette help button</span>
         </div>
       </div>
       <div class="shortcuts-section" data-shortcut-section="Quick Actions">
         <div class="shortcuts-section-title">Quick Actions</div>
         <div class="shortcuts-grid">
-          <kbd class="shortcuts-key">Alt + N</kbd><span>Start a new note</span>
-          <kbd class="shortcuts-key">Alt + T</kbd><span>Open timers panel</span>
-          <kbd class="shortcuts-key">Alt + C</kbd><span>Open LAN chat</span>
+          <span class="shortcuts-key">New Note</span><span>Start from Notes or the command palette</span>
+          <span class="shortcuts-key">Timers</span><span>Open the utility timer panel from the dock</span>
+          <span class="shortcuts-key">LAN Chat</span><span>Open local chat from the dock or utility controls</span>
         </div>
       </div>
       <div class="shortcuts-section" data-shortcut-section="Command Palette">
         <div class="shortcuts-section-title">Command Palette</div>
         <div class="shortcuts-grid">
-          <kbd class="shortcuts-key">&uarr; / &darr;</kbd><span>Move through results</span>
-          <kbd class="shortcuts-key">Enter</kbd><span>Open selected result</span>
-          <kbd class="shortcuts-key">Escape</kbd><span>Close palette</span>
+          <span class="shortcuts-key">Search</span><span>Filter workspaces, notes, supplies, contacts, and actions</span>
+          <span class="shortcuts-key">Preview</span><span>Review the current result before opening it</span>
+          <span class="shortcuts-key">Open</span><span>Select a result to jump directly into the right surface</span>
         </div>
       </div>
     </div>
-    <div id="shortcuts-no-results" class="shortcuts-no-results" hidden>No shortcuts match your filter.</div>
+    <div id="shortcuts-no-results" class="shortcuts-no-results" hidden>No actions match your filter.</div>
   </div>
 </div>

@@ -2240,6 +2240,175 @@ def api_self_test():
     return jsonify(results)
 
 
+_REDACT_KEYS = {'password', 'secret', 'token', 'api_key', 'auth_password',
+                '_derived_key', '_salt', 'CODESIGN', 'private_key'}
+
+
+def _redact_value(key, value):
+    """Return '***REDACTED***' if key looks like a secret."""
+    key_lower = (key or '').lower()
+    for pattern in _REDACT_KEYS:
+        if pattern.lower() in key_lower:
+            return '***REDACTED***'
+    return value
+
+
+@system_bp.route('/api/system/diagnostics/bundle', methods=['GET'])
+def api_diagnostics_bundle():
+    """Download a redacted diagnostics bundle for support troubleshooting."""
+    from datetime import datetime
+
+    bundle = {
+        'generated_at': datetime.now().isoformat(),
+        'version': config.Config.VERSION,
+        'platform': platform.platform(),
+        'python': platform.python_version(),
+        'arch': platform.machine(),
+    }
+
+    # System info (CPU, RAM, disk)
+    try:
+        import psutil
+        bundle['cpu_cores'] = os.cpu_count()
+        bundle['ram_total_mb'] = round(psutil.virtual_memory().total / (1024 * 1024))
+        bundle['ram_percent'] = psutil.virtual_memory().percent
+        bundle['disk_free_gb'] = round(shutil.disk_usage(get_data_dir()).free / (1024 ** 3), 2)
+        bundle['disk_total_gb'] = round(shutil.disk_usage(get_data_dir()).total / (1024 ** 3), 2)
+    except Exception:
+        bundle['cpu_cores'] = os.cpu_count()
+        try:
+            usage = shutil.disk_usage(get_data_dir())
+            bundle['disk_free_gb'] = round(usage.free / (1024 ** 3), 2)
+            bundle['disk_total_gb'] = round(usage.total / (1024 ** 3), 2)
+        except Exception:
+            pass
+
+    # SQLite diagnostics
+    bundle['sqlite'] = _sqlite_runtime_diagnostics()
+
+    # DB stats
+    try:
+        db_path = get_db_path()
+        bundle['db_size_mb'] = round(os.path.getsize(db_path) / (1024 * 1024), 2) if os.path.isfile(db_path) else 0
+        with db_session() as db:
+            tables = db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").fetchone()[0]
+            bundle['db_tables'] = tables
+    except Exception as e:
+        bundle['db_error'] = str(e)
+
+    # Data directory size
+    try:
+        bundle['data_dir'] = get_data_dir()
+        bundle['data_dir_size_mb'] = round(get_dir_size(get_data_dir()) / (1024 * 1024), 2)
+    except Exception:
+        pass
+
+    # Settings (redacted)
+    try:
+        with db_session() as db:
+            rows = db.execute('SELECT key, value FROM settings').fetchall()
+        safe_settings = {}
+        for r in rows:
+            k = r['key']
+            if k in SETTINGS_WHITELIST:
+                safe_settings[k] = r['value']
+            else:
+                safe_settings[k] = _redact_value(k, r['value'])
+        bundle['settings'] = safe_settings
+    except Exception as e:
+        bundle['settings_error'] = str(e)
+
+    # Service status
+    svc_status = {}
+    for svc_id in ['ollama', 'kiwix', 'cyberchef', 'kolibri', 'qdrant', 'stirling', 'flatnotes']:
+        try:
+            running = is_running(svc_id)
+            healthy = is_healthy(svc_id) if running else False
+            svc_status[svc_id] = {
+                'installed': os.path.isdir(os.path.join(get_services_dir(), svc_id)),
+                'running': running,
+                'healthy': healthy,
+            }
+        except Exception:
+            svc_status[svc_id] = {'installed': False, 'running': False, 'healthy': False}
+    bundle['services'] = svc_status
+
+    # Self-test summary
+    try:
+        checks = []
+        for svc_id, (url_tpl, expect_code) in SERVICE_HEALTH_URLS.items():
+            try:
+                healthy = is_healthy(svc_id)
+                checks.append({'name': f'service_{svc_id}', 'status': 'pass' if healthy else 'warn'})
+            except Exception:
+                checks.append({'name': f'service_{svc_id}', 'status': 'skip'})
+        sqlite_diag = bundle.get('sqlite', {})
+        checks.append({
+            'name': 'sqlite_security_floor',
+            'status': 'pass' if sqlite_diag.get('security_floor_met') else 'warn',
+        })
+        try:
+            with db_session() as db:
+                ic = db.execute('PRAGMA integrity_check(1)').fetchone()
+            checks.append({'name': 'db_integrity', 'status': 'pass' if ic and ic[0] == 'ok' else 'fail'})
+        except Exception:
+            checks.append({'name': 'db_integrity', 'status': 'fail'})
+        bundle['self_test'] = {'checks': checks}
+    except Exception:
+        bundle['self_test'] = {'status': 'unavailable'}
+
+    # Backup status
+    try:
+        backup_dir = os.path.join(os.path.dirname(get_db_path()), 'backups')
+        if os.path.isdir(backup_dir):
+            backups = sorted(
+                [f for f in os.listdir(backup_dir) if f.startswith('nomad_backup_')],
+                key=lambda f: os.path.getmtime(os.path.join(backup_dir, f)),
+                reverse=True,
+            )
+            bundle['backup_count'] = len(backups)
+            if backups:
+                latest = os.path.join(backup_dir, backups[0])
+                bundle['backup_latest'] = backups[0]
+                bundle['backup_latest_size_mb'] = round(os.path.getsize(latest) / (1024 * 1024), 2)
+                bundle['backup_latest_age_hours'] = round(
+                    (time.time() - os.path.getmtime(latest)) / 3600, 1
+                )
+        else:
+            bundle['backup_count'] = 0
+    except Exception:
+        pass
+
+    # Auto-backup config (redacted)
+    try:
+        with db_session() as db:
+            row = db.execute("SELECT value FROM settings WHERE key = 'auto_backup_config'").fetchone()
+        if row and row['value']:
+            ab_cfg = _safe_json_value(row['value'], {})
+            ab_cfg.pop('_derived_key', None)
+            ab_cfg.pop('_salt', None)
+            ab_cfg.pop('password', None)
+            ab_cfg['has_password'] = bool(ab_cfg.get('_derived_key'))
+            bundle['auto_backup_config'] = ab_cfg
+    except Exception:
+        pass
+
+    # Recent app log entries
+    try:
+        log_handlers = logging.getLogger('nomad').handlers + logging.getLogger('nomad.web').handlers
+        for handler in log_handlers:
+            if hasattr(handler, 'baseFilename') and os.path.isfile(handler.baseFilename):
+                with open(handler.baseFilename, 'r', encoding='utf-8', errors='replace') as f:
+                    lines = f.readlines()
+                bundle['recent_logs'] = [l.rstrip() for l in lines[-100:]]
+                break
+    except Exception:
+        pass
+
+    log_activity('diagnostics_bundle_downloaded')
+    return jsonify(bundle)
+
+
 @system_bp.route('/api/services/resources', methods=['GET'])
 def api_services_resources():
     """Get CPU, memory, and thread usage for all running services."""

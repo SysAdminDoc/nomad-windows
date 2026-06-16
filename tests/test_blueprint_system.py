@@ -359,3 +359,60 @@ class TestSystemSchemaValidation:
         resp = client.post('/api/qr/generate', json={'text': 'field note', 'size': True})
         assert resp.status_code == 400
         assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_qr_generate_returns_svg(self, client):
+        resp = client.post('/api/qr/generate', json={'text': 'http://127.0.0.1:8080', 'size': 220})
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['format'] in {'svg', 'svg_fallback'}
+        assert data['text'] == 'http://127.0.0.1:8080'
+        assert '<svg' in data['svg']
+
+
+class TestDiagnosticsBundle:
+    def test_bundle_returns_version_and_platform(self, client):
+        resp = client.get('/api/system/diagnostics/bundle')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert 'version' in data
+        assert 'platform' in data
+        assert 'python' in data
+        assert 'generated_at' in data
+
+    def test_bundle_includes_sqlite_diagnostics(self, client):
+        resp = client.get('/api/system/diagnostics/bundle')
+        data = resp.get_json()
+        assert 'sqlite' in data
+        assert 'runtime_version' in data['sqlite']
+
+    def test_bundle_includes_services(self, client):
+        resp = client.get('/api/system/diagnostics/bundle')
+        data = resp.get_json()
+        assert 'services' in data
+        assert isinstance(data['services'], dict)
+
+    def test_bundle_redacts_auth_password(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('auth_password', 'pbkdf2$600000$abc$def')")
+        db.commit()
+        resp = client.get('/api/system/diagnostics/bundle')
+        data = resp.get_json()
+        assert data['settings']['auth_password'] == '***REDACTED***'
+
+    def test_bundle_preserves_whitelisted_settings(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('theme', 'nightops')")
+        db.commit()
+        resp = client.get('/api/system/diagnostics/bundle')
+        data = resp.get_json()
+        assert data['settings']['theme'] == 'nightops'
+
+    def test_bundle_redacts_secret_keys(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('api_token_custom', 'sk-12345')")
+        db.commit()
+        resp = client.get('/api/system/diagnostics/bundle')
+        data = resp.get_json()
+        assert data['settings']['api_token_custom'] == '***REDACTED***'
+
+    def test_bundle_includes_self_test(self, client):
+        resp = client.get('/api/system/diagnostics/bundle')
+        data = resp.get_json()
+        assert 'self_test' in data

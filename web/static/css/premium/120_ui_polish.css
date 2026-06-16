@@ -513,3 +513,484 @@ body:has(#wizard:not([hidden])) .main-content {
     transition: none !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+ * Second premium pass: control surfaces, settings density, and overlays.
+ * -------------------------------------------------------------------------- */
+
+.settings-command-deck {
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  padding: 16px 18px !important;
+}
+
+.settings-command-deck-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(390px, 440px) !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+}
+
+.settings-command-title {
+  max-width: 30ch !important;
+  letter-spacing: 0 !important;
+  text-wrap: balance;
+}
+
+.settings-command-text {
+  max-width: 62ch !important;
+  line-height: 1.6 !important;
+}
+
+.settings-command-copy {
+  max-width: 54ch !important;
+}
+
+.settings-command-actions,
+.settings-memory-actions,
+.settings-panel-actions,
+.settings-panel-toolbar-wrap {
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.settings-command-actions {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  justify-content: end !important;
+  align-self: center !important;
+  width: min(440px, 100%) !important;
+  margin-left: auto !important;
+}
+
+.settings-memory-actions {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)) !important;
+  justify-content: end !important;
+  width: min(820px, 100%) !important;
+  margin-left: auto !important;
+}
+
+.settings-command-actions .btn,
+.settings-memory-actions .btn,
+.settings-panel-toolbar-wrap .btn,
+.settings-panel-actions .btn,
+.settings-inline-actions .btn {
+  min-height: 34px !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: normal !important;
+}
+
+.settings-command-pills {
+  gap: 6px !important;
+  margin-top: 14px !important;
+}
+
+:where(
+  .settings-command-pill,
+  .settings-mode-badge,
+  .settings-mode-metric,
+  .settings-memory-stat,
+  .settings-memory-card-item,
+  .settings-memory-item-icon,
+  .settings-memory-item-badge,
+  .settings-sync-indicator,
+  .settings-node-status > span,
+  .settings-inline-status,
+  .settings-update-status,
+  .settings-version-pill,
+  .settings-summary-card,
+  .command-palette-item,
+  .command-palette-preview-card,
+  .command-palette-preview-block,
+  .command-palette-preview-badge,
+  .utility-actions-menu,
+  .utility-quick-btn,
+  .utility-chip-btn,
+  .copilot-voice-state-badge,
+  .copilot-utility-btn-icon,
+  .home-continue-badge,
+  .inventory-checkout-chip,
+  .readiness-pill,
+  .tools-status-pill,
+  [class*="-command-pill"],
+  [class*="-status-pill"],
+  [class*="-summary-chip"],
+  [class*="-theme-chip"],
+  [class*="-sub-tab"]
+) {
+  border-radius: 8px !important;
+}
+
+.settings-mode-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.settings-workspace .mode-option {
+  min-height: 0 !important;
+  padding: 16px !important;
+  border-radius: 10px !important;
+  gap: 10px !important;
+}
+
+.settings-mode-topline {
+  align-items: flex-start !important;
+}
+
+.settings-mode-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  font-size: 18px !important;
+}
+
+.settings-mode-badge {
+  min-height: 20px !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  font-size: var(--text-xs, 10px) !important;
+  letter-spacing: 0 !important;
+  line-height: 1.2 !important;
+  text-transform: none !important;
+}
+
+.settings-command-pill {
+  min-height: 22px !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+}
+
+.settings-mode-title {
+  font-size: var(--text-md, 14px) !important;
+  letter-spacing: 0 !important;
+  line-height: 1.25 !important;
+  text-transform: none !important;
+}
+
+.settings-mode-subtitle,
+.settings-mode-copy {
+  font-size: var(--text-sm-md, 12px) !important;
+}
+
+.settings-mode-copy {
+  max-width: none !important;
+  line-height: 1.55 !important;
+}
+
+.settings-mode-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)) !important;
+  gap: 6px !important;
+}
+
+.settings-mode-metric {
+  align-items: center !important;
+  min-height: 34px !important;
+  padding: 7px 8px !important;
+  background: color-mix(in srgb, var(--surface-solid) 84%, transparent) !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+}
+
+.settings-mode-metric strong {
+  margin-right: 5px !important;
+  font-size: var(--text-sm-md, 12px) !important;
+}
+
+.settings-memory-stat,
+.settings-memory-card-item,
+.settings-summary-card {
+  border-radius: 10px !important;
+}
+
+.settings-memory-stat {
+  padding: 13px 14px !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 82%, transparent)) !important;
+}
+
+.settings-memory-stat-label,
+.settings-memory-item-meta,
+.command-palette-kicker,
+.command-palette-section-head,
+.command-palette-preview-kicker,
+.command-palette-preview-label,
+.workspace-kicker,
+.section-header-label {
+  letter-spacing: 0.04em !important;
+}
+
+.settings-workspace .setting-row {
+  gap: 12px !important;
+}
+
+.settings-workspace .setting-label {
+  line-height: 1.42 !important;
+}
+
+.settings-input,
+.settings-select,
+.settings-textarea,
+.preset-select,
+.search-input,
+.utility-panel-input,
+.utility-panel-select,
+.command-palette-input-shell {
+  border-radius: 8px !important;
+}
+
+.settings-toggle-control {
+  min-height: 32px !important;
+  border-radius: 8px !important;
+}
+
+.settings-toggle-control input[type="checkbox"] {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+.theme-switcher {
+  display: inline-grid !important;
+  grid-template-columns: repeat(5, 22px) !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+
+.theme-btn {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 7px !important;
+  transform: none !important;
+}
+
+.theme-btn:hover {
+  transform: translateY(-1px) !important;
+}
+
+.mode-switcher {
+  border-radius: 10px !important;
+  gap: 4px !important;
+  padding: 5px !important;
+}
+
+.mode-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 7px !important;
+}
+
+.mode-label {
+  min-width: 0 !important;
+  line-height: 1.2 !important;
+}
+
+.sidebar-customize-btn,
+.sidebar-emergency-btn {
+  min-height: 38px !important;
+  border-radius: 8px !important;
+  justify-content: center !important;
+  letter-spacing: 0 !important;
+}
+
+.sidebar {
+  overflow-x: hidden !important;
+}
+
+.sidebar-header {
+  box-sizing: border-box !important;
+  width: auto !important;
+  max-width: calc(100% - 24px) !important;
+  min-width: 0 !important;
+}
+
+.sidebar-brand,
+.sidebar-tagline {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.command-palette-overlay,
+.shortcuts-overlay,
+.modal-overlay,
+.customize-overlay {
+  z-index: var(--z-command-palette, 100000) !important;
+}
+
+.customize-panel {
+  z-index: 100001 !important;
+  border-radius: 12px 0 0 12px !important;
+}
+
+body:has(#command-palette-overlay:not([hidden])) .main-content,
+body:has(#shortcuts-overlay:not([hidden])) .main-content,
+body:has(.modal-overlay:not(.is-hidden)) .main-content,
+body:has(#customize-panel[aria-hidden="false"]) .main-content {
+  z-index: var(--z-command-palette, 100000) !important;
+}
+
+.command-palette-overlay,
+.shortcuts-overlay {
+  backdrop-filter: blur(18px) saturate(116%) !important;
+}
+
+.command-palette-dialog,
+.shortcuts-dialog,
+.modal-card,
+.utility-panel-shell {
+  border-radius: 12px !important;
+}
+
+.command-palette-dialog {
+  width: min(860px, calc(100vw - 32px)) !important;
+}
+
+.command-palette-preview {
+  min-width: 0 !important;
+}
+
+.command-palette-results,
+.shortcuts-sections,
+.utility-panel-body,
+.settings-scroll-shell {
+  scrollbar-gutter: stable !important;
+}
+
+.command-palette-item {
+  min-height: 58px !important;
+  border-radius: 8px !important;
+}
+
+.shortcuts-grid {
+  grid-template-columns: minmax(86px, 0.42fr) minmax(0, 1fr) !important;
+}
+
+.shortcuts-key {
+  white-space: normal !important;
+  line-height: 1.25 !important;
+}
+
+.utility-panel-shell {
+  right: 18px !important;
+  max-width: calc(100vw - 24px) !important;
+}
+
+.utility-panel-shell-wide {
+  width: min(420px, calc(100vw - 24px)) !important;
+}
+
+.utility-panel-chip-row {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(94px, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.utility-chip-btn {
+  min-height: 32px !important;
+  white-space: normal !important;
+}
+
+:where(.btn, button, [role="button"], input, select, textarea)[disabled],
+:where(.btn, button, [role="button"])[aria-disabled="true"],
+:where(.btn, button, [role="button"]).is-disabled {
+  cursor: not-allowed !important;
+  opacity: 0.58 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+:where(.btn, button, [role="button"]):active:not([disabled]):not([aria-disabled="true"]) {
+  transform: translateY(0) !important;
+}
+
+@media (max-width: 1180px) {
+  .settings-mode-grid {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .settings-command-deck-head,
+  .settings-memory-head,
+  .settings-panel-head-split {
+    grid-template-columns: 1fr !important;
+  }
+
+  .settings-command-actions,
+  .settings-memory-actions {
+    grid-template-columns: repeat(auto-fit, minmax(142px, 1fr)) !important;
+    justify-content: stretch !important;
+    width: 100% !important;
+  }
+
+  .settings-command-actions .btn,
+  .settings-memory-actions .btn {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .command-palette-overlay,
+  .shortcuts-overlay {
+    align-items: center !important;
+    padding: 9px !important;
+  }
+
+  .command-palette-dialog,
+  .shortcuts-dialog {
+    width: min(760px, calc(100vw - 18px)) !important;
+    max-height: calc(100dvh - 18px) !important;
+    padding: 16px !important;
+  }
+
+  .command-palette-header,
+  .shortcuts-header {
+    gap: 10px !important;
+  }
+
+  .command-palette-title {
+    font-size: 22px !important;
+  }
+
+  .command-palette-preview {
+    grid-template-columns: 1fr !important;
+  }
+
+  .command-palette-meta,
+  .command-palette-preview-badges {
+    gap: 6px !important;
+  }
+
+  .shortcuts-grid {
+    grid-template-columns: minmax(72px, 0.44fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .theme-switcher {
+    grid-template-columns: repeat(5, 20px) !important;
+  }
+
+  .theme-btn {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .mode-label {
+    max-width: 108px !important;
+  }
+
+  .utility-panel-shell {
+    left: 9px !important;
+    right: 9px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 96px) !important;
+  }
+
+  .utility-panel-shell-lan.utility-panel-compact {
+    width: auto !important;
+  }
+}

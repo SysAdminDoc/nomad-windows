@@ -88,7 +88,7 @@
           <div class="settings-memory-copy">
             <div class="workspace-kicker">DESK MEMORY</div>
             <h3 class="settings-hero-title settings-memory-title">Keep your return points stable, explicit, and easy to trust.</h3>
-            <p class="settings-panel-copy settings-memory-text">Pinned desks, startup context, and recent return points live in the product now instead of browser luck. Shape them here, then reopen them from Home, the sidebar, or the command palette.</p>
+            <p class="settings-panel-copy settings-memory-text">Pinned desks, startup context, and recent return points live in the product now instead of browser luck. Shape them here, then reopen them from Home, the sidebar, or Global Find.</p>
           </div>
           <div class="settings-memory-actions">
             <button type="button" class="btn btn-sm btn-primary" id="settings-pin-current-context-btn" data-workspace-memory-action="toggle-current-pin">Pin This Desk</button>
@@ -96,7 +96,7 @@
             <button type="button" class="btn btn-sm" id="settings-open-launch-context-btn" data-workspace-memory-action="open-launch">Open Startup Desk</button>
             <button type="button" class="btn btn-sm btn-ghost" id="settings-clear-launch-context-btn" data-workspace-memory-action="clear-launch">Clear Startup Desk</button>
             <button type="button" class="btn btn-sm" data-tab-target="services" data-scroll-target="home-continue-panel">Open Home Shelf</button>
-            <button type="button" class="btn btn-sm" data-shell-action="toggle-command-palette">Command Palette</button>
+            <button type="button" class="btn btn-sm" data-shell-action="toggle-command-palette">Global Find</button>
           </div>
         </div>
         <div class="settings-memory-summary-grid">
@@ -177,10 +177,10 @@
         <div id="disk-devices"></div>
       </div>
       <div class="settings-card settings-models-card">
-        <h3>AI Models <button class="help-icon" data-help="models-guide" title="AI model guide">?</button></h3>
+        <h3>Local Models <button class="help-icon" data-help="models-guide" title="Model guide">?</button></h3>
         <div id="model-manager" class="settings-stack">
-          <p class="settings-panel-copy">Manage downloaded AI models and pull the recommended set without leaving the settings workspace.</p>
-          <div id="model-list"><div class="settings-empty-state">No AI models are installed yet. Choose a recommended model below or download the full set.</div></div>
+          <p class="settings-panel-copy">Manage downloaded local models and pull the recommended set without leaving the settings workspace.</p>
+          <div id="model-list"><div class="settings-empty-state">No local models are installed yet. Choose a recommended model below or download the full set.</div></div>
           <div class="settings-subsection">
             <div class="settings-heading-row settings-toolbar-spacing">
               <h4>Recommended Models</h4>
@@ -196,7 +196,7 @@
           <button type="button" class="btn btn-sm" data-shell-action="create-training-dataset">New Dataset</button>
           <button type="button" class="btn btn-sm btn-primary" data-shell-action="create-training-job">New Job</button>
         </div>
-        <div class="settings-panel-copy">Create custom AI models from your conversation history using Ollama Modelfiles.</div>
+        <div class="settings-panel-copy">Create custom local models from your conversation history using Ollama Modelfiles.</div>
         <div class="settings-subsection-title">Datasets</div>
         <div id="training-datasets-list" class="training-list-shell training-list-shell-datasets"></div>
         <div class="settings-subsection-title">Training Jobs</div>
@@ -222,8 +222,8 @@
             </span>
           </div>
           <div class="setting-row">
-            <span class="setting-label">AI Assistant Name</span>
-            <input id="ai-name-input" name="assistant_name" class="settings-input settings-input-sm" value="AI" data-input-action="save-ai-name" autocomplete="off" aria-label="AI assistant name">
+            <span class="setting-label">Assistant Name</span>
+            <input id="ai-name-input" name="assistant_name" class="settings-input settings-input-sm" value="AI" data-input-action="save-ai-name" autocomplete="off" aria-label="Assistant name">
           </div>
           <div class="setting-row">
             <span class="setting-label">UI Size</span>
@@ -459,7 +459,7 @@
             <p class="settings-panel-copy">Plan recurring work, track due windows, and keep upkeep visible before it becomes a problem.</p>
           </div>
           <div class="settings-panel-actions">
-            <button class="btn btn-sm btn-primary" type="button" data-shell-action="show-task-form">+ New Task</button>
+            <button class="btn btn-sm btn-primary" type="button" data-shell-action="show-task-form">New Task</button>
           </div>
         </div>
         <div id="task-form" class="settings-form-shell settings-flow-shell is-hidden">
@@ -509,7 +509,7 @@
             <p class="settings-panel-copy">Generate clear rotations, print them fast, and keep shift coverage easy to review under pressure.</p>
           </div>
           <div class="settings-panel-actions">
-            <button class="btn btn-sm btn-primary" type="button" data-shell-action="show-watch-form">+ New Watch Schedule</button>
+            <button class="btn btn-sm btn-primary" type="button" data-shell-action="show-watch-form">New Watch Schedule</button>
           </div>
         </div>
         <div id="watch-form" class="settings-form-shell settings-flow-shell is-hidden">
@@ -567,7 +567,7 @@
           <div class="settings-panel-actions settings-panel-toolbar">
             <select id="svc-log-select" name="service_log" class="preset-select" data-change-action="load-service-logs" aria-label="Service process log">
               <option value="">Select service...</option>
-              <option value="ollama">Ollama (AI)</option>
+              <option value="ollama">Ollama (Models)</option>
               <option value="kiwix">Kiwix (Library)</option>
               <option value="cyberchef">CyberChef</option>
               <option value="kolibri">Kolibri (Education)</option>
@@ -667,7 +667,7 @@
         <div class="settings-panel-toolbar settings-toolbar-spacing">
           <button class="btn btn-sm btn-primary" type="button" data-shell-action="scan-serial-ports">Scan Ports</button>
         </div>
-        <div id="serial-port-list" class="settings-list-shell" aria-live="polite"><div class="settings-inline-status settings-inline-status-muted">Click "Scan Ports" to detect connected hardware.</div></div>
+        <div id="serial-port-list" class="settings-list-shell" aria-live="polite"><div class="settings-inline-status settings-inline-status-muted">Scan ports to detect connected hardware.</div></div>
       </div>
 
       <div class="settings-card settings-flow-panel settings-span-full">
@@ -744,7 +744,7 @@
           </div>
           <div class="settings-shortcuts-copy">
             <strong class="settings-summary-accent">Command Help:</strong>
-              Use the sidebar, Home shelf, command palette, and utility dock for direct navigation without memorizing controls.
+              Use the sidebar, Home shelf, Global Find, and utility dock for direct navigation without memorizing controls.
           </div>
         </div>
       </div>
@@ -756,9 +756,9 @@
 </main><!-- /main-content -->
 
 <!-- ════════════════════════════════════════════════════════════
-     PERSISTENT AI COPILOT DOCK (bottom bar, available on all tabs)
+     PERSISTENT COPILOT DOCK (bottom bar, available on all tabs)
      ════════════════════════════════════════════════════════════ -->
-<div class="copilot-dock" id="copilot-dock" role="complementary" aria-label="AI Copilot">
+<div class="copilot-dock" id="copilot-dock" role="complementary" aria-label="Copilot">
   <div class="copilot-answer-wrap">
     <div class="copilot-dock-answer" id="copilot-answer" aria-live="polite" aria-label="Copilot response"></div>
     <button id="copilot-dismiss" class="copilot-dismiss-btn is-hidden" type="button" data-shell-action="dismiss-copilot-answer" aria-label="Clear copilot answer">Clear</button>
@@ -768,11 +768,11 @@
     <span class="copilot-voice-transcript" id="copilot-voice-transcript" aria-live="polite" hidden></span>
   </div>
   <div class="copilot-dock-bar">
-    <span class="copilot-dock-label">AI Copilot</span>
-    <input type="text" id="copilot-input" name="copilot_query" data-enter-action="ask-copilot" aria-label="AI Copilot question input" autocomplete="off" placeholder="Ask about supplies, team, medical, or power...">
+    <span class="copilot-dock-label">Copilot</span>
+    <input type="text" id="copilot-input" name="copilot_query" data-enter-action="ask-copilot" aria-label="Copilot question input" autocomplete="off" placeholder="Ask about supplies, team, medical, or power...">
     <button class="btn btn-sm copilot-voice-btn" type="button" data-shell-action="voice-input" data-voice-target="copilot-input" title="Voice input (single question)" id="copilot-voice-btn" aria-label="Voice input for copilot">&#127908;</button>
     <button class="btn btn-sm copilot-handsfree-btn" type="button" data-shell-action="toggle-handsfree" title="Hands-free conversation mode" id="copilot-handsfree-btn" aria-label="Toggle hands-free voice conversation" aria-pressed="false" data-state="idle">&#128266;</button>
-    <button class="btn btn-sm btn-primary copilot-ask-btn" type="button" data-shell-action="ask-copilot" aria-label="Ask AI Copilot">Ask</button>
+    <button class="btn btn-sm btn-primary copilot-ask-btn" type="button" data-shell-action="ask-copilot" aria-label="Ask Copilot">Ask</button>
     <div class="copilot-dock-tools" aria-label="Desk utilities">
       <button id="copilot-utility-chat-btn" class="btn btn-sm btn-ghost copilot-utility-btn" type="button" data-shell-action="toggle-lan-chat" aria-controls="lan-chat-panel" aria-expanded="false" aria-label="Open LAN chat">
         <span class="copilot-utility-btn-icon" aria-hidden="true">&#9993;</span>

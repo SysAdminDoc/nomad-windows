@@ -60,7 +60,7 @@ function showHelp(section) {
     <a href="#data">17. Data &amp; Privacy</a>
     <a href="#troubleshooting">18. Troubleshooting</a>
     <a href="#day-one">19. Day One Checklist</a>
-    <a href="#models-guide">20. Choosing an AI Model</a>
+    <a href="#models-guide">20. Choosing a Local Model</a>
     <a href="#inventory-guide">21. Inventory Best Practices</a>
     <a href="#printable">22. Printable Reports</a>
     <a href="#lan">23. LAN &amp; Multi-Device</a>
@@ -79,7 +79,7 @@ function showHelp(section) {
     <a href="#vault-guide">36. Secure Vault Guide</a>
     <a href="#scenarios-deep">37. Training Scenarios In Depth</a>
     <a href="#task-scheduler-guide">38. Task Scheduler</a>
-    <a href="#ai-memory-guide">39. AI Memory System</a>
+    <a href="#ai-memory-guide">39. Memory System</a>
     <a href="#print-guide">40. Printable Field Documents</a>
     <a href="#glossary">41. Glossary</a>
   </div>
@@ -87,18 +87,18 @@ function showHelp(section) {
   <h2 id="guide-getting-started">1. Getting Started</h2>
   <p>When you first open NOMAD, the Setup Wizard walks you through picking a storage drive and choosing what to download. You can re-run it anytime from <strong>Settings &gt; Re-run Setup Wizard</strong>.</p>
   <h3>Recommended First Steps</h3>
-  <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Install AI Chat</strong> &mdash; Click "Install AI Chat" on the Home page. This downloads the AI engine (~310 MB). Takes 2-5 minutes.</div></div>
-  <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Download an AI Model</strong> &mdash; Go to AI Assistant in the sidebar, click "+ Download AI Model." Pick a small model like <strong>Llama 3.2 3B</strong> (2 GB) to start. Larger models give better answers but need more disk space and RAM.</div></div>
-  <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Install the Information Library</strong> &mdash; Click "Install Encyclopedia" on the Home page. Then go to the Library tab and click <strong>Download All Essentials</strong> to get offline Wikipedia, medical references, and survival guides.</div></div>
-  <div class="step"><div class="step-num">4</div><div class="step-text"><strong>Start Using Preparedness Tools</strong> &mdash; Click Preparedness in the sidebar. Start by adding your family members to <strong>Contacts</strong>, then add your supplies to <strong>Inventory</strong>.</div></div>
-  <div class="step"><div class="step-num">5</div><div class="step-text"><strong>Try the Interactive Guides</strong> &mdash; Go to Preparedness &gt; <strong>Guides</strong>. These step-by-step decision trees help you through real situations (water purification, wound care, fire starting, etc.) &mdash; no AI needed.</div></div>
+  <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Install Copilot</strong> &mdash; Select "Install Copilot" on the Home page. This downloads the local reasoning engine (~310 MB). Takes 2-5 minutes.</div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Download a Local Model</strong> &mdash; Go to Copilot in the sidebar and choose <strong>Download Model</strong>. Start with a small model like <strong>Llama 3.2 3B</strong> (2 GB). Larger models need more disk space and RAM, but give better answers.</div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Install the Information Library</strong> &mdash; Select "Install Encyclopedia" on the Home page. Then open Library and choose <strong>Download All Essentials</strong> for offline Wikipedia, medical references, and survival guides.</div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-text"><strong>Start Using Preparedness Tools</strong> &mdash; Select Preparedness in the sidebar. Start by adding your family members to <strong>Contacts</strong>, then add your supplies to <strong>Inventory</strong>.</div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-text"><strong>Try the Interactive Guides</strong> &mdash; Go to Preparedness &gt; <strong>Guides</strong>. These step-by-step decision trees help you through real situations such as water purification, wound care, and fire starting without a local model.</div></div>
   <div class="tip"><strong>Tip:</strong> The entire setup takes about 10-15 minutes on a decent internet connection. After that, everything works offline forever.</div>
 
   <h2 id="home">2. Home Dashboard</h2>
   <p>The Home page is your command center overview. It shows:</p>
   <ul>
     <li><strong>Status indicator</strong> &mdash; Overall threat level based on your situation board (green = all clear, yellow = caution, red = critical)</li>
-    <li><strong>Low stock &amp; expiring items</strong> &mdash; Click these to jump directly to your inventory</li>
+    <li><strong>Low stock &amp; expiring items</strong> &mdash; Select these to jump directly to your inventory</li>
     <li><strong>Incidents (24h)</strong> &mdash; Recent security or safety events you have logged</li>
     <li><strong>Readiness Score</strong> &mdash; Your overall preparedness grade (see below)</li>
     <li><strong>Feature cards</strong> &mdash; Quick access to each major section</li>
@@ -118,28 +118,28 @@ function showHelp(section) {
   <tr><td>Power &amp; Land</td><td>10</td><td>Registering power devices, adding garden plots, saving map waypoints</td></tr>
   <tr><td>Plans &amp; Knowledge</td><td>15</td><td>Completing checklists, writing notes, uploading documents, running drills</td></tr>
   </table>
-  <p><strong>Click any category</strong> to jump directly to the relevant Preparedness section where you can improve that score.</p>
+  <p><strong>Select any category</strong> to jump directly to the relevant Preparedness section where you can improve that score.</p>
 
-  <h2 id="ai">4. AI Assistant</h2>
-  <p>The AI runs <strong>entirely on your computer</strong> &mdash; nothing is sent to the internet. It can answer questions about survival, medical care, homesteading, radio communications, and more.</p>
+  <h2 id="ai">4. Copilot</h2>
+  <p>Copilot runs <strong>entirely on your computer</strong> &mdash; nothing is sent to the internet. It can answer questions about survival, medical care, homesteading, radio communications, and more.</p>
   <h3>How to Use It</h3>
   <ol>
-    <li>Make sure the AI Chat service is running (green status on Home page)</li>
-    <li>Select an AI model from the dropdown (top-left of the chat area)</li>
-    <li>Choose a <strong>conversation mode</strong> from the dropdown &mdash; this tells the AI what kind of expert to be (Medical Advisor, Survival Expert, Homesteading, etc.)</li>
-    <li>Type your question and press Enter or click Send</li>
+    <li>Make sure the Copilot service is running (green status on Home page)</li>
+    <li>Select a local model from the dropdown at the top-left of the chat area</li>
+    <li>Choose a <strong>conversation mode</strong> from the dropdown &mdash; this tells Copilot what kind of expert to be (Medical Advisor, Survival Expert, Homesteading, etc.)</li>
+    <li>Type your question and send it</li>
   </ol>
   <h3>Include My Prep Data</h3>
-  <p>Toggle <strong>"Include My Prep Data"</strong> to let the AI see your inventory levels, contacts, weather logs, power status, and alerts. This means it can give advice based on YOUR actual situation rather than generic answers. Your data stays on your computer.</p>
+  <p>Toggle <strong>"Include My Prep Data"</strong> to let Copilot use your inventory levels, contacts, weather logs, power status, and alerts. This keeps answers grounded in your actual situation. Your data stays on your computer.</p>
   <h3>Document Intelligence</h3>
-  <p>Upload PDFs, text files, or other documents in the Library tab. The AI can:</p>
+  <p>Upload PDFs, text files, or other documents in the Library tab. Copilot can:</p>
   <ul>
     <li>Automatically classify documents (medical, property, financial, etc.)</li>
     <li>Generate a 2-3 sentence summary</li>
     <li>Extract key information (names, dates, medications, addresses)</li>
     <li>Cross-reference extracted names against your contacts</li>
   </ul>
-  <div class="tip"><strong>Tip:</strong> The AI models are downloaded once and work forever offline. Larger models (like Mistral 7B or Llama 3.1 8B) give much better answers than small ones. If you have a GPU, the AI will automatically use it for faster responses.</div>
+  <div class="tip"><strong>Tip:</strong> Local models are downloaded once and work offline. Larger models like Mistral 7B or Llama 3.1 8B give better answers than small ones. If you have a GPU, the local engine will use it for faster responses.</div>
 
   <h2 id="library">5. Information Library</h2>
   <p>The Library contains 100+ downloadable content packs organized into 14 categories. Content is available in 3 tiers:</p>
@@ -227,7 +227,7 @@ function showHelp(section) {
     <li><strong>Incident clusters</strong> &mdash; 3 or more incidents logged within 48 hours</li>
     <li><strong>Low stock</strong> &mdash; Items that have fallen below their minimum quantity</li>
   </ul>
-  <p>Alerts appear as a badge on the bell icon in the sidebar. Click to see details. Click <strong>AI Summary</strong> for a natural-language situation report. Critical alerts trigger browser notifications and an alert sound.</p>
+  <p>Alerts appear as a badge on the bell icon in the sidebar. Open it to see details, then use <strong>Summary</strong> for a natural-language situation report. Critical alerts trigger browser notifications and an alert sound.</p>
   <div class="tip"><strong>Tip:</strong> Set daily usage rates on your inventory items (the "Daily Usage" field) to get accurate "Days Left" projections and timely low-supply alerts.</div>
 
   <h2 id="sync">11. Connecting Multiple Systems</h2>
@@ -266,8 +266,8 @@ function showHelp(section) {
   <h2 id="settings">14. Settings &amp; Backup</h2>
   <ul>
     <li><strong>System Monitoring</strong> &mdash; Live CPU, RAM, and disk usage gauges</li>
-    <li><strong>AI Models</strong> &mdash; Manage downloaded models. Click "Download All Recommended" to get all suggested models.</li>
-    <li><strong>Preferences</strong> &mdash; Theme, AI assistant name, external AI host, dashboard password, auto-backup interval, browser notifications</li>
+    <li><strong>Local Models</strong> &mdash; Manage downloaded models. Select "Download All Recommended" to get the suggested set.</li>
+    <li><strong>Preferences</strong> &mdash; Theme, assistant name, external model host, dashboard password, auto-backup interval, browser notifications</li>
     <li><strong>Full Backup / Restore</strong> &mdash; Download a ZIP of your entire database, or restore from a previous backup</li>
     <li><strong>Data Summary</strong> &mdash; See how many records you have across all tables</li>
     <li><strong>Application Log</strong> &mdash; View and filter system events for troubleshooting</li>
@@ -276,33 +276,33 @@ function showHelp(section) {
   <div class="warn"><strong>Important:</strong> Back up regularly! Use <strong>Settings &gt; Full Backup</strong> to download a ZIP file. Store copies on USB drives in multiple locations. The "Last Backup" indicator turns orange after 30 days and red after that.</div>
 
   <h2 id="benchmark">15. Diagnostics</h2>
-  <p>Test your system's CPU, memory, disk, and AI performance. Results are scored 0-100 (NOMAD Score). Run it periodically to confirm your hardware is performing well. Trend arrows show whether performance improved or declined since the last run.</p>
+  <p>Test your system's CPU, memory, disk, and local model performance. Results are scored 0-100 (NOMAD Score). Run it periodically to confirm your hardware is performing well. Trend arrows show whether performance improved or declined since the last run.</p>
 
   <h2 id="command-help">16. Command Help</h2>
-  <p>NOMAD exposes primary movement through visible controls: the sidebar, Home shelf, command palette, persistent copilot dock, and utility buttons.</p>
+  <p>NOMAD exposes primary movement through visible controls: the sidebar, Home shelf, Global Find, persistent copilot dock, and utility buttons.</p>
   <table><tr><th>Surface</th><th>Use it for</th></tr>
   <tr><td><strong>Sidebar</strong></td><td>Move between primary workspaces and confirm the active desk.</td></tr>
   <tr><td><strong>Home Shelf</strong></td><td>Reopen pinned desks, recent return points, and suggested next actions.</td></tr>
-  <tr><td><strong>Command Palette</strong></td><td>Search workspaces, notes, supplies, contacts, and available actions from one place.</td></tr>
+  <tr><td><strong>Global Find</strong></td><td>Search workspaces, notes, supplies, contacts, and available actions from one place.</td></tr>
   <tr><td><strong>Utility Dock</strong></td><td>Open timers, LAN chat, and copilot tools without leaving the current desk.</td></tr>
   <tr><td><strong>Settings</strong></td><td>Set the startup desk, theme, backups, models, and local preferences.</td></tr></table>
 
   <h2 id="data">17. Data &amp; Privacy</h2>
-  <p><strong>All data stays on your computer.</strong> NOMAD has zero telemetry, zero cloud connections, and zero tracking. The only time it connects to the internet is when YOU choose to download services, content packs, or AI models.</p>
+  <p><strong>All data stays on your computer.</strong> NOMAD has zero telemetry, zero cloud connections, and zero tracking. The only time it connects to the internet is when you choose to download services, content packs, or local models.</p>
   <p>Data is stored in <code>%APPDATA%\\\\NOMADFieldDesk\\\\</code> on new installs (or the custom location you chose during setup). Upgraded systems may still use the legacy <code>%APPDATA%\\\\ProjectNOMAD\\\\</code> folder. This includes:</p>
   <ul>
     <li><code>nomad.db</code> &mdash; SQLite database with all your data (32 tables)</li>
     <li><code>logs/</code> &mdash; Application logs</li>
     <li><code>backups/</code> &mdash; Automatic database backups (keeps last 5)</li>
-    <li><code>services/</code> &mdash; Downloaded service binaries and AI models</li>
+    <li><code>services/</code> &mdash; Downloaded service binaries and local models</li>
     <li><code>maps/</code> &mdash; Downloaded offline map data</li>
     <li><code>videos/</code> &mdash; Your uploaded video library</li>
-    <li><code>kb_uploads/</code> &mdash; Uploaded documents for AI analysis</li>
+    <li><code>kb_uploads/</code> &mdash; Uploaded documents for local analysis</li>
   </ul>
 
   <h2 id="troubleshooting">18. Troubleshooting</h2>
-  <h3>AI Chat says "Could not reach the AI"</h3>
-  <p>The AI Chat service needs to be running. Go to the Home page and check if AI Chat shows a green "Running" badge. If not, click Start. If it is not installed yet, click Install first (~310 MB download).</p>
+  <h3>Copilot says "Could not reach the model"</h3>
+  <p>The Copilot service needs to be running. Go to the Home page and check if Copilot shows a green "Running" badge. If not, select Start. If it is not installed yet, install it first (~310 MB download).</p>
   <h3>Service won't start</h3>
   <p>Check the Application Log in Settings for error details. Common causes: another program is using the same port, antivirus is blocking the executable, or the service files are corrupted (try uninstalling and reinstalling).</p>
   <h3>Map downloads fail with "permission denied"</h3>
@@ -320,8 +320,8 @@ function showHelp(section) {
   <p>If you just installed NOMAD and want to be operational as fast as possible, follow this checklist:</p>
   <table><tr><th>Priority</th><th>Task</th><th>Time</th></tr>
   <tr><td class="text-status-green-strong">1</td><td>Run the Setup Wizard &mdash; choose your storage drive and Essential content</td><td>2 min</td></tr>
-  <tr><td class="text-status-green-strong">2</td><td>Install AI Chat from the Home page</td><td>3 min</td></tr>
-  <tr><td class="text-status-green-strong">3</td><td>Download a small AI model (Llama 3.2 3B or Phi 3 Mini)</td><td>5 min</td></tr>
+  <tr><td class="text-status-green-strong">2</td><td>Install Copilot from the Home page</td><td>3 min</td></tr>
+  <tr><td class="text-status-green-strong">3</td><td>Download a small local model (Llama 3.2 3B or Phi 3 Mini)</td><td>5 min</td></tr>
   <tr><td class="text-status-green-strong">4</td><td>Add your household members to Contacts (name, phone, blood type)</td><td>5 min</td></tr>
   <tr><td class="text-status-amber-strong">5</td><td>Add your critical supplies to Inventory (water, food, medical, batteries)</td><td>15 min</td></tr>
   <tr><td class="text-status-amber-strong">6</td><td>Set daily usage rates on consumable items (water, food staples)</td><td>5 min</td></tr>
@@ -330,10 +330,10 @@ function showHelp(section) {
   <tr><td class="text-status-blue-strong">9</td><td>Complete at least one built-in Checklist (72-Hour Kit recommended)</td><td>10 min</td></tr>
   <tr><td class="text-status-blue-strong">10</td><td>Run through one Interactive Guide (Water Purification is a good start)</td><td>5 min</td></tr>
   </table>
-  <div class="tip"><strong>Result:</strong> After completing these 10 steps (~65 minutes), you will have a functional offline command center with AI chat, offline maps, supply tracking with automated alerts, and a family emergency plan. Your Readiness Score should jump to at least a C or B grade.</div>
+  <div class="tip"><strong>Result:</strong> After completing these 10 steps (~65 minutes), you will have a functional offline command center with Copilot, offline maps, supply tracking with automated alerts, and a family emergency plan. Your Readiness Score should jump to at least a C or B grade.</div>
 
-  <h2 id="models-guide">20. Choosing the Right AI Model</h2>
-  <p>AI models vary in size, speed, and quality. Here is a guide to help you choose:</p>
+  <h2 id="models-guide">20. Choosing the Right Local Model</h2>
+  <p>Local models vary in size, speed, and quality. Here is a guide to help you choose:</p>
   <table><tr><th>Model</th><th>Size</th><th>RAM Needed</th><th>Best For</th><th>Speed</th></tr>
   <tr><td><strong>Phi 3 Mini</strong></td><td>2.3 GB</td><td>4 GB</td><td>Quick answers, older PCs, limited RAM</td><td>Fast</td></tr>
   <tr><td><strong>Llama 3.2 3B</strong></td><td>2.0 GB</td><td>4 GB</td><td>General questions, good balance of speed and quality</td><td>Fast</td></tr>
@@ -345,7 +345,7 @@ function showHelp(section) {
   <tr><td><strong>DeepSeek-R1 14B</strong></td><td>9.0 GB</td><td>16 GB</td><td>Complex reasoning, detailed analysis, planning</td><td>Slower</td></tr>
   </table>
   <div class="tip"><strong>Recommendation:</strong> Start with <strong>Llama 3.2 3B</strong> (works on any PC). If you have 8+ GB RAM, upgrade to <strong>Mistral 7B</strong> for much better answers. If you have a GPU (NVIDIA/AMD), models run 5-10x faster.</div>
-  <div class="warn"><strong>Note:</strong> Models are downloaded once and stored permanently. You can have multiple models installed and switch between them in the AI Chat dropdown. Unused models can be deleted from Settings to free disk space.</div>
+  <div class="warn"><strong>Note:</strong> Models are downloaded once and stored permanently. You can have multiple models installed and switch between them in the Copilot dropdown. Unused models can be deleted from Settings to free disk space.</div>
 
   <h2 id="inventory-guide">21. Inventory Management Best Practices</h2>
   <p>Your inventory is the backbone of your preparedness. Here is how to get the most out of it:</p>
@@ -362,7 +362,7 @@ function showHelp(section) {
   <ul>
     <li><strong>Daily Consume button:</strong> Click this once per day to automatically subtract daily usage from all tracked items. One click updates everything.</li>
     <li><strong>Quick +/- buttons:</strong> Use the arrow buttons on each row to adjust quantities without opening the edit form.</li>
-    <li><strong>Shopping List:</strong> Click "Shopping List" to auto-generate a list of items that are low, expiring, or running out based on burn rates.</li>
+    <li><strong>Shopping List:</strong> Select "Shopping List" to auto-generate a list of items that are low, expiring, or running out based on burn rates.</li>
   </ul>
   <h3>Recommended Categories</h3>
   <table><tr><th>Category</th><th>Example Items</th><th>Daily Usage Tip</th></tr>
@@ -404,14 +404,14 @@ function showHelp(section) {
   <h2 id="services-guide">24. Understanding the 6 Services</h2>
 <p>NOMAD manages 6 separate tools. Each one is optional &mdash; install only what you need:</p>
   <table><tr><th>Service</th><th>What It Does</th><th>Size</th><th>Who Needs It</th></tr>
-  <tr><td><strong>AI Chat</strong></td><td>Private AI assistant that answers questions offline</td><td>~310 MB + models</td><td>Everyone &mdash; this is the core feature</td></tr>
+  <tr><td><strong>Copilot</strong></td><td>Private offline assistant that answers questions from local models</td><td>~310 MB + models</td><td>Everyone &mdash; this is the core feature</td></tr>
   <tr><td><strong>Information Library</strong></td><td>Offline Wikipedia, medical references, survival guides</td><td>~60 MB + content packs</td><td>Everyone &mdash; essential reference material</td></tr>
   <tr><td><strong>CyberChef</strong></td><td>Data encoding, encryption, decryption, hashing, file analysis</td><td>~30 MB</td><td>Technical users who need encryption/encoding tools</td></tr>
   <tr><td><strong>Education Platform</strong></td><td>Khan Academy courses, textbooks, progress tracking</td><td>~200 MB + courses</td><td>Families with children, long-term learning</td></tr>
-  <tr><td><strong>Vector Search</strong></td><td>AI-powered document search for uploaded files</td><td>~80 MB</td><td>Users who upload many documents for AI analysis</td></tr>
+  <tr><td><strong>Vector Search</strong></td><td>Local document search for uploaded files</td><td>~80 MB</td><td>Users who upload many documents for analysis</td></tr>
   <tr><td><strong>PDF Tools</strong></td><td>Merge, split, compress, convert, OCR PDFs</td><td>~100 MB + Java</td><td>Users who work with PDF documents frequently</td></tr>
   </table>
-  <div class="tip"><strong>Minimal setup:</strong> Install just AI Chat + Information Library for a powerful offline knowledge base. Add others as needed.</div>
+  <div class="tip"><strong>Minimal setup:</strong> Install just Copilot + Information Library for a powerful offline knowledge base. Add others as needed.</div>
 
   <h2 id="use-cases">25. Common Use Cases</h2>
   <h3>Power Outage (first 24 hours)</h3>
@@ -441,7 +441,7 @@ function showHelp(section) {
   </ol>
   <h3>Long-Term Off-Grid Living</h3>
   <ul>
-    <li><strong>Daily:</strong> Click "Daily Consume" to track supply burn rates. Log weather observations. Write a journal entry.</li>
+    <li><strong>Daily:</strong> Select "Daily Consume" to track supply burn rates. Log weather observations. Write a journal entry.</li>
     <li><strong>Weekly:</strong> Check the Shopping List for items running low. Review alerts. Run a checklist audit.</li>
     <li><strong>Monthly:</strong> Run a Benchmark to confirm system health. Back up your database to USB. Review and rotate expiring inventory. Update garden records with harvest data.</li>
 <li><strong>Quarterly:</strong> Run a Training Scenario. Update your Family Plan. Review and update checklists. Sync with other NOMAD systems if applicable.</li>
@@ -517,13 +517,13 @@ function showHelp(section) {
 
   <h2 id="faq">29. Frequently Asked Questions</h2>
 <h3>Does NOMAD need the internet to work?</h3>
-  <p>No. After you download services, AI models, and content packs, everything works completely offline forever. The only time it connects to the internet is when YOU choose to download something new.</p>
+  <p>No. After you download services, local models, and content packs, everything works completely offline. The only time it connects to the internet is when you choose to download something new.</p>
   <h3>Is my data sent to any server or cloud?</h3>
-  <p>No. Zero telemetry, zero cloud, zero tracking. All data stays on your computer in a local database file. The AI runs on your hardware &mdash; your conversations are never sent anywhere.</p>
+  <p>No. Zero telemetry, zero cloud, zero tracking. All data stays on your computer in a local database file. Copilot runs on your hardware &mdash; your conversations are never sent anywhere.</p>
 <h3>Can I run NOMAD from a USB drive?</h3>
   <p>Yes. Download the portable <strong>NOMADFieldDesk.exe</strong> and put it on a USB drive. Run it from there. You can choose to store data on the USB drive as well during the setup wizard.</p>
   <h3>How much disk space do I need?</h3>
-  <p>The base application is ~25 MB. With essential content and a small AI model: ~5 GB. With everything downloaded: 50-200 GB depending on how many content packs and AI models you install. You control what you download.</p>
+  <p>The base application is ~25 MB. With essential content and a small local model: ~5 GB. With everything downloaded: 50-200 GB depending on how many content packs and local models you install. You control what you download.</p>
   <h3>Can my family use it from another computer on the network?</h3>
 <p>Yes. As long as the other computer is on the same Wi-Fi or LAN, it can open a browser and go to your NOMAD address shown in Settings. Remote access is intended for desktop-class browsers on your local network.</p>
   <h3>What happens if my computer breaks?</h3>
@@ -533,9 +533,9 @@ function showHelp(section) {
 <h3>How do I update NOMAD?</h3>
   <p>Download the latest version from the <a href="https://github.com/SysAdminDoc/project-nomad-desktop/releases">releases page</a>. If using the portable exe, just replace the old file with the new one. If using the installer, run the new installer &mdash; it updates in place. Your data is stored separately and is preserved across updates.</p>
   <h3>Why do some features say "Install" before I can use them?</h3>
-<p>NOMAD manages several separate tools (AI Chat, Information Library, etc.). Each needs to be downloaded once before use. This keeps the base application small and lets you choose what you need. Most features in the Preparedness tab work immediately with no installation required.</p>
-  <h3>The AI gives wrong or unhelpful answers. What should I do?</h3>
-  <p>Try a larger AI model (see the AI Model guide above). Smaller models are fast but less accurate. Also try changing the conversation mode &mdash; "Medical Advisor" gives better medical answers than "General Assistant." Enable "Include My Prep Data" so the AI has context about your specific situation.</p>
+<p>NOMAD manages several separate tools (Copilot, Information Library, etc.). Each needs to be downloaded once before use. This keeps the base application small and lets you choose what you need. Most features in the Preparedness tab work immediately with no installation required.</p>
+  <h3>The assistant gives wrong or unhelpful answers. What should I do?</h3>
+  <p>Try a larger local model (see the local model guide above). Smaller models are fast but less accurate. Also try changing the conversation mode &mdash; "Medical Advisor" gives better medical answers than "General Assistant." Enable "Include My Prep Data" so the assistant has context about your specific situation.</p>
 
   <h2 id="medical-guide">30. Medical Module In Depth</h2>
   <p>The Medical tab in Preparedness is a full field-hospital record system. Here is how to use it effectively:</p>
@@ -747,14 +747,14 @@ function showHelp(section) {
   </table>
   <p><strong>Examples:</strong> "Check water filter" (weekly), "Generator oil change" (monthly), "Medication dose" (daily), "Patrol north fence" (daily).</p>
 
-  <h2 id="ai-memory-guide">39. AI Memory System</h2>
-  <p>AI Memory lets you store persistent facts that the AI remembers across all conversations and copilot queries.</p>
+  <h2 id="ai-memory-guide">39. Memory System</h2>
+  <p>Memory lets you store persistent facts that the assistant can reuse across conversations and copilot queries.</p>
   <table>
     <tr><th>Feature</th><th>Description</th></tr>
-    <tr><td><strong>Memory Panel</strong></td><td>Click the "Memory" button in the AI Chat header to view, add, or delete facts.</td></tr>
-    <tr><td><strong>Persistent Context</strong></td><td>Facts are injected into every AI interaction — chat, copilot quick-query, and SITREP generation.</td></tr>
+    <tr><td><strong>Memory Panel</strong></td><td>Select the "Memory" button in the Copilot header to view, add, or delete facts.</td></tr>
+    <tr><td><strong>Persistent Context</strong></td><td>Facts are injected into every assistant interaction — chat, copilot quick-query, and SITREP generation.</td></tr>
     <tr><td><strong>What to Store</strong></td><td>Location, group size, medical conditions, equipment specs, key concerns, ongoing situations, preferences.</td></tr>
-    <tr><td><strong>Emergency Sheet</strong></td><td>AI memory facts appear on the printable Emergency Reference Sheet under "Operator Notes."</td></tr>
+    <tr><td><strong>Emergency Sheet</strong></td><td>Memory facts appear on the printable Emergency Reference Sheet under "Operator Notes."</td></tr>
   </table>
   <p><strong>Examples:</strong> "Family of 4, two children ages 5 and 8", "Solar array is 5kW with 10kWh battery", "Well water requires UV treatment", "Bug-out location is the cabin at waypoint 'Safe House'".</p>
 
@@ -775,7 +775,7 @@ function showHelp(section) {
 
   <h2 id="glossary">41. Glossary</h2>
   <table><tr><th>Term</th><th>Definition</th></tr>
-  <tr><td>AI Model</td><td>A downloadable file that gives the AI its knowledge and reasoning ability. Larger models = better answers but more storage and RAM required.</td></tr>
+  <tr><td>Local Model</td><td>A downloadable file that gives the assistant its knowledge and reasoning ability. Larger models give better answers but require more storage and RAM.</td></tr>
   <tr><td>BOB (Bug-Out Bag)</td><td>A pre-packed bag with essentials for a 72-hour evacuation. Also called a go-bag, GOOD bag, or INCH bag.</td></tr>
 <tr><td>Burn Rate</td><td>How fast you are consuming a supply. Measured in daily usage. NOMAD uses this to calculate "Days Left."</td></tr>
   <tr><td>CBRN</td><td>Chemical, Biological, Radiological, Nuclear. A category of threats requiring specialized protective measures.</td></tr>
@@ -911,7 +911,7 @@ async function pollBroadcast() {
       banner.classList.add('severity-' + sev);
       banner.style.display = 'block';
       banner.textContent = b.message;
-      banner.title = 'Click to dismiss | ' + b.timestamp;
+      banner.title = 'Dismiss alert | ' + b.timestamp;
       // Play alert sound once per broadcast
       if (!window._lastBroadcastTs || window._lastBroadcastTs !== b.timestamp) {
         window._lastBroadcastTs = b.timestamp;
@@ -1418,9 +1418,9 @@ async function loadServiceQuickLinks(servicesData = null) {
       return;
     }
     block?.classList.remove('is-empty');
-    const names = {ollama:'AI Chat',kiwix:'Library',cyberchef:'CyberChef',kolibri:'Kolibri',stirling:'PDF Tools'};
+    const names = {ollama:'Copilot',kiwix:'Library',cyberchef:'CyberChef',kolibri:'Kolibri',stirling:'PDF Tools'};
     el.innerHTML = running.filter(s => s.id !== 'qdrant').map(s => {
-      if (s.id === 'ollama') return `<button class="btn btn-sm btn-open-svc btn-open-svc-compact" data-tab-target="ai-chat">Open AI Chat</button>`;
+      if (s.id === 'ollama') return `<button class="btn btn-sm btn-open-svc btn-open-svc-compact" data-tab-target="ai-chat">Open Copilot</button>`;
       return `<button class="btn btn-sm btn-open-svc btn-open-svc-compact" data-app-frame-title="${names[s.id]||s.id}" data-app-frame-url="http://localhost:${s.port}">Open ${names[s.id]||s.id}</button>`;
     }).join('');
   } catch(e) {}
@@ -1831,7 +1831,7 @@ async function loadMotionStatus() {
   if (cooldownEl && config.cooldown) cooldownEl.value = config.cooldown;
 
   if (keys.length === 0) {
-    el.innerHTML = prepEmptyBlock('No motion detectors active. Click "Motion" on a camera to start.');
+    el.innerHTML = prepEmptyBlock('No motion detectors active. Use "Motion" on a camera to start.');
   } else {
     el.innerHTML = '<div class="prep-table-wrap prep-inline-table-shell"><table class="freq-table prep-inline-table"><thead><tr><th>Camera</th><th>Status</th><th>Detections</th><th>Last Detection</th><th>Last Check</th></tr></thead><tbody>' +
       keys.map(cid => {
@@ -2250,7 +2250,7 @@ async function loadBackups() {
   const el = document.getElementById('backup-list');
   if (!el) return;
   if (!backups.length) {
-    el.innerHTML = '<div class="settings-empty-state settings-backup-list-empty">No backups yet. Click "Backup Now" to create one.</div>';
+    el.innerHTML = '<div class="settings-empty-state settings-backup-list-empty">No backups yet. Use "Backup Now" to create one.</div>';
     return;
   }
   el.innerHTML = backups.map(b => {
@@ -2444,7 +2444,7 @@ async function loadPreservationLog() {
   const el = document.getElementById('preservation-list');
   if (!el) return;
   if (!data.length) {
-    el.innerHTML = prepEmptyBlock('No preservation batches logged. Click "+ Log Batch" to track canned, dried, or frozen food.');
+    el.innerHTML = prepEmptyBlock('No preservation batches logged. Use "Log Batch" to track canned, dried, or frozen food.');
     return;
   }
   const methodColors = {canning:'#c62828',drying:'#e65100',freezing:'#1565c0',fermenting:'#7b1fa2',smoking:'#795548'};
@@ -3183,7 +3183,7 @@ async function loadPatients() {
     _patients = await apiFetch('/api/patients');
     const el = document.getElementById('patient-list');
     if (!_patients.length) {
-      el.innerHTML = prepEmptyBlock('No patients registered. Click "+ Add Patient" or "Import from Contacts" to start.');
+      el.innerHTML = prepEmptyBlock('No patients registered. Use "Add Patient" or "Import from Contacts" to start.');
       return;
     }
     el.innerHTML = _patients.map(p => {
@@ -5008,7 +5008,7 @@ function updateTabBadges() {
     });
   }
 
-  // AI Chat badge: green dot if Ollama running, red dot if not
+  // Copilot badge: green dot if Ollama running, red dot if not
   if (!aiBadge) return;
   const applyAiBadge = (svcs) => {
     if (!Array.isArray(svcs)) return;

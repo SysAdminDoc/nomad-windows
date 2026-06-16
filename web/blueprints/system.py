@@ -1823,6 +1823,137 @@ def api_backup_config_get():
     config.pop('_salt', None)
     return jsonify(config)
 
+
+@system_bp.route('/api/system/backup/verify', methods=['POST'])
+def api_backup_verify():
+    """Verify a backup's integrity without replacing the live DB.
+
+    For encrypted backups, the request body must include {'password': '...'}.
+    Returns table count, schema summary, size, and PRAGMA integrity_check result.
+    """
+    import sqlite3 as _sqlite3
+    import tempfile
+    from datetime import datetime
+
+    data, error = _optional_json_object()
+    if error:
+        return error
+
+    db_path = get_db_path()
+    backup_dir = os.path.join(os.path.dirname(db_path), 'backups')
+    if not os.path.isdir(backup_dir):
+        return jsonify({'error': 'No backup directory found'}), 404
+
+    filename = (data.get('filename') or '').strip()
+    if not filename:
+        candidates = sorted(
+            [f for f in os.listdir(backup_dir) if f.startswith('nomad_backup_')],
+            key=lambda f: os.path.getmtime(os.path.join(backup_dir, f)),
+            reverse=True,
+        )
+        if not candidates:
+            return jsonify({'error': 'No backups found'}), 404
+        filename = candidates[0]
+
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return jsonify({'error': 'Invalid filename'}), 400
+
+    backup_path = os.path.join(backup_dir, filename)
+    if not os.path.isfile(backup_path):
+        return jsonify({'error': 'Backup file not found'}), 404
+
+    size_bytes = os.path.getsize(backup_path)
+    encrypted = filename.endswith('.enc')
+
+    verify_path = backup_path
+    tmp_path = None
+
+    try:
+        if encrypted:
+            password = (data.get('password') or '').strip()
+            if not password:
+                return jsonify({'error': 'Password required for encrypted backup', 'encrypted': True}), 400
+            try:
+                from cryptography.fernet import Fernet, InvalidToken
+                from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+                from cryptography.hazmat.primitives import hashes
+                import base64
+
+                with db_session() as db_cfg:
+                    cfg_row = db_cfg.execute("SELECT value FROM settings WHERE key = 'auto_backup_config'").fetchone()
+                cfg_data = _safe_json_value(cfg_row['value'] if cfg_row else None, {})
+                salt = cfg_data.get('_salt', '')
+                if not salt:
+                    return jsonify({'error': 'No encryption salt found in backup config'}), 400
+
+                kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt.encode(), iterations=100000)
+                key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+                f = Fernet(key)
+
+                with open(backup_path, 'rb') as fp:
+                    enc_data = fp.read()
+                dec_data = f.decrypt(enc_data)
+
+                tmp_fd, tmp_path = tempfile.mkstemp(suffix='.db')
+                os.close(tmp_fd)
+                with open(tmp_path, 'wb') as fp:
+                    fp.write(dec_data)
+                verify_path = tmp_path
+            except InvalidToken:
+                return jsonify({'error': 'Decryption failed — wrong password', 'encrypted': True, 'decrypt_ok': False}), 400
+            except ImportError:
+                return jsonify({'error': 'cryptography package not installed'}), 500
+
+        conn = _sqlite3.connect(verify_path, timeout=10)
+        conn.row_factory = _sqlite3.Row
+        try:
+            tables = conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").fetchone()[0]
+            table_names = [r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+            ).fetchall()]
+            ic = conn.execute('PRAGMA integrity_check(1)').fetchone()
+            integrity_ok = ic and ic[0] == 'ok'
+        finally:
+            conn.close()
+
+        result = {
+            'filename': filename,
+            'size_bytes': size_bytes,
+            'encrypted': encrypted,
+            'decrypt_ok': True if encrypted else None,
+            'integrity_ok': integrity_ok,
+            'tables': tables,
+            'table_sample': table_names[:20],
+            'verified_at': datetime.now().isoformat(),
+        }
+
+        with db_session() as db:
+            db.execute(
+                "INSERT OR REPLACE INTO settings (key, value) VALUES ('last_backup_verification', ?)",
+                (json.dumps(result),),
+            )
+            db.commit()
+
+        log_activity('backup_verified', detail=f'{filename}: integrity={"ok" if integrity_ok else "FAILED"}, tables={tables}')
+        return jsonify(result)
+
+    finally:
+        if tmp_path and os.path.isfile(tmp_path):
+            os.remove(tmp_path)
+
+
+@system_bp.route('/api/system/backup/verify/status')
+def api_backup_verify_status():
+    """Return the most recent backup verification result."""
+    with db_session() as db:
+        row = db.execute("SELECT value FROM settings WHERE key = 'last_backup_verification'").fetchone()
+    if not row or not row['value']:
+        return jsonify({'verified': False})
+    result = _safe_json_value(row['value'], {})
+    result['verified'] = True
+    return jsonify(result)
+
+
 # [EXTRACTED to blueprint] Federation v2 API
 
 

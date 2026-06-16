@@ -369,6 +369,23 @@ class TestSystemSchemaValidation:
         assert '<svg' in data['svg']
 
 
+class TestBackupVerification:
+    def test_verify_no_backups(self, client):
+        resp = client.post('/api/system/backup/verify', json={})
+        assert resp.status_code == 404
+
+    def test_verify_status_not_verified(self, client):
+        resp = client.get('/api/system/backup/verify/status')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['verified'] is False
+
+    def test_verify_rejects_path_traversal(self, client):
+        resp = client.post('/api/system/backup/verify', json={'filename': '../../../etc/passwd'})
+        assert resp.status_code == 400
+        assert 'Invalid' in resp.get_json()['error']
+
+
 class TestDiagnosticsBundle:
     def test_bundle_returns_version_and_platform(self, client):
         resp = client.get('/api/system/diagnostics/bundle')

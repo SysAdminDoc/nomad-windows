@@ -1079,7 +1079,8 @@ class TestErrorHandler:
         assert "const data = await safeFetch(`/api/patients/${pid}/wounds/${wid}/photos`, {}, null);" in ops_text
         assert "_guideContext = await safeFetch('/api/guides/context', {}, null);" in ops_text
         assert "await apiPost(`/api/alerts/${id}/dismiss`, {});" in ops_text
-        assert "const resp = await apiFetch('/api/export-config');" in ops_text
+        assert "const resp = await apiFetch('/api/export-config');" not in ops_text
+        assert "Auto backup completed" not in ops_text
         assert "if (!peopleInput || !daysInput || !activityInput || !resultEl) return;" in ops_text
         assert "if (!peopleInput || !monthsInput || !resultEl) return;" in ops_text
         assert "if (!wattsInput || !fuelInput || !hoursInput || !daysInput || !loadInput || !resultEl) return;" in ops_text

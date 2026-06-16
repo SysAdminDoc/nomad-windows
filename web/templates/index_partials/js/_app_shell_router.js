@@ -1037,7 +1037,6 @@ document.addEventListener('change', e => {
     case 'filter-freq-table': filterFreqTable(); break;
     case 'update-power-spec-fields': updatePowerSpecFields(); break;
     case 'load-sensor-chart': loadSensorChart(); break;
-    case 'save-auto-backup': saveAutoBackup(); break;
     case 'save-voice-prefs': saveVoicePrefs(); break;
     case 'toggle-startup': toggleStartup(); break;
     case 'toggle-notifications': toggleNotifications(); break;

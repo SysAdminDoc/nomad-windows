@@ -806,42 +806,6 @@ function showHelp(section) {
   </body></html>`, section);
 }
 
-/* ─── Auto Backup ─── */
-let _autoBackupTimer = null;
-function saveAutoBackup() {
-  const intervalInput = document.getElementById('auto-backup-interval');
-  if (!intervalInput) return;
-  const interval = parseInt(intervalInput.value);
-  localStorage.setItem('nomad-auto-backup', interval);
-  setupAutoBackup(interval);
-}
-function setupAutoBackup(interval) {
-  if (_autoBackupTimer) { clearInterval(_autoBackupTimer); _autoBackupTimer = null; }
-  window.NomadShellRuntime?.stopInterval('shell.auto-backup');
-  if (interval > 0) {
-    const runner = async () => {
-      if (document.hidden) return;
-      try {
-        const resp = await apiFetch('/api/export-config');
-        if (resp instanceof Response) toast('Auto backup completed', 'info');
-      } catch(e) {}
-    };
-    if (window.NomadShellRuntime) {
-      _autoBackupTimer = window.NomadShellRuntime.startInterval('shell.auto-backup', runner, interval * 1000, {
-        requireVisible: true,
-      });
-      return;
-    }
-    _autoBackupTimer = setInterval(runner, interval * 1000);
-  }
-}
-(function() {
-  const interval = parseInt(localStorage.getItem('nomad-auto-backup') || '0');
-  if (interval > 0) setupAutoBackup(interval);
-  const el = document.getElementById('auto-backup-interval');
-  if (el) el.value = interval;
-})();
-
 /* ─── AI Conversation Starters ─── */
 function useStarter(text) {
   const chatInput = document.getElementById('chat-input');

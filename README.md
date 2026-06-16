@@ -1,7 +1,7 @@
 <div align="center">
 <img src="logo.png" width="140" height="140"/>
 
-# NOMAD Field Desk v7.66.21
+# NOMAD Field Desk v7.66.23
 
 ### Your Personal Intelligence & Preparedness Command Center
 
@@ -53,7 +53,7 @@
 
 ## Security Notice
 
-> NOMAD is designed for **localhost-only** use by default. If you expose it on a LAN or reverse proxy, you **must** place it behind an authenticating reverse proxy (Caddy, nginx + Authelia, Traefik + forward-auth) that enforces TLS and validates Host headers. Set `NOMAD_ALLOWED_HOSTS=your-hostname.local` to reject DNS rebinding requests. Enable `NOMAD_AUTH_REQUIRED=1` for token-based access control on LAN deployments. Never expose NOMAD directly to the internet without authentication.
+> NOMAD is designed for **localhost-only** use by default. If you expose it on a LAN or reverse proxy, you **must** place it behind an authenticating reverse proxy (Caddy, nginx + Authelia, Traefik + forward-auth) that enforces TLS and validates Host headers. Set `NOMAD_ALLOWED_HOSTS=your-hostname.local` to reject DNS rebinding requests. Enable `NOMAD_AUTH_REQUIRED=1` for token-based access control on LAN deployments. LAN QR codes are generated locally by the app and do not send your LAN URL to third-party QR services. Never expose NOMAD directly to the internet without authentication.
 
 ---
 

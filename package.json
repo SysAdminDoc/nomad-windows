@@ -12,10 +12,10 @@
     "visual:test:list": "playwright test --config=playwright.config.mjs --list"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
-    "esbuild": "^0.20.0",
-    "vitest": "^2.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
-    "jsdom": "^24.0.0"
+    "@playwright/test": "^1.61.0",
+    "esbuild": "^0.28.1",
+    "vitest": "^4.1.9",
+    "@vitest/coverage-v8": "^4.1.9",
+    "jsdom": "^29.1.1"
   }
 }

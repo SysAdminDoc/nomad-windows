@@ -42,6 +42,7 @@ from web.utils import (
     safe_json_value as _safe_json_value,
     safe_float as _safe_float,
 )
+from web.validation import validate_json, validate_optional_json
 
 situation_room_bp = Blueprint('situation_room', __name__)
 log = logging.getLogger('nomad.situation_room')
@@ -2844,6 +2845,11 @@ def api_sitroom_feeds():
 
 
 @situation_room_bp.route('/api/sitroom/feeds', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'required': True, 'max_length': 200},
+    'url': {'type': str, 'required': True, 'max_length': 2000},
+    'category': {'type': str, 'max_length': 100},
+})
 def api_sitroom_add_feed():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()[:200]
@@ -3561,6 +3567,10 @@ def api_sitroom_monitors():
 
 
 @situation_room_bp.route('/api/sitroom/monitors', methods=['POST'])
+@validate_json({
+    'keyword': {'type': str, 'required': True, 'max_length': 100},
+    'color': {'type': str, 'max_length': 20},
+})
 def api_sitroom_add_monitor():
     data = request.get_json() or {}
     keyword = (data.get('keyword') or '').strip()[:100]
@@ -3819,6 +3829,9 @@ def api_sitroom_news_clusters():
 
 
 @situation_room_bp.route('/api/sitroom/deduction', methods=['POST'])
+@validate_optional_json({
+    'focus': {'type': str, 'max_length': 500},
+})
 def api_sitroom_deduction():
     """AI-powered situation deduction from current evidence."""
     req_data = request.get_json(silent=True) or {}
@@ -4377,6 +4390,9 @@ def api_sitroom_data_freshness():
 
 
 @situation_room_bp.route('/api/sitroom/search', methods=['POST'])
+@validate_optional_json({
+    'query': {'type': str, 'max_length': 200},
+})
 def api_sitroom_search():
     """Full-text search across all cached news and events."""
     req = request.get_json(silent=True) or {}
@@ -4639,6 +4655,9 @@ def api_sitroom_intel_digest():
 
 
 @situation_room_bp.route('/api/sitroom/watchlist', methods=['GET', 'POST', 'DELETE'])
+@validate_optional_json({
+    'keyword': {'type': str, 'max_length': 100},
+})
 def api_sitroom_watchlist():
     """Manage a keyword watchlist for personalized alerts."""
     with db_session() as db:
@@ -5211,6 +5230,9 @@ def api_sitroom_apt_groups():
 
 
 @situation_room_bp.route('/api/sitroom/webhook-test', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'required': True, 'max_length': 500},
+})
 def api_sitroom_webhook_test():
     """Test webhook notification delivery (POST to external URL)."""
     data = request.get_json(silent=True) or {}
@@ -5252,6 +5274,10 @@ def api_sitroom_webhook_test():
 
 
 @situation_room_bp.route('/api/sitroom/webhook-config', methods=['GET', 'POST'])
+@validate_optional_json({
+    'url': {'type': str, 'max_length': 500},
+    'event_types': {'type': str, 'max_length': 200},
+})
 def api_sitroom_webhook_config():
     """Manage webhook notification configuration."""
     with db_session() as db:

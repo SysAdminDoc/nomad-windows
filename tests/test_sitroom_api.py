@@ -112,6 +112,72 @@ class TestSitroomSpecialized:
         assert resp.status_code == 200
 
 
+class TestSitroomMutationValidation:
+    """Regression tests: mutation endpoints reject malformed/non-object JSON."""
+
+    def test_add_feed_rejects_malformed_json(self, client):
+        resp = client.post('/api/sitroom/feeds', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_add_feed_rejects_non_object(self, client):
+        resp = client.post('/api/sitroom/feeds', json=[1, 2, 3])
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_add_feed_rejects_wrong_type_name(self, client):
+        resp = client.post('/api/sitroom/feeds', json={'name': 123, 'url': 'https://example.com/feed.xml'})
+        assert resp.status_code == 400
+
+    def test_add_monitor_rejects_malformed_json(self, client):
+        resp = client.post('/api/sitroom/monitors', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+
+    def test_add_monitor_rejects_non_object(self, client):
+        resp = client.post('/api/sitroom/monitors', json='keyword')
+        assert resp.status_code == 400
+
+    def test_search_rejects_malformed_json(self, client):
+        resp = client.post('/api/sitroom/search', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+
+    def test_search_allows_empty_body(self, client):
+        resp = client.post('/api/sitroom/search')
+        assert resp.status_code == 200
+
+    def test_deduction_rejects_malformed_json(self, client):
+        resp = client.post('/api/sitroom/deduction', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+
+    def test_deduction_allows_empty_body(self, client):
+        resp = client.post('/api/sitroom/deduction')
+        assert resp.status_code == 200
+
+    def test_watchlist_post_rejects_malformed_json(self, client):
+        resp = client.post('/api/sitroom/watchlist', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+
+    def test_watchlist_get_still_works(self, client):
+        resp = client.get('/api/sitroom/watchlist')
+        assert resp.status_code == 200
+
+    def test_webhook_test_rejects_malformed_json(self, client):
+        resp = client.post('/api/sitroom/webhook-test', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+
+    def test_webhook_test_rejects_non_object(self, client):
+        resp = client.post('/api/sitroom/webhook-test', json='http://example.com')
+        assert resp.status_code == 400
+
+    def test_webhook_config_rejects_malformed_json(self, client):
+        resp = client.post('/api/sitroom/webhook-config', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+
+    def test_webhook_config_get_still_works(self, client):
+        resp = client.get('/api/sitroom/webhook-config')
+        assert resp.status_code == 200
+
+
 class TestSitroomProximity:
     """Tests for the /api/sitroom/proximity endpoint added in v7.2.0.
 

@@ -114,10 +114,26 @@ def api_install_service(service_id):
         _installing.add(service_id)
 
     def do_install():
+        started_at = time.time()
+        log_activity('service_install_started', service_id,
+                     f'{SVC_FRIENDLY.get(service_id, service_id)} install started')
         try:
             mod.install()
+            elapsed = round(time.time() - started_at, 1)
+            try:
+                svc_dir = os.path.join(get_services_dir(), service_id)
+                disk_bytes = get_dir_size(svc_dir) if os.path.isdir(svc_dir) else 0
+                disk_str = format_size(disk_bytes)
+            except Exception:
+                disk_str = 'unknown'
+            log_activity('service_install_completed', service_id,
+                         f'{SVC_FRIENDLY.get(service_id, service_id)} installed in {elapsed}s, disk: {disk_str}')
         except Exception as e:
+            elapsed = round(time.time() - started_at, 1)
             log.error(f'Install failed for {service_id}: {e}')
+            log_activity('service_install_failed', service_id,
+                         f'{SVC_FRIENDLY.get(service_id, service_id)} install failed after {elapsed}s: {e}',
+                         level='error')
         finally:
             _installing.discard(service_id)
 
@@ -487,6 +503,22 @@ def api_update_download_open():
     from platform_utils import open_folder
     open_folder(os.path.dirname(path))
     return jsonify({'status': 'opened', 'path': path})
+
+@services_bp.route('/api/services/<service_id>/journal')
+def api_service_journal(service_id):
+    """Return install/update activity journal for a service."""
+    if service_id not in SERVICE_MODULES:
+        return jsonify({'error': 'Unknown service'}), 404
+    limit = _get_query_int('limit', 20, 1, 100)
+    with db_session() as db:
+        rows = db.execute(
+            "SELECT event, detail, level, created_at FROM activity_log "
+            "WHERE service = ? AND event LIKE 'service_install%' "
+            "ORDER BY created_at DESC LIMIT ?",
+            (service_id, limit),
+        ).fetchall()
+    return jsonify({'service': service_id, 'journal': [dict(r) for r in rows]})
+
 
 # ─── Task Scheduler Engine (Phase 15) ───────────────────────────
 

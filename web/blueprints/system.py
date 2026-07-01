@@ -1839,12 +1839,15 @@ def api_backup_verify():
     if error:
         return error
 
+    filename = (data.get('filename') or '').strip()
+    if filename and ('..' in filename or '/' in filename or '\\' in filename):
+        return jsonify({'error': 'Invalid filename'}), 400
+
     db_path = get_db_path()
     backup_dir = os.path.join(os.path.dirname(db_path), 'backups')
     if not os.path.isdir(backup_dir):
         return jsonify({'error': 'No backup directory found'}), 404
 
-    filename = (data.get('filename') or '').strip()
     if not filename:
         candidates = sorted(
             [f for f in os.listdir(backup_dir) if f.startswith('nomad_backup_')],

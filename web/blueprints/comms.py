@@ -990,14 +990,17 @@ def api_serial_status():
 def api_mesh_status():
     """Return mesh transport status — Reticulum if available, else stub."""
     from services import reticulum as rns_svc
-    if rns_svc.available():
-        status = rns_svc.get_status()
-        set_mesh_state(
-            connected=status.get('running', False),
-            my_node_id=status.get('identity', '!local'),
-        )
-        return jsonify(status)
-    return jsonify(get_mesh_state())
+    status = rns_svc.get_status()
+    connected = bool(status.get('ready', False))
+    node_id = status.get('identity') or '!local'
+    node_count = int(status.get('peer_count') or status.get('known_destinations') or 0)
+    set_mesh_state(
+        connected=connected,
+        my_node_id=node_id,
+        node_count=node_count,
+        transport_state=status.get('state', 'unknown'),
+    )
+    return jsonify({**status, 'connected': connected, 'my_node_id': node_id, 'node_count': node_count})
 
 
 @comms_bp.route('/api/mesh/start', methods=['POST'])
@@ -1006,7 +1009,7 @@ def api_mesh_start():
     """Start the Reticulum mesh transport."""
     from services import reticulum as rns_svc
     if not rns_svc.available():
-        return jsonify({'error': 'RNS not installed. Install with: pip install rns lxmf'}), 503
+        return jsonify(rns_svc.get_status()), 503
 
     if rns_svc.running():
         return jsonify({'status': 'already_running', **rns_svc.get_status()})
@@ -1017,9 +1020,15 @@ def api_mesh_start():
     try:
         rns_svc.start(transport=transport)
         node_id = rns_svc.get_identity_hash() or '!local'
-        set_mesh_state(connected=True, my_node_id=node_id)
+        status = rns_svc.get_status()
+        set_mesh_state(
+            connected=bool(status.get('ready', False)),
+            my_node_id=node_id,
+            node_count=int(status.get('peer_count') or status.get('known_destinations') or 0),
+            transport_state=status.get('state', 'unknown'),
+        )
         log_activity('mesh_started', detail=f'Identity: {node_id[:12]}')
-        return jsonify({'status': 'started', **rns_svc.get_status()})
+        return jsonify({'status': 'started', **status, 'my_node_id': node_id})
     except Exception as e:
         return jsonify({'error': 'Mesh start failed'}), 500
 

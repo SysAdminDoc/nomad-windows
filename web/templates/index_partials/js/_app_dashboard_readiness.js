@@ -1459,6 +1459,39 @@ function _attachCompassListener() {
   }, 3000);
 }
 
+function renderMeshTransportStatus(status) {
+  const statusEl = document.getElementById('mesh-status');
+  if (!statusEl || !status) return;
+  const state = status.state || (status.running ? 'running' : 'stopped');
+  const peers = Number(status.peer_count || status.known_destinations || 0);
+  const links = Number(status.active_interfaces || 0);
+  const installHint = status.install_hint || 'pip install rns lxmf';
+  statusEl.classList.toggle('tools-status-pill-live', state === 'running');
+  statusEl.classList.toggle('tools-status-pill-alert', state === 'installable' || state === 'unavailable' || state === 'degraded');
+  if (state === 'running') {
+    statusEl.textContent = `Reticulum ready: ${peers} peers, ${links} links`;
+  } else if (state === 'degraded') {
+    statusEl.textContent = `Reticulum degraded: ${peers} peers, ${links} links`;
+  } else if (state === 'installable' || state === 'unavailable') {
+    statusEl.textContent = `Reticulum installable: ${installHint}`;
+  } else {
+    statusEl.textContent = 'Reticulum stopped';
+  }
+}
+
+async function refreshMeshTransportStatus() {
+  const statusEl = document.getElementById('mesh-status');
+  if (!statusEl) return;
+  const status = await safeFetch('/api/mesh/status', {}, null);
+  if (status) renderMeshTransportStatus(status);
+}
+
+if (typeof document !== 'undefined' && document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', refreshMeshTransportStatus);
+} else if (typeof document !== 'undefined') {
+  refreshMeshTransportStatus();
+}
+
 async function scanMeshtastic() {
   if (!('serial' in navigator)) { toast('Web Serial not supported. Use Chrome or Edge.', 'error'); return; }
   try {

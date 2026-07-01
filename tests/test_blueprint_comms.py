@@ -137,6 +137,116 @@ class TestPropagation:
         assert isinstance(data, dict)
 
 
+class TestMeshTransportStatus:
+    def test_mesh_status_reports_installable_transport(self, client, monkeypatch):
+        from services import reticulum as rns_svc
+
+        monkeypatch.setattr(rns_svc, 'get_status', lambda: {
+            'state': 'installable',
+            'available': False,
+            'installable': True,
+            'running': False,
+            'ready': False,
+            'identity': None,
+            'peer_count': 0,
+            'known_destinations': 0,
+            'active_interfaces': 0,
+            'interfaces': [],
+            'install_hint': 'pip install rns lxmf',
+        })
+
+        resp = client.get('/api/mesh/status')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['state'] == 'installable'
+        assert data['installable'] is True
+        assert data['install_hint'] == 'pip install rns lxmf'
+        assert data['connected'] is False
+        assert data['my_node_id'] == '!local'
+
+    def test_mesh_status_reports_running_identity_and_counts(self, client, monkeypatch):
+        from services import reticulum as rns_svc
+
+        monkeypatch.setattr(rns_svc, 'get_status', lambda: {
+            'state': 'running',
+            'available': True,
+            'installable': False,
+            'running': True,
+            'ready': True,
+            'identity': 'abcdef123456',
+            'peer_count': 3,
+            'known_destinations': 3,
+            'active_interfaces': 2,
+            'interfaces': [
+                {'name': 'AutoInterface', 'online': True, 'type': 'AutoInterface'},
+                {'name': 'TCPInterface', 'online': True, 'type': 'TCPInterface'},
+            ],
+        })
+
+        resp = client.get('/api/mesh/status')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['state'] == 'running'
+        assert data['connected'] is True
+        assert data['my_node_id'] == 'abcdef123456'
+        assert data['peer_count'] == 3
+        assert data['node_count'] == 3
+        assert data['active_interfaces'] == 2
+        assert len(data['interfaces']) == 2
+
+    def test_mesh_start_unavailable_returns_install_guidance(self, client, monkeypatch):
+        from services import reticulum as rns_svc
+
+        monkeypatch.setattr(rns_svc, 'available', lambda: False)
+        monkeypatch.setattr(rns_svc, 'get_status', lambda: {
+            'state': 'installable',
+            'available': False,
+            'installable': True,
+            'running': False,
+            'ready': False,
+            'install_hint': 'pip install rns lxmf',
+            'error': 'RNS not installed. Install with: pip install rns lxmf',
+        })
+
+        resp = client.post('/api/mesh/start', json={})
+        assert resp.status_code == 503
+        data = resp.get_json()
+        assert data['state'] == 'installable'
+        assert data['install_hint'] == 'pip install rns lxmf'
+
+    def test_reticulum_status_degrades_without_online_interfaces(self, monkeypatch):
+        from services import reticulum as rns_svc
+
+        class FakeIdentity:
+            hexhash = 'abcdef123456'
+
+        class FakeTransport:
+            destinations_table = {'peer': object()}
+
+        class FakeRns:
+            Transport = FakeTransport
+
+        class FakeReticulum:
+            def is_transport_instance(self):
+                return False
+
+            def get_interfaces(self):
+                return []
+
+        monkeypatch.setattr(rns_svc, 'available', lambda: True)
+        monkeypatch.setattr(rns_svc, '_rns', FakeRns)
+        monkeypatch.setattr(rns_svc, '_identity', FakeIdentity())
+        monkeypatch.setattr(rns_svc, '_reticulum', FakeReticulum())
+
+        data = rns_svc.get_status()
+        assert data['state'] == 'degraded'
+        assert data['running'] is True
+        assert data['ready'] is False
+        assert data['connected'] is False
+        assert data['peer_count'] == 1
+        assert 'No active Reticulum interfaces are online' in data['issues']
+
+
 class TestPrintFreqCard:
     def test_freq_card_print(self, client):
         resp = client.get('/api/print/freq-card')

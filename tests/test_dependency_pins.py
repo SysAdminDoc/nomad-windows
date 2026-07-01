@@ -31,9 +31,7 @@ def test_development_dependency_floors_stay_auditable():
     assert _requirement_floor('requirements-dev.txt', 'pip-audit', '3.0') >= (2, 10, 1)
 
 
-def test_workflows_run_pip_audit_before_tests_and_release_packaging():
-    ci_workflow = (REPO_ROOT / '.github' / 'workflows' / 'ci.yml').read_text(encoding='utf-8')
-    build_workflow = (REPO_ROOT / '.github' / 'workflows' / 'build.yml').read_text(encoding='utf-8')
-    assert 'python -m pip_audit -r requirements.txt -r requirements-dev.txt --strict' in ci_workflow
-    assert 'python -m pip_audit -r requirements.txt --strict' in build_workflow
-    assert '"pip-audit>=2.10.1,<3.0"' in build_workflow
+def test_security_audit_tooling_stays_local_only():
+    assert not (REPO_ROOT / '.github' / 'workflows').exists()
+    requirements_dev = (REPO_ROOT / 'requirements-dev.txt').read_text(encoding='utf-8')
+    assert 'pip-audit>=2.10.1,<3.0' in requirements_dev

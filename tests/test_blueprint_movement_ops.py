@@ -81,6 +81,64 @@ def _create_gonogo(client, criterion='Roads passable', evac_id=None):
 
 # ─── Movement Plans ───────────────────────────────────────────────────────────
 
+def _movement_mutation_routes(client):
+    plan = _create_plan(client)
+    alt_vehicle = _create_alt_vehicle(client)
+    hazard = _create_hazard(client)
+    loading = _create_loading(client)
+    go_nogo = _create_gonogo(client)
+    return [
+        ('post', '/api/movement-plans'),
+        ('put', f"/api/movement-plans/{plan['id']}"),
+        ('post', '/api/movement/march-rate'),
+        ('post', '/api/movement/pace-count'),
+        ('post', '/api/alt-vehicles'),
+        ('put', f"/api/alt-vehicles/{alt_vehicle['id']}"),
+        ('post', '/api/route-hazards'),
+        ('put', f"/api/route-hazards/{hazard['id']}"),
+        ('post', '/api/route-recon'),
+        ('post', '/api/vehicle-loading'),
+        ('put', f"/api/vehicle-loading/{loading['id']}"),
+        ('post', '/api/go-nogo'),
+        ('put', f"/api/go-nogo/{go_nogo['id']}"),
+    ]
+
+
+class TestMovementPayloadValidation:
+    def test_mutation_routes_reject_malformed_json(self, client):
+        for method, path in _movement_mutation_routes(client):
+            resp = getattr(client, method)(
+                path,
+                data='{bad',
+                content_type='application/json',
+            )
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_mutation_routes_reject_non_object_json(self, client):
+        for method, path in _movement_mutation_routes(client):
+            resp = getattr(client, method)(
+                path,
+                data='[]',
+                content_type='application/json',
+            )
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_calculator_rejects_bad_numeric_shape(self, client):
+        resp = client.post('/api/movement/march-rate', json={'distance_miles': []})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_vehicle_loading_rejects_bad_collection_shape(self, client):
+        resp = client.post('/api/vehicle-loading', json={
+            'vehicle_name': 'Truck 2',
+            'assigned_persons': 42,
+        })
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+
 class TestMovementPlansList:
     def test_empty_returns_list(self, client):
         resp = client.get('/api/movement-plans')

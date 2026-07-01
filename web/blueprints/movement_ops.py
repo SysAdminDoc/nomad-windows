@@ -5,6 +5,7 @@ import logging
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.validation import validate_json, validate_optional_json
 
 _log = logging.getLogger(__name__)
 
@@ -51,6 +52,140 @@ _GO_NOGO_MATRIX_ALLOWED_FIELDS = frozenset({
     'current_status', 'data_source', 'last_updated', 'notes',
 })
 
+_TEXT = {'type': str, 'max_length': 500}
+_TEXT_LONG = {'type': str, 'max_length': 5000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_BOOLISH_INPUT = {'type': (bool, int, float, str)}
+_JSONISH_INPUT = {'type': (list, dict, str)}
+
+_MOVEMENT_PLAN_SCHEMA = {
+    'name': {'type': str, 'min_length': 1, 'max_length': 200},
+    'plan_type': _TEXT,
+    'origin': _TEXT,
+    'origin_lat': _NUMBER_INPUT,
+    'origin_lng': _NUMBER_INPUT,
+    'destination': _TEXT,
+    'destination_lat': _NUMBER_INPUT,
+    'destination_lng': _NUMBER_INPUT,
+    'distance_miles': _NUMBER_INPUT,
+    'pace_count_per_100m': _NUMBER_INPUT,
+    'march_rate_mph': _NUMBER_INPUT,
+    'estimated_hours': _NUMBER_INPUT,
+    'rest_plan': _TEXT,
+    'water_stops': _JSONISH_INPUT,
+    'waypoints': _JSONISH_INPUT,
+    'convoy_sop': _TEXT_LONG,
+    'convoy_order': _JSONISH_INPUT,
+    'comm_plan': _TEXT_LONG,
+    'hand_signals': _JSONISH_INPUT,
+    'night_movement': _BOOLISH_INPUT,
+    'vehicle_id': _NUMBER_INPUT,
+    'evac_plan_id': _NUMBER_INPUT,
+    'status': _TEXT,
+    'notes': _TEXT_LONG,
+}
+_MOVEMENT_PLAN_CREATE_SCHEMA = dict(
+    _MOVEMENT_PLAN_SCHEMA,
+    name={'type': str, 'required': True, 'max_length': 200},
+)
+_MARCH_RATE_SCHEMA = {
+    'distance_miles': _NUMBER_INPUT,
+    'march_rate_mph': _NUMBER_INPUT,
+    'rest_min_per_hour': _NUMBER_INPUT,
+    'load_lb': _NUMBER_INPUT,
+    'terrain': _TEXT,
+}
+_PACE_COUNT_SCHEMA = {
+    'pace_per_100m': _NUMBER_INPUT,
+    'distance_meters': _NUMBER_INPUT,
+}
+_ALT_VEHICLE_SCHEMA = {
+    'name': {'type': str, 'min_length': 1, 'max_length': 200},
+    'vehicle_type': _TEXT,
+    'capacity_lb': _NUMBER_INPUT,
+    'range_miles': _NUMBER_INPUT,
+    'speed_mph': _NUMBER_INPUT,
+    'fuel_type': _TEXT,
+    'fuel_consumption': _TEXT,
+    'feed_requirements': _TEXT_LONG,
+    'condition': _TEXT,
+    'maintenance_due': _TEXT,
+    'storage_location': _TEXT,
+    'notes': _TEXT_LONG,
+}
+_ALT_VEHICLE_CREATE_SCHEMA = dict(
+    _ALT_VEHICLE_SCHEMA,
+    name={'type': str, 'required': True, 'max_length': 200},
+)
+_ROUTE_HAZARD_SCHEMA = {
+    'movement_plan_id': _NUMBER_INPUT,
+    'name': {'type': str, 'min_length': 1, 'max_length': 200},
+    'hazard_type': _TEXT,
+    'lat': _NUMBER_INPUT,
+    'lng': _NUMBER_INPUT,
+    'severity': _TEXT,
+    'description': _TEXT_LONG,
+    'bypass_route': _TEXT_LONG,
+    'seasonal': _BOOLISH_INPUT,
+    'active_months': _TEXT,
+    'last_verified': _TEXT,
+    'notes': _TEXT_LONG,
+}
+_ROUTE_HAZARD_CREATE_SCHEMA = dict(
+    _ROUTE_HAZARD_SCHEMA,
+    name={'type': str, 'required': True, 'max_length': 200},
+)
+_ROUTE_RECON_SCHEMA = {
+    'movement_plan_id': _NUMBER_INPUT,
+    'recon_date': {'type': str, 'min_length': 1, 'max_length': 100},
+    'observer': _TEXT,
+    'road_condition': _TEXT,
+    'bridge_status': _TEXT,
+    'water_crossings': _JSONISH_INPUT,
+    'obstacles': _JSONISH_INPUT,
+    'threat_level': _TEXT,
+    'population_density': _TEXT,
+    'fuel_available': _BOOLISH_INPUT,
+    'water_available': _BOOLISH_INPUT,
+    'shelter_available': _BOOLISH_INPUT,
+    'photos': _JSONISH_INPUT,
+    'notes': _TEXT_LONG,
+}
+_ROUTE_RECON_CREATE_SCHEMA = dict(
+    _ROUTE_RECON_SCHEMA,
+    recon_date={'type': str, 'required': True, 'max_length': 100},
+)
+_VEHICLE_LOADING_SCHEMA = {
+    'evac_plan_id': _NUMBER_INPUT,
+    'vehicle_id': _NUMBER_INPUT,
+    'vehicle_name': _TEXT,
+    'load_order': _NUMBER_INPUT,
+    'assigned_persons': _JSONISH_INPUT,
+    'assigned_bags': _JSONISH_INPUT,
+    'assigned_items': _JSONISH_INPUT,
+    'total_weight_lb': _NUMBER_INPUT,
+    'max_weight_lb': _NUMBER_INPUT,
+    'fuel_level_pct': _NUMBER_INPUT,
+    'notes': _TEXT_LONG,
+}
+_GO_NOGO_SCHEMA = {
+    'evac_plan_id': _NUMBER_INPUT,
+    'criterion': {'type': str, 'min_length': 1, 'max_length': 500},
+    'category': _TEXT,
+    'weight': _NUMBER_INPUT,
+    'go_threshold': _TEXT_LONG,
+    'nogo_threshold': _TEXT_LONG,
+    'current_value': _TEXT,
+    'current_status': _TEXT,
+    'data_source': _TEXT,
+    'last_updated': _TEXT,
+    'notes': _TEXT_LONG,
+}
+_GO_NOGO_CREATE_SCHEMA = dict(
+    _GO_NOGO_SCHEMA,
+    criterion={'type': str, 'required': True, 'max_length': 500},
+)
+
 
 # ─── Movement Plans CRUD ─────────────────────────────────────────────
 
@@ -73,6 +208,7 @@ def api_movement_plans_list():
 
 
 @movement_ops_bp.route('/api/movement-plans', methods=['POST'])
+@validate_json(_MOVEMENT_PLAN_CREATE_SCHEMA)
 def api_movement_plans_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -112,6 +248,7 @@ def api_movement_plans_detail(pid):
 
 
 @movement_ops_bp.route('/api/movement-plans/<int:pid>', methods=['PUT'])
+@validate_json(_MOVEMENT_PLAN_SCHEMA)
 def api_movement_plans_update(pid):
     data = request.get_json() or {}
     allowed = _MOVEMENT_PLANS_ALLOWED_FIELDS
@@ -151,6 +288,7 @@ def api_movement_plans_delete(pid):
 # ─── March Rate Calculator ───────────────────────────────────────────
 
 @movement_ops_bp.route('/api/movement/march-rate', methods=['POST'])
+@validate_optional_json(_MARCH_RATE_SCHEMA)
 def api_march_rate_calc():
     """Calculate march time: distance / rate with rest stops factored in."""
     data = request.get_json() or {}
@@ -187,6 +325,7 @@ def api_march_rate_calc():
 # ─── Pace Count Calculator ──────────────────────────────────────────
 
 @movement_ops_bp.route('/api/movement/pace-count', methods=['POST'])
+@validate_optional_json(_PACE_COUNT_SCHEMA)
 def api_pace_count_calc():
     """Convert distance using personal pace count."""
     data = request.get_json() or {}
@@ -219,6 +358,7 @@ def api_alt_vehicles_list():
 
 
 @movement_ops_bp.route('/api/alt-vehicles', methods=['POST'])
+@validate_json(_ALT_VEHICLE_CREATE_SCHEMA)
 def api_alt_vehicles_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -245,6 +385,7 @@ def api_alt_vehicles_create():
 
 
 @movement_ops_bp.route('/api/alt-vehicles/<int:vid>', methods=['PUT'])
+@validate_json(_ALT_VEHICLE_SCHEMA)
 def api_alt_vehicles_update(vid):
     data = request.get_json() or {}
     allowed = _ALT_VEHICLES_ALLOWED_FIELDS
@@ -296,6 +437,7 @@ def api_route_hazards_list():
 
 
 @movement_ops_bp.route('/api/route-hazards', methods=['POST'])
+@validate_json(_ROUTE_HAZARD_CREATE_SCHEMA)
 def api_route_hazards_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -323,6 +465,7 @@ def api_route_hazards_create():
 
 
 @movement_ops_bp.route('/api/route-hazards/<int:hid>', methods=['PUT'])
+@validate_json(_ROUTE_HAZARD_SCHEMA)
 def api_route_hazards_update(hid):
     data = request.get_json() or {}
     allowed = _ROUTE_HAZARDS_ALLOWED_FIELDS
@@ -372,6 +515,7 @@ def api_route_recon_list():
 
 
 @movement_ops_bp.route('/api/route-recon', methods=['POST'])
+@validate_json(_ROUTE_RECON_CREATE_SCHEMA)
 def api_route_recon_create():
     data = request.get_json() or {}
     recon_date = (data.get('recon_date') or '').strip()
@@ -433,6 +577,7 @@ def api_vehicle_loading_list():
 
 
 @movement_ops_bp.route('/api/vehicle-loading', methods=['POST'])
+@validate_json(_VEHICLE_LOADING_SCHEMA)
 def api_vehicle_loading_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -459,6 +604,7 @@ def api_vehicle_loading_create():
 
 
 @movement_ops_bp.route('/api/vehicle-loading/<int:lid>', methods=['PUT'])
+@validate_json(_VEHICLE_LOADING_SCHEMA)
 def api_vehicle_loading_update(lid):
     data = request.get_json() or {}
     allowed = _VEHICLE_LOADING_PLANS_ALLOWED_FIELDS
@@ -510,6 +656,7 @@ def api_go_nogo_list():
 
 
 @movement_ops_bp.route('/api/go-nogo', methods=['POST'])
+@validate_json(_GO_NOGO_CREATE_SCHEMA)
 def api_go_nogo_create():
     data = request.get_json() or {}
     criterion = (data.get('criterion') or '').strip()
@@ -535,6 +682,7 @@ def api_go_nogo_create():
 
 
 @movement_ops_bp.route('/api/go-nogo/<int:gid>', methods=['PUT'])
+@validate_json(_GO_NOGO_SCHEMA)
 def api_go_nogo_update(gid):
     data = request.get_json() or {}
     allowed = _GO_NOGO_MATRIX_ALLOWED_FIELDS

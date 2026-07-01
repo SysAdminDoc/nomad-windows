@@ -31,6 +31,32 @@ _lxmf_delivery = None    # LXMF delivery callback destination
 _message_callback = None # Callable for incoming messages
 _lock = threading.Lock()
 _announce_interval = 600  # seconds between re-announcements
+_INSTALL_HINT = 'pip install rns lxmf'
+
+
+def _empty_status(state, *, available_flag, running_flag, issue=None):
+    status = {
+        'state': state,
+        'available': available_flag,
+        'installable': not available_flag,
+        'running': running_flag,
+        'ready': False,
+        'connected': False,
+        'identity': None,
+        'my_node_id': None,
+        'transport_enabled': False,
+        'known_destinations': 0,
+        'peer_count': 0,
+        'active_interfaces': 0,
+        'interfaces': [],
+        'issues': [],
+    }
+    if issue:
+        status['issues'].append(issue)
+    if not available_flag:
+        status['install_hint'] = _INSTALL_HINT
+        status['error'] = f'RNS not installed. Install with: {_INSTALL_HINT}'
+    return status
 
 
 def available():
@@ -64,40 +90,68 @@ def get_identity_hash():
 def get_status():
     """Return current Reticulum status dict."""
     if not available():
-        return {
-            'available': False,
-            'running': False,
-            'error': 'RNS not installed. Install with: pip install rns lxmf',
-        }
+        return _empty_status(
+            'installable',
+            available_flag=False,
+            running_flag=False,
+            issue='RNS and LXMF packages are not installed',
+        )
 
     if not running():
-        return {
-            'available': True,
-            'running': False,
-            'identity': None,
-        }
+        return _empty_status(
+            'stopped',
+            available_flag=True,
+            running_flag=False,
+            issue='Reticulum transport is stopped',
+        )
 
+    identity = _identity.hexhash if _identity else None
     status = {
+        'state': 'running',
         'available': True,
+        'installable': False,
         'running': True,
-        'identity': _identity.hexhash if _identity else None,
-        'transport_enabled': _reticulum.is_transport_instance() if _reticulum else False,
+        'ready': True,
+        'connected': True,
+        'identity': identity,
+        'my_node_id': identity,
+        'transport_enabled': False,
+        'known_destinations': 0,
+        'peer_count': 0,
+        'active_interfaces': 0,
+        'interfaces': [],
+        'issues': [],
     }
 
     # Count known destinations and active interfaces
     try:
-        status['known_destinations'] = len(_rns.Transport.destinations_table) if hasattr(_rns.Transport, 'destinations_table') else 0
-        status['active_interfaces'] = len([i for i in _reticulum.get_interfaces() if i.online]) if _reticulum else 0
-        status['interfaces'] = []
+        if _reticulum and hasattr(_reticulum, 'is_transport_instance'):
+            status['transport_enabled'] = bool(_reticulum.is_transport_instance())
+        if _rns and hasattr(_rns, 'Transport') and hasattr(_rns.Transport, 'destinations_table'):
+            status['known_destinations'] = len(_rns.Transport.destinations_table)
         if _reticulum:
-            for iface in _reticulum.get_interfaces():
+            interfaces = _reticulum.get_interfaces() if hasattr(_reticulum, 'get_interfaces') else []
+            for iface in interfaces:
+                online = bool(getattr(iface, 'online', False))
                 status['interfaces'].append({
                     'name': str(iface),
-                    'online': iface.online,
+                    'online': online,
                     'type': type(iface).__name__,
                 })
+            status['active_interfaces'] = len([i for i in status['interfaces'] if i['online']])
     except Exception:
-        pass
+        status['issues'].append('Unable to read Reticulum interface status')
+
+    status['peer_count'] = status['known_destinations']
+    if not status['identity']:
+        status['issues'].append('No Reticulum identity is loaded')
+    if status['active_interfaces'] < 1:
+        status['issues'].append('No active Reticulum interfaces are online')
+
+    if status['issues']:
+        status['state'] = 'degraded'
+        status['ready'] = False
+        status['connected'] = False
 
     return status
 

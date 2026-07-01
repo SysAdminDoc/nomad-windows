@@ -134,13 +134,6 @@
   Acceptance: Playwright covers 390px/430px widths for Situation Room, Inventory, Medical, Maps, Comms, Settings, AI Chat, and Services with no overlap/clipping and usable primary actions.
   Complexity: M
 
-- [ ] P2 - Make mesh transport readiness explicit
-  Why: Reticulum/LXMF service code exists, but `/api/mesh/status` falls back to generic mesh state when RNS is absent; users need clear readiness before relying on off-grid comms.
-  Evidence: `services/reticulum.py`; `web/blueprints/comms.py`; Meshtastic 2.7 firmware notes.
-  Touches: `services/reticulum.py`, `web/blueprints/comms.py`, comms UI, tests.
-  Acceptance: Mesh UI distinguishes unavailable/installable/running/degraded states, exposes identity/peer counts, and includes install guidance without implying transport is active.
-  Complexity: M
-
 - [ ] P3 - Add i18n coverage ratchet for visible shell text
   Why: Translation data exists for 10 languages, but only 12 `data-i18n` hooks were found across primary templates against thousands of visible text nodes.
   Evidence: `web/translations.py`; `web/static/js/i18n.js`; `web/templates/index_partials/` scan.

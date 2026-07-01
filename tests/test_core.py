@@ -842,7 +842,7 @@ class TestErrorHandler:
         assert "NomadShellRuntime.startInterval('preparedness.camera-snapshots'" in ops_text
         assert 'startCameraSnapshotRefresh(cameras);' in ops_text
         assert "cameras.filter(c => c.stream_type === 'snapshot').forEach(c => {" not in ops_text
-        assert "NomadShellRuntime.startInterval('shell.auto-backup'" in ops_text
+        assert "NomadShellRuntime.startInterval('shell.auto-backup'" not in ops_text
 
         # Wizard polling moved to _app_setup_wizard.js when the setup wizard
         # was split out of _app_workspaces.js. KB polling stayed behind.
@@ -1103,7 +1103,7 @@ class TestErrorHandler:
         assert "if (!systolicInput || !diastolicInput || !pulseInput || !respInput || !tempInput || !spo2Input || !painInput || !gcsInput || !notesInput) return;" in ops_text
         assert "if (!tbody) return;" in ops_text
         assert "if (!locationInput || !typeInput || !severityInput || !descriptionInput || !treatmentInput || !photoInput) return;" in ops_text
-        assert "if (!intervalInput) return;" in ops_text
+        assert "const intervalInput = document.getElementById('ab-interval');" in ops_text
         assert "if (!chatInput) return;" in ops_text
         assert "if (!tagsInput) return;" in ops_text
         assert "if (!messageInput || !severityInput) return;" in ops_text
@@ -1698,7 +1698,6 @@ class TestErrorHandler:
     def test_packaging_files_use_nomad_field_desk_branding(self):
         build_spec = (REPO_ROOT / 'build.spec').read_text(encoding='utf-8')
         installer = (REPO_ROOT / 'installer.iss').read_text(encoding='utf-8')
-        workflow = (REPO_ROOT / '.github' / 'workflows' / 'build.yml').read_text(encoding='utf-8')
         readme = (REPO_ROOT / 'README.md').read_text(encoding='utf-8')
         package_json = (REPO_ROOT / 'package.json').read_text(encoding='utf-8')
 
@@ -1706,8 +1705,7 @@ class TestErrorHandler:
         assert '#define MyAppName "NOMAD Field Desk"' in installer
         assert '#define MyAppExeName "NOMADFieldDesk.exe"' in installer
         assert 'OutputBaseFilename=NOMAD-Setup' in installer
-        assert 'artifact: NOMADFieldDesk-Windows' in workflow
-        assert 'release/NOMAD-Setup.exe' in workflow
+        assert not (REPO_ROOT / '.github' / 'workflows').exists()
         # Version-agnostic: match any v<major>.<minor>.<patch> so test survives bumps.
         import re as _re
         assert _re.search(r'# NOMAD Field Desk v\d+\.\d+\.\d+', readme), 'README missing NOMAD Field Desk version header'

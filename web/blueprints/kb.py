@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 from config import get_data_dir, Config
 from platform_utils import get_data_base
 from db import db_session, log_activity
+from web.auth import require_auth
 from services import ollama, qdrant, stirling
 from web.state import (
     _embed_state, _ocr_pipeline_state, _ocr_processed_files, _OCR_PROCESSED_MAX,
@@ -241,6 +242,7 @@ If no entities found, respond with: []"""
 # ─── KB Upload ──────────────────────────────────────────────────────
 
 @kb_bp.route('/api/kb/upload', methods=['POST'])
+@require_auth('user')
 def api_kb_upload():
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
@@ -380,6 +382,7 @@ def api_kb_documents():
 
 
 @kb_bp.route('/api/kb/documents/<int:doc_id>', methods=['DELETE'])
+@require_auth('admin')
 def api_kb_document_delete(doc_id):
     with db_session() as db:
         doc = db.execute('SELECT filename FROM documents WHERE id = ?', (doc_id,)).fetchone()
@@ -398,6 +401,7 @@ def api_kb_document_delete(doc_id):
 # ─── KB Indexing Controls ────────────────────────────────────────────
 
 @kb_bp.route('/api/kb/cancel', methods=['POST'])
+@require_auth('admin')
 def api_kb_cancel():
     """Cancel the current embedding job."""
     state = get_embed_state()
@@ -431,6 +435,7 @@ def api_kb_estimate():
 
 
 @kb_bp.route('/api/kb/purge', methods=['POST'])
+@require_auth('admin')
 def api_kb_purge():
     """Purge all vectors and files for a specific source or all sources."""
     data = request.get_json() or {}
@@ -474,6 +479,7 @@ def api_kb_status():
 
 
 @kb_bp.route('/api/kb/search', methods=['POST'])
+@require_auth('user')
 def api_kb_search():
     data = request.get_json() or {}
     query = data.get('query', '')
@@ -593,6 +599,7 @@ def _merge_results(vector_results, lexical_results, limit=5):
 # ─── Document Analysis ──────────────────────────────────────────────
 
 @kb_bp.route('/api/kb/documents/<int:doc_id>/analyze', methods=['POST'])
+@require_auth('user')
 def api_kb_analyze(doc_id):
     """Trigger AI analysis (classify, summarize, extract) for a document."""
     with db_session() as db:
@@ -626,6 +633,7 @@ def api_kb_doc_details(doc_id):
 
 
 @kb_bp.route('/api/kb/documents/<int:doc_id>/import-entities', methods=['POST'])
+@require_auth('user')
 def api_kb_import_entities(doc_id):
     """Import extracted entities from a document into structured tables."""
     with db_session() as db:
@@ -714,6 +722,7 @@ def api_kb_import_entities(doc_id):
 
 
 @kb_bp.route('/api/kb/analyze-all', methods=['POST'])
+@require_auth('admin')
 def api_kb_analyze_all():
     """Analyze all unanalyzed documents."""
     with db_session() as db:
@@ -748,6 +757,7 @@ def api_kb_workspaces():
 
 
 @kb_bp.route('/api/kb/workspaces', methods=['POST'])
+@require_auth('user')
 def api_kb_workspace_create():
     """Create a KB workspace."""
     d = request.json or {}
@@ -765,6 +775,7 @@ def api_kb_workspace_create():
 
 
 @kb_bp.route('/api/kb/workspaces/<int:wid>', methods=['DELETE'])
+@require_auth('admin')
 def api_kb_workspace_delete(wid):
     """Delete a KB workspace."""
     with db_session() as db:
@@ -862,6 +873,7 @@ def api_ocr_pipeline_status():
 
 
 @kb_bp.route('/api/kb/ocr-pipeline/start', methods=['POST'])
+@require_auth('admin')
 def api_ocr_pipeline_start():
     if get_ocr_pipeline_state()['running']:
         return jsonify({'status': 'already_running'})
@@ -871,12 +883,14 @@ def api_ocr_pipeline_start():
 
 
 @kb_bp.route('/api/kb/ocr-pipeline/stop', methods=['POST'])
+@require_auth('admin')
 def api_ocr_pipeline_stop():
     set_ocr_pipeline_state(running=False)
     return jsonify({'status': 'stopped'})
 
 
 @kb_bp.route('/api/kb/ocr-pipeline/scan', methods=['POST'])
+@require_auth('admin')
 def api_ocr_pipeline_scan_now():
     """Trigger an immediate scan of watch folders."""
     _ocr_pipeline_scan()

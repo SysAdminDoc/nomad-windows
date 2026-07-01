@@ -16,6 +16,7 @@ from web.print_templates import render_print_document
 from web.validation import validate_json, validate_optional_json
 
 from web.utils import esc as _esc, get_query_int as _get_query_int
+from web.auth import require_auth
 
 medical_bp = Blueprint('medical', __name__)
 
@@ -543,6 +544,7 @@ def api_patients_list():
 
 @medical_bp.route('/api/patients', methods=['POST'])
 @validate_json(_PATIENT_SCHEMA)
+@require_auth('user')
 def api_patients_create():
     data = request.get_json() or {}
     if not data.get('name'):
@@ -561,6 +563,7 @@ def api_patients_create():
 
 @medical_bp.route('/api/patients/<int:pid>', methods=['PUT'])
 @validate_json(_PATIENT_SCHEMA)
+@require_auth('user')
 def api_patients_update(pid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -589,6 +592,7 @@ def api_patients_update(pid):
 
 
 @medical_bp.route('/api/patients/<int:pid>', methods=['DELETE'])
+@require_auth('user')
 def api_patients_delete(pid):
     with db_session() as db:
         db.execute('DELETE FROM handoff_reports WHERE patient_id = ?', (pid,))
@@ -646,6 +650,7 @@ def api_vitals_list(pid):
 
 @medical_bp.route('/api/patients/<int:pid>/vitals', methods=['POST'])
 @validate_json(_VITALS_SCHEMA)
+@require_auth('user')
 def api_vitals_create(pid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -727,6 +732,7 @@ def api_wounds_list(pid):
 
 @medical_bp.route('/api/patients/<int:pid>/wounds', methods=['POST'])
 @validate_json(_WOUND_SCHEMA)
+@require_auth('user')
 def api_wounds_create(pid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -740,6 +746,7 @@ def api_wounds_create(pid):
 
 
 @medical_bp.route('/api/patients/<int:pid>/wounds/<int:wid>/photo', methods=['POST'])
+@require_auth('user')
 def api_wound_photo_upload(pid, wid):
     """Upload a photo for a wound record."""
     if 'photo' not in request.files:
@@ -899,6 +906,7 @@ def api_pediatric_weight_estimate():
 
 @medical_bp.route('/api/medical/interactions', methods=['POST'])
 @validate_json(_INTERACTIONS_SCHEMA)
+@require_auth('user')
 def api_drug_interactions():
     """Check drug interactions for a list of medications."""
     data = request.get_json() or {}
@@ -1065,6 +1073,7 @@ def api_triage_board():
         })
 @medical_bp.route('/api/medical/triage/<int:pid>', methods=['PUT'])
 @validate_json(_TRIAGE_SCHEMA)
+@require_auth('user')
 def api_triage_update(pid):
     """Update a patient's triage category and care phase."""
     data = request.get_json() or {}
@@ -1095,6 +1104,7 @@ def api_triage_update(pid):
 
 @medical_bp.route('/api/medical/handoff/<int:pid>', methods=['POST'])
 @validate_optional_json(_HANDOFF_SCHEMA)
+@require_auth('user')
 def api_medical_handoff(pid):
     """Generate an SBAR handoff report for a patient."""
     with db_session() as db:
@@ -1415,6 +1425,7 @@ def api_medication_log_list(pid):
 
 @medical_bp.route('/api/patients/<int:pid>/medication-log', methods=['POST'])
 @validate_json(_MEDICATION_LOG_SCHEMA)
+@require_auth('user')
 def api_medication_log_create(pid):
     """Record a medication dose. Looks up drug in DOSAGE_GUIDE for interval to calculate next_dose_due."""
     data = request.get_json() or {}
@@ -1574,6 +1585,7 @@ def api_wound_updates_list(pid, wid):
 
 @medical_bp.route('/api/patients/<int:pid>/wounds/<int:wid>/updates', methods=['POST'])
 @validate_json(_WOUND_UPDATE_SCHEMA)
+@require_auth('user')
 def api_wound_updates_create(pid, wid):
     """Create a wound update entry. If status is 'closed', also updates the wound_log entry."""
     data = request.get_json() or {}

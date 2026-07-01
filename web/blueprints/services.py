@@ -9,6 +9,7 @@ import logging
 
 from flask import Blueprint, request, jsonify
 
+from web.auth import require_auth
 from db import db_session, log_activity
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
 from services.manager import (
@@ -102,6 +103,7 @@ def api_services():
     return jsonify(services)
 
 @services_bp.route('/api/services/<service_id>/install', methods=['POST'])
+@require_auth('admin')
 def api_install_service(service_id):
     mod = SERVICE_MODULES.get(service_id)
     if not mod:
@@ -141,6 +143,7 @@ def api_install_service(service_id):
     return jsonify({'status': 'installing'})
 
 @services_bp.route('/api/services/<service_id>/start', methods=['POST'])
+@require_auth('admin')
 def api_start_service(service_id):
     mod = SERVICE_MODULES.get(service_id)
     if not mod:
@@ -165,6 +168,7 @@ def api_start_service(service_id):
         lock.release()
 
 @services_bp.route('/api/services/<service_id>/stop', methods=['POST'])
+@require_auth('admin')
 def api_stop_service(service_id):
     mod = SERVICE_MODULES.get(service_id)
     if not mod:
@@ -182,6 +186,7 @@ def api_stop_service(service_id):
         lock.release()
 
 @services_bp.route('/api/services/<service_id>/restart', methods=['POST'])
+@require_auth('admin')
 def api_restart_service(service_id):
     mod = SERVICE_MODULES.get(service_id)
     if not mod:
@@ -201,6 +206,7 @@ def api_restart_service(service_id):
         lock.release()
 
 @services_bp.route('/api/services/<service_id>/uninstall', methods=['POST'])
+@require_auth('admin')
 def api_uninstall_service(service_id):
     if service_id not in SERVICE_MODULES:
         return jsonify({'error': 'Unknown service'}), 404
@@ -219,6 +225,7 @@ def api_uninstall_service(service_id):
         lock.release()
 
 @services_bp.route('/api/services/start-all', methods=['POST'])
+@require_auth('admin')
 def api_start_all():
     started = []
     errors = []
@@ -233,6 +240,7 @@ def api_start_all():
     return jsonify({'started': started, 'errors': errors})
 
 @services_bp.route('/api/services/stop-all', methods=['POST'])
+@require_auth('admin')
 def api_stop_all():
     stopped = []
     errors = []
@@ -366,6 +374,7 @@ def api_service_logs_all():
 
 
 @services_bp.route('/api/update-download', methods=['POST'])
+@require_auth('admin')
 def api_update_download():
     """Download the latest release from GitHub."""
     def do_update():
@@ -495,6 +504,7 @@ def api_update_download_status():
     return jsonify(get_update_state())
 
 @services_bp.route('/api/update-download/open', methods=['POST'])
+@require_auth('admin')
 def api_update_download_open():
     """Open the downloaded update file."""
     path = get_update_state().get('path')

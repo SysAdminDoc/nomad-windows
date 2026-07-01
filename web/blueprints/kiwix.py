@@ -10,10 +10,16 @@ from db import log_activity
 from services import kiwix
 from services.manager import _download_progress
 from web.utils import validate_download_url as _validate_download_url
+from web.validation import validate_optional_json
 
 log = logging.getLogger('nomad.web')
 
 kiwix_bp = Blueprint('kiwix', __name__)
+
+_TEXT_255 = {'type': str, 'max_length': 255}
+_TEXT_2000 = {'type': str, 'max_length': 2000}
+_DOWNLOAD_SCHEMA = {'url': _TEXT_2000, 'filename': _TEXT_255}
+_DELETE_SCHEMA = {'filename': _TEXT_255}
 
 
 # ─── Kiwix ZIM API ─────────────────────────────────────────────────
@@ -29,6 +35,7 @@ def api_kiwix_catalog():
     return jsonify(kiwix.get_catalog())
 
 @kiwix_bp.route('/api/kiwix/download-zim', methods=['POST'])
+@validate_optional_json(_DOWNLOAD_SCHEMA)
 def api_kiwix_download_zim():
     data = request.get_json() or {}
     url = data.get('url', kiwix.STARTER_ZIM_URL)
@@ -67,6 +74,7 @@ def api_kiwix_zim_downloads():
     return jsonify(zim_entries)
 
 @kiwix_bp.route('/api/kiwix/delete-zim', methods=['POST'])
+@validate_optional_json(_DELETE_SCHEMA)
 def api_kiwix_delete_zim():
     data = request.get_json() or {}
     filename = data.get('filename')

@@ -14,6 +14,45 @@ Pattern matches tests/test_blueprint_agriculture.py structure.
 import pytest
 
 
+def _kiwix_mutation_routes():
+    return [
+        ('post', '/api/kiwix/download-zim'),
+        ('post', '/api/kiwix/delete-zim'),
+    ]
+
+
+class TestKiwixPayloadValidation:
+    def test_mutation_routes_reject_malformed_json(self, client, fake_kiwix):
+        for method, path in _kiwix_mutation_routes():
+            resp = getattr(client, method)(
+                path,
+                data='{bad',
+                content_type='application/json',
+            )
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_mutation_routes_reject_non_object_json(self, client, fake_kiwix):
+        for method, path in _kiwix_mutation_routes():
+            resp = getattr(client, method)(
+                path,
+                data='[]',
+                content_type='application/json',
+            )
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_mutation_routes_reject_wrong_shape_fields(self, client, fake_kiwix):
+        cases = [
+            ('post', '/api/kiwix/download-zim', {'url': ['bad']}),
+            ('post', '/api/kiwix/delete-zim', {'filename': ['bad']}),
+        ]
+        for method, path, payload in cases:
+            resp = getattr(client, method)(path, json=payload)
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Validation failed'
+
+
 # ── SHARED HELPERS ────────────────────────────────────────────────────────
 
 @pytest.fixture

@@ -1,8 +1,8 @@
 ; NOMAD Field Desk Inno Setup Script
-; AppVersion: 7.66.30
+; AppVersion: 7.66.31
 
 #define MyAppName "NOMAD Field Desk"
-#define MyAppVersion "7.66.30"
+#define MyAppVersion "7.66.31"
 #define MyAppPublisher "SysAdminDoc"
 #define MyAppURL "https://github.com/SysAdminDoc/project-nomad-desktop"
 #define MyAppSupportURL "https://github.com/SysAdminDoc/project-nomad-desktop/issues"

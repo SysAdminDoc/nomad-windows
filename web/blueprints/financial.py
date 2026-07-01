@@ -428,34 +428,34 @@ def api_financial_dashboard():
     with db_session() as db:
         # Cash totals
         total_cash = db.execute(
-            'SELECT COALESCE(SUM(amount), 0) AS total FROM financial_cash'
+            'SELECT ROUND(COALESCE(SUM(amount), 0), 2) AS total FROM financial_cash'
         ).fetchone()['total']
 
         cash_by_location = db.execute(
-            '''SELECT location, SUM(amount) AS total
+            '''SELECT location, ROUND(SUM(amount), 2) AS total
                FROM financial_cash GROUP BY location ORDER BY total DESC'''
         ).fetchall()
 
         # Metals totals
         metals_by_type = db.execute(
             '''SELECT metal_type, SUM(weight_oz) AS total_oz,
-                      SUM(purchase_price) AS total_value
+                      ROUND(SUM(purchase_price), 2) AS total_value
                FROM financial_metals GROUP BY metal_type'''
         ).fetchall()
 
         total_metals_value = db.execute(
-            'SELECT COALESCE(SUM(purchase_price), 0) AS total FROM financial_metals'
+            'SELECT ROUND(COALESCE(SUM(purchase_price), 0), 2) AS total FROM financial_metals'
         ).fetchone()['total']
 
         # Barter totals
         barter_categories = db.execute(
             '''SELECT category, COUNT(*) AS count,
-                      SUM(estimated_value) AS total_value
+                      ROUND(SUM(estimated_value), 2) AS total_value
                FROM financial_barter GROUP BY category ORDER BY category'''
         ).fetchall()
 
         total_barter_value = db.execute(
-            'SELECT COALESCE(SUM(estimated_value), 0) AS total FROM financial_barter'
+            'SELECT ROUND(COALESCE(SUM(estimated_value), 0), 2) AS total FROM financial_barter'
         ).fetchone()['total']
 
         # Documents
@@ -505,11 +505,11 @@ def api_emergency_fund():
         )
 
         total_cash = db.execute(
-            'SELECT COALESCE(SUM(amount), 0) AS total FROM financial_cash'
+            'SELECT ROUND(COALESCE(SUM(amount), 0), 2) AS total FROM financial_cash'
         ).fetchone()['total']
 
         total_metals_value = db.execute(
-            'SELECT COALESCE(SUM(purchase_price), 0) AS total FROM financial_metals'
+            'SELECT ROUND(COALESCE(SUM(purchase_price), 0), 2) AS total FROM financial_metals'
         ).fetchone()['total']
 
     current = total_cash + total_metals_value
@@ -537,13 +537,13 @@ def api_cost_per_day():
             total_investment = _safe_float(total_investment, 0)
         else:
             total_cash = db.execute(
-                'SELECT COALESCE(SUM(amount), 0) AS total FROM financial_cash'
+                'SELECT ROUND(COALESCE(SUM(amount), 0), 2) AS total FROM financial_cash'
             ).fetchone()['total']
             total_metals = db.execute(
-                'SELECT COALESCE(SUM(purchase_price), 0) AS total FROM financial_metals'
+                'SELECT ROUND(COALESCE(SUM(purchase_price), 0), 2) AS total FROM financial_metals'
             ).fetchone()['total']
             total_barter = db.execute(
-                'SELECT COALESCE(SUM(estimated_value), 0) AS total FROM financial_barter'
+                'SELECT ROUND(COALESCE(SUM(estimated_value), 0), 2) AS total FROM financial_barter'
             ).fetchone()['total']
             total_investment = total_cash + total_metals + total_barter
 
@@ -572,7 +572,7 @@ def api_cost_per_day():
 def api_financial_summary():
     with db_session() as db:
         total_cash = db.execute(
-            'SELECT COALESCE(SUM(amount), 0) AS total FROM financial_cash'
+            'SELECT ROUND(COALESCE(SUM(amount), 0), 2) AS total FROM financial_cash'
         ).fetchone()['total']
 
         metals_count = db.execute(
@@ -588,11 +588,11 @@ def api_financial_summary():
         ).fetchone()['c']
 
         total_metals_value = db.execute(
-            'SELECT COALESCE(SUM(purchase_price), 0) AS total FROM financial_metals'
+            'SELECT ROUND(COALESCE(SUM(purchase_price), 0), 2) AS total FROM financial_metals'
         ).fetchone()['total']
 
         total_barter_value = db.execute(
-            'SELECT COALESCE(SUM(estimated_value), 0) AS total FROM financial_barter'
+            'SELECT ROUND(COALESCE(SUM(estimated_value), 0), 2) AS total FROM financial_barter'
         ).fetchone()['total']
 
     total_value = total_cash + total_metals_value + total_barter_value

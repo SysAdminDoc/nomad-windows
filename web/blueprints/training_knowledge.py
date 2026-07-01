@@ -9,6 +9,7 @@ from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
 from web.utils import coerce_int as _ci, coerce_float as _cf
+from web.validation import validate_json, validate_optional_json
 
 log = logging.getLogger(__name__)
 
@@ -154,6 +155,17 @@ def api_skills_get(sid):
 
 
 @training_knowledge_bp.route('/skills', methods=['POST'])
+@validate_json({
+    'person_name': {'type': str, 'max_length': 200},
+    'skill_name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'level': {'type': (int, float)},
+    'prerequisites': {'type': list},
+    'certified': {'type': bool},
+    'certified_date': {'type': str, 'max_length': 200},
+    'instructor': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_skills_create():
     data = request.get_json() or {}
     if not data.get('person_name') or not data.get('skill_name'):
@@ -175,6 +187,17 @@ def api_skills_create():
 
 
 @training_knowledge_bp.route('/skills/<int:sid>', methods=['PUT'])
+@validate_json({
+    'person_name': {'type': str, 'max_length': 200},
+    'skill_name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'instructor': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+    'certified_date': {'type': str, 'max_length': 200},
+    'level': {'type': (int, float)},
+    'certified': {'type': bool},
+    'prerequisites': {'type': list},
+})
 def api_skills_update(sid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -290,6 +313,18 @@ def api_courses_get(cid):
 
 
 @training_knowledge_bp.route('/courses', methods=['POST'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'category': {'type': str, 'max_length': 200},
+    'difficulty': {'type': str, 'max_length': 200},
+    'estimated_hours': {'type': (int, float)},
+    'instructor': {'type': str, 'max_length': 200},
+    'max_students': {'type': (int, float)},
+    'prerequisites_text': {'type': str, 'max_length': 2000},
+    'materials_needed': {'type': str, 'max_length': 2000},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_courses_create():
     data = request.get_json() or {}
     if not data.get('title'):
@@ -316,6 +351,18 @@ def api_courses_create():
 
 
 @training_knowledge_bp.route('/courses/<int:cid>', methods=['PUT'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'category': {'type': str, 'max_length': 200},
+    'instructor': {'type': str, 'max_length': 200},
+    'prerequisites_text': {'type': str, 'max_length': 2000},
+    'materials_needed': {'type': str, 'max_length': 2000},
+    'difficulty': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'estimated_hours': {'type': (int, float)},
+    'max_students': {'type': (int, float)},
+})
 def api_courses_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -410,6 +457,16 @@ def api_lessons_list(cid):
 
 
 @training_knowledge_bp.route('/courses/<int:cid>/lessons', methods=['POST'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'content': {'type': str, 'max_length': 5000},
+    'lesson_number': {'type': (int, float)},
+    'duration_minutes': {'type': (int, float)},
+    'lesson_type': {'type': str, 'max_length': 200},
+    'materials': {'type': str, 'max_length': 2000},
+    'objectives': {'type': list},
+    'completed_by': {'type': list},
+})
 def api_lessons_create(cid):
     data = request.get_json() or {}
     if not data.get('title'):
@@ -441,6 +498,16 @@ def api_lessons_create(cid):
 
 
 @training_knowledge_bp.route('/lessons/<int:lid>', methods=['PUT'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'content': {'type': str, 'max_length': 5000},
+    'materials': {'type': str, 'max_length': 2000},
+    'lesson_number': {'type': (int, float)},
+    'duration_minutes': {'type': (int, float)},
+    'lesson_type': {'type': str, 'max_length': 200},
+    'objectives': {'type': list},
+    'completed_by': {'type': list},
+})
 def api_lessons_update(lid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -471,6 +538,9 @@ def api_lessons_update(lid):
 
 
 @training_knowledge_bp.route('/lessons/<int:lid>/complete', methods=['POST'])
+@validate_json({
+    'person_name': {'type': str, 'max_length': 200},
+})
 def api_lessons_complete(lid):
     """Mark a person as completed for a lesson (add to completed_by JSON)."""
     data = request.get_json() or {}
@@ -513,6 +583,17 @@ def api_certifications_list():
 
 
 @training_knowledge_bp.route('/certifications', methods=['POST'])
+@validate_json({
+    'person_name': {'type': str, 'max_length': 200},
+    'certification_name': {'type': str, 'max_length': 200},
+    'issuing_authority': {'type': str, 'max_length': 200},
+    'date_earned': {'type': str, 'max_length': 200},
+    'expiration_date': {'type': str, 'max_length': 200},
+    'renewal_interval_days': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+    'document_ref': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_certifications_create():
     data = request.get_json() or {}
     if not data.get('person_name') or not data.get('certification_name'):
@@ -537,6 +618,17 @@ def api_certifications_create():
 
 
 @training_knowledge_bp.route('/certifications/<int:cid>', methods=['PUT'])
+@validate_json({
+    'person_name': {'type': str, 'max_length': 200},
+    'certification_name': {'type': str, 'max_length': 200},
+    'issuing_authority': {'type': str, 'max_length': 200},
+    'date_earned': {'type': str, 'max_length': 200},
+    'expiration_date': {'type': str, 'max_length': 200},
+    'document_ref': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+    'renewal_interval_days': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_certifications_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -610,6 +702,16 @@ def api_drill_templates_list():
 
 
 @training_knowledge_bp.route('/drills/templates', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'drill_type': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'phases': {'type': list},
+    'grading_criteria': {'type': list},
+    'estimated_duration_minutes': {'type': (int, float)},
+    'personnel_required': {'type': (int, float)},
+    'equipment_needed': {'type': str, 'max_length': 2000},
+})
 def api_drill_templates_create():
     data = request.get_json() or {}
     if not data.get('name'):
@@ -634,6 +736,16 @@ def api_drill_templates_create():
 
 
 @training_knowledge_bp.route('/drills/templates/<int:tid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'equipment_needed': {'type': str, 'max_length': 2000},
+    'drill_type': {'type': str, 'max_length': 200},
+    'phases': {'type': list},
+    'grading_criteria': {'type': list},
+    'estimated_duration_minutes': {'type': (int, float)},
+    'personnel_required': {'type': (int, float)},
+})
 def api_drill_templates_update(tid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -664,6 +776,7 @@ def api_drill_templates_update(tid):
 
 
 @training_knowledge_bp.route('/drills/templates/seed', methods=['POST'])
+@validate_optional_json({})
 def api_drill_templates_seed():
     """Seed 4 built-in drill templates. Skips any that already exist by name."""
     created = []
@@ -689,6 +802,13 @@ def api_drill_templates_seed():
 
 
 @training_knowledge_bp.route('/drills/run', methods=['POST'])
+@validate_json({
+    'template_id': {'type': (int, float)},
+    'participants': {'type': list},
+    'next_drill_date': {'type': str, 'max_length': 200},
+    'conducted_by': {'type': str, 'max_length': 200},
+    'is_no_notice': {'type': bool},
+})
 def api_drill_run():
     """Start a drill: create a drill_result from a template."""
     data = request.get_json() or {}
@@ -763,6 +883,18 @@ def api_drill_results_get(rid):
 
 
 @training_knowledge_bp.route('/drills/results/<int:rid>', methods=['PUT'])
+@validate_json({
+    'overall_grade': {'type': str, 'max_length': 200},
+    'aar_notes': {'type': str, 'max_length': 5000},
+    'corrective_actions': {'type': str, 'max_length': 5000},
+    'next_drill_date': {'type': str, 'max_length': 200},
+    'conducted_by': {'type': str, 'max_length': 200},
+    'participants': {'type': list},
+    'phase_scores': {'type': (dict, str)},
+    'deficiencies': {'type': list},
+    'strengths': {'type': list},
+    'is_no_notice': {'type': bool},
+})
 def api_drill_results_update(rid):
     """Update drill result: grade, AAR, deficiencies, etc."""
     data = request.get_json() or {}
@@ -820,6 +952,17 @@ def api_flashcards_list():
 
 
 @training_knowledge_bp.route('/flashcards', methods=['POST'])
+@validate_json({
+    'deck_name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'front_text': {'type': str, 'max_length': 5000},
+    'back_text': {'type': str, 'max_length': 5000},
+    'difficulty': {'type': (int, float)},
+    'interval_days': {'type': (int, float)},
+    'ease_factor': {'type': (int, float)},
+    'next_review': {'type': str, 'max_length': 200},
+    'tags': {'type': list},
+})
 def api_flashcards_create():
     data = request.get_json() or {}
     if not data.get('front_text') or not data.get('back_text'):
@@ -843,6 +986,15 @@ def api_flashcards_create():
 
 
 @training_knowledge_bp.route('/flashcards/<int:fid>', methods=['PUT'])
+@validate_json({
+    'deck_name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'front_text': {'type': str, 'max_length': 5000},
+    'back_text': {'type': str, 'max_length': 5000},
+    'next_review': {'type': str, 'max_length': 200},
+    'difficulty': {'type': (int, float)},
+    'tags': {'type': list},
+})
 def api_flashcards_update(fid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -876,6 +1028,9 @@ def api_flashcards_delete(fid):
 
 
 @training_knowledge_bp.route('/flashcards/<int:fid>/review', methods=['POST'])
+@validate_json({
+    'quality': {'type': (int, float)},
+})
 def api_flashcards_review(fid):
     """SM-2 spaced repetition review. Accepts {quality: 0-5}."""
     data = request.get_json() or {}
@@ -956,6 +1111,20 @@ def api_knowledge_packages_list():
 
 
 @training_knowledge_bp.route('/knowledge-packages', methods=['POST'])
+@validate_json({
+    'person_name': {'type': str, 'max_length': 200},
+    'title': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'category': {'type': str, 'max_length': 200},
+    'skills_documented': {'type': list},
+    'procedures': {'type': list},
+    'contacts_referenced': {'type': list},
+    'critical_knowledge': {'type': str, 'max_length': 5000},
+    'contingency_plans': {'type': str, 'max_length': 5000},
+    'last_reviewed': {'type': str, 'max_length': 200},
+    'review_interval_days': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_knowledge_packages_create():
     data = request.get_json() or {}
     if not data.get('person_name') or not data.get('title'):
@@ -985,6 +1154,20 @@ def api_knowledge_packages_create():
 
 
 @training_knowledge_bp.route('/knowledge-packages/<int:kid>', methods=['PUT'])
+@validate_json({
+    'person_name': {'type': str, 'max_length': 200},
+    'title': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'category': {'type': str, 'max_length': 200},
+    'critical_knowledge': {'type': str, 'max_length': 5000},
+    'contingency_plans': {'type': str, 'max_length': 5000},
+    'last_reviewed': {'type': str, 'max_length': 200},
+    'skills_documented': {'type': list},
+    'procedures': {'type': list},
+    'contacts_referenced': {'type': list},
+    'review_interval_days': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_knowledge_packages_update(kid):
     data = request.get_json() or {}
     with db_session() as db:

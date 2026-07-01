@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json, validate_optional_json
 
 _log = logging.getLogger(__name__)
 
@@ -128,6 +129,22 @@ def api_caches_list():
 
 
 @specialized_modules_bp.route('/caches', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'cache_type': {'type': str, 'max_length': 200},
+    'location_description': {'type': str, 'max_length': 2000},
+    'gps_coords': {'type': str, 'max_length': 200},
+    'access_instructions': {'type': str, 'max_length': 2000},
+    'concealment_method': {'type': str, 'max_length': 200},
+    'container_type': {'type': str, 'max_length': 200},
+    'contents': {'type': list},
+    'last_checked': {'type': str, 'max_length': 200},
+    'condition': {'type': str, 'max_length': 200},
+    'known_by': {'type': list},
+    'expiration_date': {'type': str, 'max_length': 200},
+    'security_level': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_caches_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -168,6 +185,22 @@ def api_caches_get(cid):
 
 
 @specialized_modules_bp.route('/caches/<int:cid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'cache_type': {'type': str, 'max_length': 200},
+    'location_description': {'type': str, 'max_length': 2000},
+    'gps_coords': {'type': str, 'max_length': 200},
+    'access_instructions': {'type': str, 'max_length': 2000},
+    'concealment_method': {'type': str, 'max_length': 200},
+    'container_type': {'type': str, 'max_length': 200},
+    'contents': {'type': list},
+    'last_checked': {'type': str, 'max_length': 200},
+    'condition': {'type': str, 'max_length': 200},
+    'known_by': {'type': list},
+    'expiration_date': {'type': str, 'max_length': 200},
+    'security_level': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_caches_update(cid):
     data = request.get_json() or {}
     allowed = _SUPPLY_CACHES_ALLOWED_FIELDS
@@ -230,6 +263,27 @@ def api_pets_list():
 
 
 @specialized_modules_bp.route('/pets', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'species': {'type': str, 'max_length': 200},
+    'breed': {'type': str, 'max_length': 200},
+    'age_years': {'type': (int, float)},
+    'weight_lbs': {'type': (int, float)},
+    'microchip_id': {'type': str, 'max_length': 200},
+    'medical_conditions': {'type': list},
+    'medications': {'type': list},
+    'vaccination_dates': {'type': dict},
+    'food_type': {'type': str, 'max_length': 200},
+    'daily_food_amount': {'type': str, 'max_length': 200},
+    'food_supply_days': {'type': (int, float)},
+    'veterinarian': {'type': str, 'max_length': 200},
+    'evacuation_carrier': {'type': str, 'max_length': 200},
+    'temperament': {'type': str, 'max_length': 200},
+    'special_needs': {'type': str, 'max_length': 2000},
+    'photo_ref': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_pets_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -273,6 +327,27 @@ def api_pets_get(pid):
 
 
 @specialized_modules_bp.route('/pets/<int:pid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'species': {'type': str, 'max_length': 200},
+    'breed': {'type': str, 'max_length': 200},
+    'age_years': {'type': (int, float)},
+    'weight_lbs': {'type': (int, float)},
+    'microchip_id': {'type': str, 'max_length': 200},
+    'medical_conditions': {'type': list},
+    'medications': {'type': list},
+    'vaccination_dates': {'type': dict},
+    'food_type': {'type': str, 'max_length': 200},
+    'daily_food_amount': {'type': str, 'max_length': 200},
+    'food_supply_days': {'type': (int, float)},
+    'veterinarian': {'type': str, 'max_length': 200},
+    'evacuation_carrier': {'type': str, 'max_length': 200},
+    'temperament': {'type': str, 'max_length': 200},
+    'special_needs': {'type': str, 'max_length': 2000},
+    'photo_ref': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_pets_update(pid):
     data = request.get_json() or {}
     allowed = _PETS_ALLOWED_FIELDS
@@ -354,6 +429,20 @@ def api_youth_list():
 
 
 @specialized_modules_bp.route('/youth', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'program_type': {'type': str, 'max_length': 200},
+    'age_range': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'curriculum': {'type': list},
+    'materials_needed': {'type': list},
+    'instructor': {'type': str, 'max_length': 200},
+    'schedule': {'type': str, 'max_length': 200},
+    'participants': {'type': list},
+    'skills_taught': {'type': list},
+    'progress_notes': {'type': str, 'max_length': 2000},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_youth_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -392,6 +481,20 @@ def api_youth_get(yid):
 
 
 @specialized_modules_bp.route('/youth/<int:yid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'program_type': {'type': str, 'max_length': 200},
+    'age_range': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'curriculum': {'type': list},
+    'materials_needed': {'type': list},
+    'instructor': {'type': str, 'max_length': 200},
+    'schedule': {'type': str, 'max_length': 200},
+    'participants': {'type': list},
+    'skills_taught': {'type': list},
+    'progress_notes': {'type': str, 'max_length': 2000},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_youth_update(yid):
     data = request.get_json() or {}
     allowed = _YOUTH_PROGRAMS_ALLOWED_FIELDS
@@ -453,6 +556,24 @@ def api_eol_list():
 
 
 @specialized_modules_bp.route('/eol', methods=['POST'])
+@validate_json({
+    'person': {'type': str, 'max_length': 200},
+    'plan_type': {'type': str, 'max_length': 200},
+    'wishes': {'type': str, 'max_length': 5000},
+    'medical_directives': {'type': str, 'max_length': 5000},
+    'organ_donor': {'type': bool},
+    'body_disposition': {'type': str, 'max_length': 2000},
+    'memorial_wishes': {'type': str, 'max_length': 5000},
+    'important_documents': {'type': list},
+    'digital_accounts': {'type': list},
+    'beneficiaries': {'type': list},
+    'executor': {'type': str, 'max_length': 200},
+    'attorney': {'type': str, 'max_length': 200},
+    'insurance_info': {'type': str, 'max_length': 2000},
+    'last_updated_by': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_eol_create():
     data = request.get_json() or {}
     person = (data.get('person') or '').strip()
@@ -494,6 +615,24 @@ def api_eol_get(eid):
 
 
 @specialized_modules_bp.route('/eol/<int:eid>', methods=['PUT'])
+@validate_json({
+    'person': {'type': str, 'max_length': 200},
+    'plan_type': {'type': str, 'max_length': 200},
+    'wishes': {'type': str, 'max_length': 5000},
+    'medical_directives': {'type': str, 'max_length': 5000},
+    'organ_donor': {'type': bool},
+    'body_disposition': {'type': str, 'max_length': 2000},
+    'memorial_wishes': {'type': str, 'max_length': 5000},
+    'important_documents': {'type': list},
+    'digital_accounts': {'type': list},
+    'beneficiaries': {'type': list},
+    'executor': {'type': str, 'max_length': 200},
+    'attorney': {'type': str, 'max_length': 200},
+    'insurance_info': {'type': str, 'max_length': 2000},
+    'last_updated_by': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_eol_update(eid):
     data = request.get_json() or {}
     allowed = _END_OF_LIFE_PLANS_ALLOWED_FIELDS
@@ -563,6 +702,19 @@ def api_procurement_list():
 
 
 @specialized_modules_bp.route('/procurement', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'list_type': {'type': str, 'max_length': 200},
+    'priority': {'type': str, 'max_length': 200},
+    'items': {'type': list},
+    'budget': {'type': (int, float)},
+    'spent': {'type': (int, float)},
+    'supplier': {'type': str, 'max_length': 200},
+    'due_date': {'type': str, 'max_length': 200},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_procurement_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -599,6 +751,19 @@ def api_procurement_get(pid):
 
 
 @specialized_modules_bp.route('/procurement/<int:pid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'list_type': {'type': str, 'max_length': 200},
+    'priority': {'type': str, 'max_length': 200},
+    'items': {'type': list},
+    'budget': {'type': (int, float)},
+    'spent': {'type': (int, float)},
+    'supplier': {'type': str, 'max_length': 200},
+    'due_date': {'type': str, 'max_length': 200},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_procurement_update(pid):
     data = request.get_json() or {}
     allowed = _PROCUREMENT_LISTS_ALLOWED_FIELDS
@@ -680,6 +845,24 @@ def api_intel_list():
 
 
 @specialized_modules_bp.route('/intel', methods=['POST'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'intel_type': {'type': str, 'max_length': 200},
+    'priority_info_req': {'type': str, 'max_length': 2000},
+    'source': {'type': str, 'max_length': 200},
+    'source_reliability': {'type': str, 'max_length': 200},
+    'info_credibility': {'type': str, 'max_length': 200},
+    'classification': {'type': str, 'max_length': 200},
+    'date_collected': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'summary': {'type': str, 'max_length': 5000},
+    'raw_data': {'type': str, 'max_length': 5000},
+    'analysis': {'type': str, 'max_length': 5000},
+    'actionable': {'type': bool},
+    'dissemination': {'type': list},
+    'expiry_date': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_intel_create():
     data = request.get_json() or {}
     title = (data.get('title') or '').strip()
@@ -722,6 +905,24 @@ def api_intel_get(iid):
 
 
 @specialized_modules_bp.route('/intel/<int:iid>', methods=['PUT'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'intel_type': {'type': str, 'max_length': 200},
+    'priority_info_req': {'type': str, 'max_length': 2000},
+    'source': {'type': str, 'max_length': 200},
+    'source_reliability': {'type': str, 'max_length': 200},
+    'info_credibility': {'type': str, 'max_length': 200},
+    'classification': {'type': str, 'max_length': 200},
+    'date_collected': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'summary': {'type': str, 'max_length': 5000},
+    'raw_data': {'type': str, 'max_length': 5000},
+    'analysis': {'type': str, 'max_length': 5000},
+    'actionable': {'type': bool},
+    'dissemination': {'type': list},
+    'expiry_date': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_intel_update(iid):
     data = request.get_json() or {}
     allowed = _INTEL_COLLECTION_ALLOWED_FIELDS
@@ -811,6 +1012,22 @@ def api_fabrication_list():
 
 
 @specialized_modules_bp.route('/fabrication', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'project_type': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'file_path': {'type': str, 'max_length': 200},
+    'material': {'type': str, 'max_length': 200},
+    'material_amount': {'type': str, 'max_length': 200},
+    'printer_model': {'type': str, 'max_length': 200},
+    'print_settings': {'type': dict},
+    'estimated_time_hours': {'type': (int, float)},
+    'actual_time_hours': {'type': (int, float)},
+    'copies_made': {'type': (int, float)},
+    'priority': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_fabrication_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -852,6 +1069,22 @@ def api_fabrication_get(fid):
 
 
 @specialized_modules_bp.route('/fabrication/<int:fid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'project_type': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'file_path': {'type': str, 'max_length': 200},
+    'material': {'type': str, 'max_length': 200},
+    'material_amount': {'type': str, 'max_length': 200},
+    'printer_model': {'type': str, 'max_length': 200},
+    'print_settings': {'type': dict},
+    'estimated_time_hours': {'type': (int, float)},
+    'actual_time_hours': {'type': (int, float)},
+    'copies_made': {'type': (int, float)},
+    'priority': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_fabrication_update(fid):
     data = request.get_json() or {}
     allowed = _FABRICATION_PROJECTS_ALLOWED_FIELDS
@@ -910,6 +1143,15 @@ def api_badges_list():
 
 
 @specialized_modules_bp.route('/badges', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'icon': {'type': str, 'max_length': 200},
+    'criteria': {'type': str, 'max_length': 2000},
+    'points': {'type': (int, float)},
+    'rarity': {'type': str, 'max_length': 200},
+})
 def api_badges_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -942,6 +1184,15 @@ def api_badges_get(bid):
 
 
 @specialized_modules_bp.route('/badges/<int:bid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'icon': {'type': str, 'max_length': 200},
+    'criteria': {'type': str, 'max_length': 2000},
+    'points': {'type': (int, float)},
+    'rarity': {'type': str, 'max_length': 200},
+})
 def api_badges_update(bid):
     data = request.get_json() or {}
     allowed = _BADGES_ALLOWED_FIELDS
@@ -991,6 +1242,7 @@ DEFAULT_BADGES = [
 
 
 @specialized_modules_bp.route('/badges/seed', methods=['POST'])
+@validate_optional_json({})
 def api_badges_seed():
     with db_session() as db:
         count = db.execute('SELECT COUNT(*) as c FROM badges').fetchone()['c']
@@ -1045,6 +1297,13 @@ def api_awards_list():
 
 
 @specialized_modules_bp.route('/awards', methods=['POST'])
+@validate_json({
+    'badge_id': {'type': (int, float)},
+    'person': {'type': str, 'max_length': 200},
+    'awarded_date': {'type': str, 'max_length': 200},
+    'awarded_by': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_awards_create():
     data = request.get_json() or {}
     badge_id = data.get('badge_id')
@@ -1143,6 +1402,18 @@ def api_calendar_list():
 
 
 @specialized_modules_bp.route('/calendar', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'event_type': {'type': str, 'max_length': 200},
+    'date': {'type': str, 'max_length': 200},
+    'recurrence': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'tasks': {'type': list},
+    'reminders': {'type': list},
+    'category': {'type': str, 'max_length': 200},
+    'completed': {'type': bool},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_calendar_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -1180,6 +1451,18 @@ def api_calendar_get(eid):
 
 
 @specialized_modules_bp.route('/calendar/<int:eid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'event_type': {'type': str, 'max_length': 200},
+    'date': {'type': str, 'max_length': 200},
+    'recurrence': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'tasks': {'type': list},
+    'reminders': {'type': list},
+    'category': {'type': str, 'max_length': 200},
+    'completed': {'type': bool},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_calendar_update(eid):
     data = request.get_json() or {}
     allowed = _SEASONAL_EVENTS_ALLOWED_FIELDS
@@ -1258,6 +1541,19 @@ def api_legal_list():
 
 
 @specialized_modules_bp.route('/legal', methods=['POST'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'doc_type': {'type': str, 'max_length': 200},
+    'person': {'type': str, 'max_length': 200},
+    'issuing_authority': {'type': str, 'max_length': 200},
+    'document_number': {'type': str, 'max_length': 200},
+    'issue_date': {'type': str, 'max_length': 200},
+    'expiry_date': {'type': str, 'max_length': 200},
+    'file_path': {'type': str, 'max_length': 200},
+    'storage_location': {'type': str, 'max_length': 200},
+    'renewal_reminder': {'type': bool},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_legal_create():
     data = request.get_json() or {}
     title = (data.get('title') or '').strip()
@@ -1295,6 +1591,19 @@ def api_legal_get(lid):
 
 
 @specialized_modules_bp.route('/legal/<int:lid>', methods=['PUT'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'doc_type': {'type': str, 'max_length': 200},
+    'person': {'type': str, 'max_length': 200},
+    'issuing_authority': {'type': str, 'max_length': 200},
+    'document_number': {'type': str, 'max_length': 200},
+    'issue_date': {'type': str, 'max_length': 200},
+    'expiry_date': {'type': str, 'max_length': 200},
+    'file_path': {'type': str, 'max_length': 200},
+    'storage_location': {'type': str, 'max_length': 200},
+    'renewal_reminder': {'type': bool},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_legal_update(lid):
     data = request.get_json() or {}
     allowed = _LEGAL_DOCUMENTS_ALLOWED_FIELDS
@@ -1369,6 +1678,26 @@ def api_drones_list():
 
 
 @specialized_modules_bp.route('/drones', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'drone_type': {'type': str, 'max_length': 200},
+    'manufacturer': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'serial_number': {'type': str, 'max_length': 200},
+    'registration': {'type': str, 'max_length': 200},
+    'weight_grams': {'type': (int, float)},
+    'max_flight_time_min': {'type': (int, float)},
+    'max_range_m': {'type': (int, float)},
+    'camera_specs': {'type': str, 'max_length': 200},
+    'battery_count': {'type': (int, float)},
+    'battery_type': {'type': str, 'max_length': 200},
+    'firmware_version': {'type': str, 'max_length': 200},
+    'total_flights': {'type': (int, float)},
+    'total_flight_hours': {'type': (int, float)},
+    'last_flight': {'type': str, 'max_length': 200},
+    'condition': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_drones_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -1409,6 +1738,26 @@ def api_drones_get(did):
 
 
 @specialized_modules_bp.route('/drones/<int:did>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'drone_type': {'type': str, 'max_length': 200},
+    'manufacturer': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'serial_number': {'type': str, 'max_length': 200},
+    'registration': {'type': str, 'max_length': 200},
+    'weight_grams': {'type': (int, float)},
+    'max_flight_time_min': {'type': (int, float)},
+    'max_range_m': {'type': (int, float)},
+    'camera_specs': {'type': str, 'max_length': 200},
+    'battery_count': {'type': (int, float)},
+    'battery_type': {'type': str, 'max_length': 200},
+    'firmware_version': {'type': str, 'max_length': 200},
+    'total_flights': {'type': (int, float)},
+    'total_flight_hours': {'type': (int, float)},
+    'last_flight': {'type': str, 'max_length': 200},
+    'condition': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_drones_update(did):
     data = request.get_json() or {}
     allowed = _DRONES_ALLOWED_FIELDS
@@ -1500,6 +1849,23 @@ def api_drones_flights_nested(did):
 
 
 @specialized_modules_bp.route('/flights', methods=['POST'])
+@validate_json({
+    'drone_id': {'type': (int, float)},
+    'date': {'type': str, 'max_length': 200},
+    'mission_type': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'gps_coords': {'type': str, 'max_length': 200},
+    'duration_min': {'type': (int, float)},
+    'max_altitude_m': {'type': (int, float)},
+    'distance_km': {'type': (int, float)},
+    'battery_start_pct': {'type': (int, float)},
+    'battery_end_pct': {'type': (int, float)},
+    'weather_conditions': {'type': str, 'max_length': 200},
+    'observations': {'type': str, 'max_length': 5000},
+    'media_captured': {'type': list},
+    'pilot': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_flights_create():
     data = request.get_json() or {}
     drone_id = data.get('drone_id')
@@ -1634,6 +2000,28 @@ def api_fitness_list():
 
 
 @specialized_modules_bp.route('/fitness', methods=['POST'])
+@validate_json({
+    'person': {'type': str, 'max_length': 200},
+    'date': {'type': str, 'max_length': 200},
+    'exercise_type': {'type': str, 'max_length': 200},
+    'workout_type': {'type': str, 'max_length': 200},
+    'activity': {'type': str, 'max_length': 200},
+    'duration_min': {'type': (int, float)},
+    'duration': {'type': (int, float)},
+    'distance_km': {'type': (int, float)},
+    'distance': {'type': (int, float)},
+    'reps': {'type': (int, float)},
+    'sets': {'type': (int, float)},
+    'weight_lbs': {'type': (int, float)},
+    'calories_burned': {'type': (int, float)},
+    'calories': {'type': (int, float)},
+    'heart_rate_avg': {'type': (int, float)},
+    'heart_rate': {'type': (int, float)},
+    'heart_rate_max': {'type': (int, float)},
+    'perceived_exertion': {'type': (int, float)},
+    'exertion': {'type': (int, float)},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_fitness_create():
     data = request.get_json() or {}
     person = (data.get('person') or '').strip()
@@ -1787,6 +2175,20 @@ def api_content_packs_list():
 
 
 @specialized_modules_bp.route('/content-packs', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'pack_type': {'type': str, 'max_length': 200},
+    'version': {'type': str, 'max_length': 200},
+    'author': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'contents_manifest': {'type': list},
+    'size_bytes': {'type': (int, float)},
+    'install_date': {'type': str, 'max_length': 200},
+    'source_url': {'type': str, 'max_length': 2000},
+    'checksum': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_content_packs_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -1825,6 +2227,20 @@ def api_content_packs_get(pid):
 
 
 @specialized_modules_bp.route('/content-packs/<int:pid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'pack_type': {'type': str, 'max_length': 200},
+    'version': {'type': str, 'max_length': 200},
+    'author': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'contents_manifest': {'type': list},
+    'size_bytes': {'type': (int, float)},
+    'install_date': {'type': str, 'max_length': 200},
+    'source_url': {'type': str, 'max_length': 2000},
+    'checksum': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_content_packs_update(pid):
     data = request.get_json() or {}
     allowed = _CONTENT_PACKS_ALLOWED_FIELDS

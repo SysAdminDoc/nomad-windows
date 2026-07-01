@@ -18,7 +18,7 @@ from services import ollama
 from services.manager import format_size, get_services_dir
 from config import get_data_dir
 from web.state import _ytdlp_downloads, _ytdlp_dl_lock, _ytdlp_install_state
-from web.validation import validate_json
+from web.validation import validate_json, validate_optional_json
 from web.sql_safety import safe_table, safe_columns, build_update
 import web.state as _state
 from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_list as _safe_json_list, validate_download_url as _validate_download_url
@@ -488,6 +488,11 @@ def api_videos_delete(vid):
             log_activity('video_delete', 'media', row['title'])
         return jsonify({'status': 'deleted'})
 @media_bp.route('/api/videos/<int:vid>', methods=['PATCH'])
+@validate_optional_json({
+    'title': {'type': str, 'max_length': 200},
+    'folder': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+})
 def api_videos_update(vid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -691,6 +696,9 @@ def api_channels_categories():
     return jsonify([{'name': cat, 'count': counts[cat]} for cat in cats])
 
 @media_bp.route('/api/channels/validate', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+})
 def api_channels_validate():
     """Check a channel URL — mark dead if no videos found."""
     data = request.get_json() or {}
@@ -928,6 +936,11 @@ def api_subscriptions_list():
         rows = db.execute('SELECT * FROM subscriptions ORDER BY channel_name LIMIT ? OFFSET ?', (limit, offset)).fetchall()
         return jsonify([dict(r) for r in rows])
 @media_bp.route('/api/subscriptions', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'url': {'type': str, 'max_length': 2000},
+    'category': {'type': str, 'max_length': 200},
+})
 def api_subscriptions_add():
     data = request.get_json() or {}
     name = data.get('name', '').strip()
@@ -953,6 +966,10 @@ def api_subscriptions_delete(sid):
 # ─── Media Shared Endpoints (favorites, batch) ────────────────────
 
 @media_bp.route('/api/media/favorite', methods=['POST'])
+@validate_json({
+    'type': {'type': str, 'max_length': 200},
+    'id': {'type': (int, float)},
+})
 def api_media_favorite():
     data = request.get_json() or {}
     media_type = data.get('type', 'videos')
@@ -971,6 +988,10 @@ def api_media_favorite():
             db.commit()
         return jsonify({'status': 'toggled', 'favorited': new_val})
 @media_bp.route('/api/media/batch-delete', methods=['POST'])
+@validate_json({
+    'type': {'type': str, 'max_length': 200},
+    'ids': {'type': list},
+})
 def api_media_batch_delete():
     data = request.get_json() or {}
     media_type = data.get('type', 'videos')
@@ -1002,6 +1023,11 @@ def api_media_batch_delete():
         db.commit()
         return jsonify({'status': 'deleted', 'count': deleted})
 @media_bp.route('/api/media/batch-move', methods=['POST'])
+@validate_json({
+    'type': {'type': str, 'max_length': 200},
+    'ids': {'type': list},
+    'folder': {'type': str, 'max_length': 200},
+})
 def api_media_batch_move():
     data = request.get_json() or {}
     media_type = data.get('type', 'videos')
@@ -1160,6 +1186,11 @@ def api_ytdlp_install_progress():
     return jsonify(_ytdlp_install_state)
 
 @media_bp.route('/api/ytdlp/download', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+    'folder': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+})
 def api_ytdlp_download():
 
     exe = get_ytdlp_path()
@@ -1374,6 +1405,9 @@ def api_videos_catalog():
     return jsonify(PREPPER_CATALOG)
 
 @media_bp.route('/api/ytdlp/download-catalog', methods=['POST'])
+@validate_json({
+    'items': {'type': list},
+})
 def api_ytdlp_download_catalog():
     """Download multiple catalog videos sequentially."""
 
@@ -1580,6 +1614,13 @@ def api_audio_delete(aid):
             db.commit()
         return jsonify({'status': 'deleted'})
 @media_bp.route('/api/audio/<int:aid>', methods=['PATCH'])
+@validate_optional_json({
+    'title': {'type': str, 'max_length': 200},
+    'folder': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'artist': {'type': str, 'max_length': 200},
+    'album': {'type': str, 'max_length': 200},
+})
 def api_audio_update(aid):
     data = request.get_json() or {}
     if 'folder' in data:
@@ -1617,6 +1658,11 @@ def api_audio_folders():
         rows = db.execute('SELECT DISTINCT folder FROM audio WHERE folder != "" ORDER BY folder').fetchall()
         return jsonify([r['folder'] for r in rows])
 @media_bp.route('/api/ytdlp/download-audio', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+    'folder': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+})
 def api_ytdlp_download_audio():
     """Download audio-only from a URL via yt-dlp."""
 
@@ -2170,6 +2216,13 @@ def api_books_delete(bid):
             db.commit()
         return jsonify({'status': 'deleted'})
 @media_bp.route('/api/books/<int:bid>', methods=['PATCH'])
+@validate_optional_json({
+    'title': {'type': str, 'max_length': 200},
+    'folder': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'author': {'type': str, 'max_length': 200},
+    'last_position': {'type': str, 'max_length': 200},
+})
 def api_books_update(bid):
     data = request.get_json() or {}
     if 'folder' in data:
@@ -2206,6 +2259,14 @@ def api_books_catalog():
     return jsonify(REFERENCE_CATALOG)
 
 @media_bp.route('/api/books/download-ref', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+    'title': {'type': str, 'max_length': 200},
+    'author': {'type': str, 'max_length': 200},
+    'folder': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'format': {'type': str, 'max_length': 200},
+})
 def api_books_download_ref():
     """Download a reference book from the catalog."""
 
@@ -2349,6 +2410,11 @@ def api_media_progress_get(media_type, media_id):
         row = db.execute('SELECT * FROM media_progress WHERE media_type = ? AND media_id = ?', (media_type, media_id)).fetchone()
         return jsonify(dict(row) if row else {'position_sec': 0, 'duration_sec': 0, 'completed': 0})
 @media_bp.route('/api/media/progress/<media_type>/<int:media_id>', methods=['PUT'])
+@validate_optional_json({
+    'position_sec': {'type': (int, float)},
+    'duration_sec': {'type': (int, float)},
+    'completed': {'type': (int, float)},
+})
 def api_media_progress_update(media_type, media_id):
     """Update playback progress for a media item."""
     if media_type not in ('video', 'audio', 'book'):
@@ -2392,6 +2458,11 @@ def api_playlists():
             rows = db.execute('SELECT * FROM playlists ORDER BY updated_at DESC LIMIT 500').fetchall()
         return jsonify([dict(r) for r in rows])
 @media_bp.route('/api/playlists', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'media_type': {'type': str, 'max_length': 200},
+    'items': {'type': list},
+})
 def api_playlist_create():
     """Create a new playlist."""
     d = request.json or {}
@@ -2404,6 +2475,10 @@ def api_playlist_create():
         pid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
         return jsonify({'id': pid, 'status': 'ok'})
 @media_bp.route('/api/playlists/<int:pid>', methods=['PUT'])
+@validate_optional_json({
+    'name': {'type': str, 'max_length': 200},
+    'items': {'type': list},
+})
 def api_playlist_update(pid):
     """Update a playlist."""
     d = request.json or {}
@@ -2432,6 +2507,15 @@ def api_playlist_delete(pid):
         db.commit()
         return jsonify({'status': 'ok'})
 @media_bp.route('/api/media/<media_type>/<int:media_id>/metadata', methods=['PUT'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+    'description': {'type': str, 'max_length': 2000},
+    'artist': {'type': str, 'max_length': 200},
+    'album': {'type': str, 'max_length': 200},
+    'author': {'type': str, 'max_length': 200},
+})
 def api_media_metadata_update(media_type, media_id):
     """Update metadata for a media item."""
     _MEDIA_META_TABLES = {'videos', 'audio', 'books'}
@@ -2464,6 +2548,11 @@ def api_torrent_available():
     return jsonify({'available': _torrent_avail()})
 
 @media_bp.route('/api/torrent/add', methods=['POST'])
+@validate_json({
+    'magnet': {'type': str, 'max_length': 5000},
+    'name': {'type': str, 'max_length': 200},
+    'torrent_id': {'type': str, 'max_length': 200},
+})
 def api_torrent_add():
     d = request.json or {}
     magnet = (d.get('magnet') or '').strip()

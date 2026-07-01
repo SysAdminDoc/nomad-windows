@@ -457,3 +457,103 @@ class TestContentPacks:
 
     def test_create_requires_name(self, client):
         assert client.post('/api/specialized/content-packs', json={}).status_code == 400
+
+
+# ── PAYLOAD VALIDATION ───────────────────────────────────────────────────
+
+class TestSpecializedModulesPayloadValidation:
+    """Verify the validate_json decorator rejects malformed, non-object,
+    and wrong-shape payloads on representative specialized POST routes."""
+
+    # -- /api/specialized/caches POST (supply caches) --
+
+    def test_caches_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/specialized/caches',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_caches_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/specialized/caches',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_caches_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': 123},
+            {'contents': 'water,food'},
+            {'known_by': 'alice'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/specialized/caches', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/specialized/pets POST --
+
+    def test_pets_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/specialized/pets',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_pets_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/specialized/pets',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_pets_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': []},
+            {'age_years': 'old'},
+            {'vaccination_dates': 'jan,feb'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/specialized/pets', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/specialized/intel POST --
+
+    def test_intel_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/specialized/intel',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_intel_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/specialized/intel',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_intel_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'title': 999},
+            {'actionable': 'yes'},
+            {'intel_type': []},
+        ]
+        for payload in cases:
+            resp = client.post('/api/specialized/intel', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'

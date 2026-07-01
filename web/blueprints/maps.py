@@ -21,6 +21,7 @@ from web.print_templates import render_print_document
 from web.state import _map_downloads, _map_downloads_lock
 import web.state as _state
 from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_list as _safe_json_list, safe_json_object as _safe_json_object, safe_id_list as _safe_id_list, validate_download_url as _validate_download_url
+from web.validation import validate_json, validate_optional_json
 
 import urllib.request as _urllib_request
 import urllib.error as _urllib_error
@@ -310,6 +311,7 @@ def api_maps_files():
     return jsonify(files)
 
 @maps_bp.route('/api/maps/delete', methods=['POST'])
+@validate_json({'filename': {'type': str, 'max_length': 200}})
 def api_maps_delete():
     data = request.get_json() or {}
     filename = data.get('filename')
@@ -592,6 +594,7 @@ def _download_map_region_thread(region_id, bbox, maps_dir):
             _map_downloads[region_id] = {'progress': 0, 'status': 'Error', 'error': err_msg}
 
 @maps_bp.route('/api/maps/download-region', methods=['POST'])
+@validate_json({'region_id': {'type': str, 'max_length': 200}})
 def api_maps_download_region():
     data = request.get_json() or {}
     region_id = data.get('region_id')
@@ -619,6 +622,10 @@ def api_maps_download_region():
     return jsonify({'status': 'started', 'region_id': region_id})
 
 @maps_bp.route('/api/maps/download-url', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+    'filename': {'type': str, 'max_length': 200},
+})
 def api_maps_download_url():
     """Download a map file from a direct URL."""
     data = request.get_json() or {}
@@ -736,6 +743,7 @@ def api_maps_download_url():
 ALLOWED_MAP_EXTENSIONS = ('.pmtiles', '.mbtiles', '.geojson', '.gpx', '.kml')
 
 @maps_bp.route('/api/maps/import-file', methods=['POST'])
+@validate_json({'path': {'type': str, 'max_length': 2000}})
 def api_maps_import_file():
     """Import a local map file by copying it to the maps directory."""
     data = request.get_json() or {}
@@ -781,6 +789,13 @@ def api_waypoints_list():
     return jsonify([dict(r) for r in rows])
 
 @maps_bp.route('/api/waypoints', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'category': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_waypoints_create():
     data = request.get_json() or {}
     try:
@@ -810,6 +825,15 @@ def api_waypoints_delete(wid):
     return jsonify({'status': 'deleted'})
 
 @maps_bp.route('/api/waypoints/<int:wid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'category': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+    'elevation_m': {'type': (int, float)},
+    'icon': {'type': str, 'max_length': 200},
+})
 def api_waypoint_update(wid):
     """Update a waypoint. Accepts any of: name, lat, lng, category, notes, elevation_m, icon."""
     data = request.get_json() or {}
@@ -854,6 +878,14 @@ def api_map_routes_list():
     return jsonify([dict(r) for r in rows])
 
 @maps_bp.route('/api/maps/routes', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'waypoint_ids': {'type': list},
+    'distance_km': {'type': (int, float)},
+    'estimated_time_min': {'type': (int, float)},
+    'terrain_difficulty': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_map_routes_create():
     data = request.get_json() or {}
     waypoint_ids = _safe_id_list(data.get('waypoint_ids'))
@@ -1018,6 +1050,13 @@ def _sun_times_for(lat, lng, when):
 
 
 @maps_bp.route('/api/maps/route-plan', methods=['POST'])
+@validate_optional_json({
+    'route_id': {'type': (int, float)},
+    'pace_kmh': {'type': (int, float)},
+    'corridor_km': {'type': (int, float)},
+    'people': {'type': (int, float)},
+    'depart_iso': {'type': str, 'max_length': 200},
+})
 def api_maps_route_plan():
     """Return a planned schedule for an existing route.
 
@@ -1190,6 +1229,13 @@ def api_map_annotations_list():
     return jsonify([dict(r) for r in rows])
 
 @maps_bp.route('/api/maps/annotations', methods=['POST'])
+@validate_json({
+    'type': {'type': str, 'max_length': 200},
+    'geojson': {'type': (dict, str)},
+    'label': {'type': str, 'max_length': 200},
+    'color': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_map_annotations_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -1366,6 +1412,13 @@ def api_waypoint_icons():
     return jsonify(WAYPOINT_ICONS)
 
 @maps_bp.route('/api/maps/atlas', methods=['POST'])
+@validate_optional_json({
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'zoom_levels': {'type': list},
+    'title': {'type': str, 'max_length': 200},
+    'grid_size': {'type': (int, float)},
+})
 def api_maps_atlas():
     """Generate printable map atlas pages for the current view area."""
     data = request.get_json() or {}
@@ -1688,6 +1741,9 @@ def api_tracks_list():
         return jsonify([dict(r) for r in rows])
 
 @maps_bp.route('/api/tracks', methods=['POST'])
+@validate_optional_json({
+    'name': {'type': str, 'max_length': 200},
+})
 def api_tracks_start():
     """Create a new track recording session."""
     data = request.get_json() or {}
@@ -1707,6 +1763,11 @@ def api_tracks_start():
         return jsonify(dict(row)), 201
 
 @maps_bp.route('/api/tracks/<int:tid>/point', methods=['POST'])
+@validate_json({
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'alt': {'type': (int, float)},
+})
 def api_tracks_add_point(tid):
     """Append a point to a track. Accepts {lat, lng, alt, timestamp}."""
     data = request.get_json() or {}
@@ -1823,6 +1884,15 @@ def api_geofences_list():
         return jsonify(results)
 
 @maps_bp.route('/api/geofences', methods=['POST'])
+@validate_json({
+    'waypoint_id': {'type': (int, float)},
+    'radius_m': {'type': (int, float)},
+    'alert_type': {'type': str, 'max_length': 200},
+    'message': {'type': str, 'max_length': 2000},
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'name': {'type': str, 'max_length': 200},
+})
 def api_geofences_create():
     """Create a geofence linked to a waypoint.
 
@@ -1874,6 +1944,10 @@ def api_geofences_create():
         return jsonify(result), 201
 
 @maps_bp.route('/api/geofences/check', methods=['POST'])
+@validate_json({
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+})
 def api_geofences_check():
     """Check a position against all active geofences.
 

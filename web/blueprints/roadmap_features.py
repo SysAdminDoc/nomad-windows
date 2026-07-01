@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, Response
 from db import db_session, log_activity
 from web.blueprints import get_pagination, error_response
+from web.validation import validate_json, validate_optional_json
 
 roadmap_bp = Blueprint('roadmap_features', __name__)
 _log = logging.getLogger('nomad.roadmap')
@@ -52,6 +53,16 @@ def api_recipe_detail(rid):
 
 
 @roadmap_bp.route('/api/recipes', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'servings': {'type': (int, float)},
+    'prep_time_min': {'type': (int, float)},
+    'cook_time_min': {'type': (int, float)},
+    'instructions': {'type': str, 'max_length': 5000},
+    'source_url': {'type': str, 'max_length': 2000},
+    'notes': {'type': str, 'max_length': 2000},
+    'ingredients': {'type': list},
+})
 def api_recipe_create():
     d = request.get_json() or {}
     name = (d.get('name') or '').strip()
@@ -76,6 +87,16 @@ def api_recipe_create():
 
 
 @roadmap_bp.route('/api/recipes/<int:rid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'servings': {'type': (int, float)},
+    'prep_time_min': {'type': (int, float)},
+    'cook_time_min': {'type': (int, float)},
+    'instructions': {'type': str, 'max_length': 5000},
+    'source_url': {'type': str, 'max_length': 2000},
+    'notes': {'type': str, 'max_length': 2000},
+    'ingredients': {'type': list},
+})
 def api_recipe_update(rid):
     d = request.get_json() or {}
     with db_session() as db:
@@ -114,6 +135,9 @@ def api_recipe_delete(rid):
 
 
 @roadmap_bp.route('/api/recipes/<int:rid>/cook', methods=['POST'])
+@validate_optional_json({
+    'servings_multiplier': {'type': (int, float)},
+})
 def api_recipe_cook(rid):
     """Cook a recipe: deduct ingredient quantities from inventory."""
     d = request.get_json() or {}
@@ -152,6 +176,11 @@ def api_locations_list():
 
 
 @roadmap_bp.route('/api/inventory/locations', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'parent_id': {'type': (int, float)},
+    'description': {'type': str, 'max_length': 2000},
+})
 def api_location_create():
     d = request.get_json() or {}
     name = (d.get('name') or '').strip()
@@ -223,6 +252,14 @@ def api_batteries_list():
 
 
 @roadmap_bp.route('/api/batteries', methods=['POST'])
+@validate_json({
+    'device_name': {'type': str, 'max_length': 200},
+    'battery_type': {'type': str, 'max_length': 200},
+    'quantity': {'type': (int, float)},
+    'installed_date': {'type': str, 'max_length': 200},
+    'expected_life_days': {'type': (int, float)},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_battery_create():
     d = request.get_json() or {}
     name = (d.get('device_name') or '').strip()
@@ -239,6 +276,15 @@ def api_battery_create():
 
 
 @roadmap_bp.route('/api/batteries/<int:bid>', methods=['PUT'])
+@validate_json({
+    'device_name': {'type': str, 'max_length': 200},
+    'battery_type': {'type': str, 'max_length': 200},
+    'quantity': {'type': (int, float)},
+    'installed_date': {'type': str, 'max_length': 200},
+    'expected_life_days': {'type': (int, float)},
+    'last_checked': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_battery_update(bid):
     d = request.get_json() or {}
     with db_session() as db:
@@ -279,6 +325,16 @@ def api_warranties_list():
 
 
 @roadmap_bp.route('/api/warranties', methods=['POST'])
+@validate_json({
+    'item_name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'purchase_date': {'type': str, 'max_length': 200},
+    'expiry_date': {'type': str, 'max_length': 200},
+    'provider': {'type': str, 'max_length': 200},
+    'policy_number': {'type': str, 'max_length': 200},
+    'coverage': {'type': str, 'max_length': 2000},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_warranty_create():
     d = request.get_json() or {}
     name = (d.get('item_name') or '').strip()
@@ -296,6 +352,16 @@ def api_warranty_create():
 
 
 @roadmap_bp.route('/api/warranties/<int:wid>', methods=['PUT'])
+@validate_json({
+    'item_name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'purchase_date': {'type': str, 'max_length': 200},
+    'expiry_date': {'type': str, 'max_length': 200},
+    'provider': {'type': str, 'max_length': 200},
+    'policy_number': {'type': str, 'max_length': 200},
+    'coverage': {'type': str, 'max_length': 2000},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_warranty_update(wid):
     d = request.get_json() or {}
     with db_session() as db:
@@ -335,6 +401,13 @@ def api_ai_skills_list():
 
 
 @roadmap_bp.route('/api/ai/skills', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'system_prompt': {'type': str, 'max_length': 5000},
+    'kb_scope': {'type': str, 'max_length': 200},
+    'icon': {'type': str, 'max_length': 200},
+})
 def api_ai_skill_create():
     d = request.get_json() or {}
     name = (d.get('name') or '').strip()
@@ -350,6 +423,13 @@ def api_ai_skill_create():
 
 
 @roadmap_bp.route('/api/ai/skills/<int:sid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'system_prompt': {'type': str, 'max_length': 5000},
+    'kb_scope': {'type': str, 'max_length': 200},
+    'icon': {'type': str, 'max_length': 200},
+})
 def api_ai_skill_update(sid):
     d = request.get_json() or {}
     with db_session() as db:
@@ -413,6 +493,14 @@ def api_ai_usage():
 
 
 @roadmap_bp.route('/api/ai/usage/log', methods=['POST'])
+@validate_json({
+    'model': {'type': str, 'max_length': 200},
+    'tokens_in': {'type': (int, float)},
+    'tokens_out': {'type': (int, float)},
+    'duration_ms': {'type': (int, float)},
+    'rating': {'type': (int, float)},
+    'conversation_id': {'type': str, 'max_length': 200},
+})
 def api_ai_usage_log():
     d = request.get_json() or {}
     with db_session() as db:
@@ -437,6 +525,13 @@ def api_monitors_list():
 
 
 @roadmap_bp.route('/api/monitors', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+    'name': {'type': str, 'max_length': 200},
+    'method': {'type': str, 'max_length': 200},
+    'expected_status': {'type': (int, float)},
+    'check_interval_sec': {'type': (int, float)},
+})
 def api_monitor_create():
     d = request.get_json() or {}
     url = (d.get('url') or '').strip()
@@ -500,6 +595,11 @@ def api_feeds_list():
 
 
 @roadmap_bp.route('/api/feeds', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+    'title': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+})
 def api_feed_create():
     d = request.get_json() or {}
     url = (d.get('url') or '').strip()
@@ -582,6 +682,9 @@ def api_feed_refresh(fid):
 
 
 @roadmap_bp.route('/api/feeds/import-opml', methods=['POST'])
+@validate_optional_json({
+    'content': {'type': str, 'max_length': 5000},
+})
 def api_import_opml():
     """P5-13: Import OPML file to bulk-add RSS feeds."""
     if 'file' not in request.files:
@@ -633,6 +736,14 @@ def api_calendar_list():
 
 
 @roadmap_bp.route('/api/calendar', methods=['POST'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'start_time': {'type': str, 'max_length': 200},
+    'end_time': {'type': str, 'max_length': 200},
+    'all_day': {'type': (int, float)},
+    'location': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+})
 def api_calendar_create():
     d = request.get_json() or {}
     title = (d.get('title') or '').strip()
@@ -709,6 +820,11 @@ def api_dashboard_templates():
 
 
 @roadmap_bp.route('/api/dashboard/templates', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'config': {'type': dict},
+})
 def api_dashboard_template_create():
     d = request.get_json() or {}
     name = (d.get('name') or '').strip()
@@ -745,6 +861,10 @@ def api_dashboard_config_export():
 
 
 @roadmap_bp.route('/api/dashboard/config/import', methods=['POST'])
+@validate_json({
+    'settings': {'type': dict},
+    'templates': {'type': list},
+})
 def api_dashboard_config_import():
     """P4-03: Import dashboard configuration from JSON."""
     d = request.get_json() or {}
@@ -822,6 +942,14 @@ def api_map_bookmarks_list():
 
 
 @roadmap_bp.route('/api/maps/bookmarks', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'zoom': {'type': (int, float)},
+    'icon': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_map_bookmark_create():
     d = request.get_json() or {}
     name = (d.get('name') or '').strip()
@@ -850,6 +978,9 @@ def api_map_bookmark_delete(bid):
 # ═══════════════════════════════════════════════════════════════════════
 
 @roadmap_bp.route('/api/conversations/<int:cid>/kb-scope', methods=['PUT'])
+@validate_json({
+    'kb_scopes': {'type': list},
+})
 def api_conversation_kb_scope(cid):
     """Set which KB workspaces are active for a conversation."""
     d = request.get_json() or {}
@@ -881,6 +1012,9 @@ def api_conversation_kb_scope_get(cid):
 # ═══════════════════════════════════════════════════════════════════════
 
 @roadmap_bp.route('/api/recipes/import-url', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+})
 def api_recipe_import_url():
     """Scrape recipe from URL using JSON-LD structured data."""
     d = request.get_json() or {}
@@ -954,6 +1088,9 @@ def api_recipe_import_url():
 # ═══════════════════════════════════════════════════════════════════════
 
 @roadmap_bp.route('/api/widgets/custom-api', methods=['POST'])
+@validate_json({
+    'url': {'type': str, 'max_length': 2000},
+})
 def api_custom_api_widget():
     """Fetch any JSON API and return the result for widget rendering."""
     d = request.get_json() or {}
@@ -1010,6 +1147,10 @@ def api_prompt_versions(pid):
 
 
 @roadmap_bp.route('/api/ai/prompts/<int:pid>/versions', methods=['POST'])
+@validate_json({
+    'content': {'type': str, 'max_length': 5000},
+    'commit_message': {'type': str, 'max_length': 200},
+})
 def api_prompt_version_create(pid):
     d = request.get_json() or {}
     content = d.get('content', '')
@@ -1082,6 +1223,10 @@ def _decrypt_secret(ciphertext):
 # ═══════════════════════════════════════════════════════════════════════
 
 @roadmap_bp.route('/api/auth/totp/setup', methods=['POST'])
+@validate_optional_json({
+    'user_id': {'type': (int, float)},
+    'username': {'type': str, 'max_length': 200},
+})
 def api_totp_setup():
     """Generate a TOTP secret and provisioning URI."""
     d = request.get_json() or {}
@@ -1106,6 +1251,10 @@ def api_totp_setup():
 
 
 @roadmap_bp.route('/api/auth/totp/verify', methods=['POST'])
+@validate_json({
+    'user_id': {'type': (int, float)},
+    'code': {'type': str, 'max_length': 200},
+})
 def api_totp_verify():
     """Verify a TOTP code."""
     d = request.get_json() or {}
@@ -1211,6 +1360,10 @@ def api_kb_upload_archive():
 # ═══════════════════════════════════════════════════════════════════════
 
 @roadmap_bp.route('/api/federation/cert-trust', methods=['PUT'])
+@validate_json({
+    'peer_id': {'type': str, 'max_length': 200},
+    'allow_insecure': {'type': bool},
+})
 def api_federation_cert_trust():
     """Toggle self-signed cert trust for a federation peer."""
     d = request.get_json() or {}
@@ -1244,6 +1397,7 @@ def api_tab_permissions():
 
 
 @roadmap_bp.route('/api/settings/tab-permissions', methods=['PUT'])
+@validate_optional_json({})
 def api_tab_permissions_update():
     """Set per-tab access control — {tab_name: [allowed_roles]}."""
     d = request.get_json() or {}
@@ -1407,6 +1561,10 @@ def api_monitor_snapshot(mid):
 # ═══════════════════════════════════════════════════════════════════════
 
 @roadmap_bp.route('/api/auth/upgrade-hash', methods=['POST'])
+@validate_json({
+    'user_id': {'type': (int, float)},
+    'password': {'type': str, 'max_length': 200},
+})
 def api_upgrade_password_hash():
     """Upgrade a user's password hash from PBKDF2 to bcrypt."""
     d = request.get_json() or {}
@@ -1570,6 +1728,11 @@ def api_survival_reference_card(card_id):
 # ═══════════════════════════════════════════════════════════════════════
 
 @roadmap_bp.route('/api/ai/compare', methods=['POST'])
+@validate_json({
+    'model_a': {'type': str, 'max_length': 200},
+    'model_b': {'type': str, 'max_length': 200},
+    'prompt': {'type': str, 'max_length': 5000},
+})
 def api_ai_compare():
     """Send same prompt to two models and return both responses."""
     d = request.get_json() or {}
@@ -1654,6 +1817,11 @@ def api_ai_tools_list():
 
 
 @roadmap_bp.route('/api/ai/tools/<tool_name>', methods=['POST'])
+@validate_optional_json({
+    'query': {'type': str, 'max_length': 2000},
+    'drug': {'type': str, 'max_length': 200},
+    'weight_kg': {'type': (int, float)},
+})
 def api_ai_tool_call(tool_name):
     """Execute an AI tool/function call."""
     if tool_name not in AI_TOOLS:

@@ -234,3 +234,103 @@ class TestPersonalFeeds:
 
         assert client.delete(f'/api/feeds/{fid}').status_code == 200
         assert client.delete(f'/api/feeds/{fid}').status_code == 404
+
+
+# ── PAYLOAD VALIDATION ───────────────────────────────────────────────────
+
+class TestRoadmapFeaturesPayloadValidation:
+    """Verify the validate_json decorator rejects malformed, non-object,
+    and wrong-shape payloads on representative roadmap-features POST routes."""
+
+    # -- /api/monitors POST --
+
+    def test_monitors_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/monitors',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_monitors_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/monitors',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_monitors_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'url': 42},
+            {'expected_status': 'ok'},
+            {'check_interval_sec': True},
+        ]
+        for payload in cases:
+            resp = client.post('/api/monitors', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/batteries POST --
+
+    def test_batteries_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/batteries',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_batteries_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/batteries',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_batteries_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'device_name': []},
+            {'quantity': 'lots'},
+            {'expected_life_days': True},
+        ]
+        for payload in cases:
+            resp = client.post('/api/batteries', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/warranties POST --
+
+    def test_warranties_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/warranties',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_warranties_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/warranties',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_warranties_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'item_name': 123},
+            {'category': []},
+            {'purchase_date': True},
+        ]
+        for payload in cases:
+            resp = client.post('/api/warranties', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'

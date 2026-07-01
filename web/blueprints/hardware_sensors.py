@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.validation import validate_json
 from web.blueprints import get_pagination
 from web.utils import coerce_int as _ci, coerce_float as _cf
 
@@ -166,6 +167,24 @@ def _sqlite_utc_cutoff(hours):
 
 
 @hardware_sensors_bp.route('/sensors', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'sensor_type': {'type': str, 'max_length': 200},
+    'protocol': {'type': str, 'max_length': 200},
+    'device_id': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'topic': {'type': str, 'max_length': 500},
+    'unit': {'type': str, 'max_length': 200},
+    'current_value': {'type': str, 'max_length': 200},
+    'last_reading_at': {'type': str, 'max_length': 200},
+    'min_threshold': {'type': (int, float)},
+    'max_threshold': {'type': (int, float)},
+    'alert_enabled': {'type': bool},
+    'calibration_offset': {'type': (int, float)},
+    'battery_pct': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def sensors_create():
     """Create a new IoT sensor."""
     data = request.get_json() or {}
@@ -219,6 +238,24 @@ def sensors_get(sid):
 
 
 @hardware_sensors_bp.route('/sensors/<int:sid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'sensor_type': {'type': str, 'max_length': 200},
+    'protocol': {'type': str, 'max_length': 200},
+    'device_id': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'topic': {'type': str, 'max_length': 500},
+    'unit': {'type': str, 'max_length': 200},
+    'current_value': {'type': str, 'max_length': 200},
+    'last_reading_at': {'type': str, 'max_length': 200},
+    'min_threshold': {'type': (int, float)},
+    'max_threshold': {'type': (int, float)},
+    'alert_enabled': {'type': bool},
+    'calibration_offset': {'type': (int, float)},
+    'battery_pct': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def sensors_update(sid):
     """Update an IoT sensor."""
     data = request.get_json() or {}
@@ -257,6 +294,13 @@ def sensors_delete(sid):
 
 
 @hardware_sensors_bp.route('/sensors/<int:sid>/reading', methods=['POST'])
+@validate_json({
+    'value': {'type': (int, float)},
+    'raw_value': {'type': str, 'max_length': 200},
+    'unit': {'type': str, 'max_length': 200},
+    'quality': {'type': str, 'max_length': 200},
+    'timestamp': {'type': str, 'max_length': 200},
+})
 def sensors_add_reading(sid):
     """Post a new reading for a sensor and update current_value/last_reading_at."""
     data = request.get_json() or {}
@@ -361,6 +405,24 @@ def network_list():
 
 
 @hardware_sensors_bp.route('/network', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'device_type': {'type': str, 'max_length': 200},
+    'ip_address': {'type': str, 'max_length': 200},
+    'mac_address': {'type': str, 'max_length': 200},
+    'hostname': {'type': str, 'max_length': 200},
+    'manufacturer': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'firmware_version': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'vlan': {'type': str, 'max_length': 200},
+    'role': {'type': str, 'max_length': 200},
+    'port_count': {'type': (int, float)},
+    'uplink_to': {'type': (int, float)},
+    'last_seen': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def network_create():
     """Add a network device."""
     data = request.get_json() or {}
@@ -408,6 +470,24 @@ def network_get(did):
 
 
 @hardware_sensors_bp.route('/network/<int:did>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'device_type': {'type': str, 'max_length': 200},
+    'ip_address': {'type': str, 'max_length': 200},
+    'mac_address': {'type': str, 'max_length': 200},
+    'hostname': {'type': str, 'max_length': 200},
+    'manufacturer': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'firmware_version': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'vlan': {'type': str, 'max_length': 200},
+    'role': {'type': str, 'max_length': 200},
+    'port_count': {'type': (int, float)},
+    'uplink_to': {'type': (int, float)},
+    'last_seen': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def network_update(did):
     """Update a network device."""
     data = request.get_json() or {}
@@ -508,6 +588,27 @@ def mesh_list():
 
 
 @hardware_sensors_bp.route('/mesh', methods=['POST'])
+@validate_json({
+    'node_id': {'type': str, 'max_length': 200},
+    'long_name': {'type': str, 'max_length': 200},
+    'short_name': {'type': str, 'max_length': 200},
+    'hardware_model': {'type': str, 'max_length': 200},
+    'firmware_version': {'type': str, 'max_length': 200},
+    'role': {'type': str, 'max_length': 200},
+    'latitude': {'type': (int, float)},
+    'longitude': {'type': (int, float)},
+    'altitude_m': {'type': (int, float)},
+    'battery_level': {'type': (int, float)},
+    'voltage': {'type': (int, float)},
+    'channel_utilization': {'type': (int, float)},
+    'air_util_tx': {'type': (int, float)},
+    'snr': {'type': (int, float)},
+    'rssi': {'type': (int, float)},
+    'hops_away': {'type': (int, float)},
+    'last_heard': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def mesh_create():
     """Create or upsert a mesh node by node_id."""
     data = request.get_json() or {}
@@ -582,6 +683,27 @@ def mesh_get(mid):
 
 
 @hardware_sensors_bp.route('/mesh/<int:mid>', methods=['PUT'])
+@validate_json({
+    'node_id': {'type': str, 'max_length': 200},
+    'long_name': {'type': str, 'max_length': 200},
+    'short_name': {'type': str, 'max_length': 200},
+    'hardware_model': {'type': str, 'max_length': 200},
+    'firmware_version': {'type': str, 'max_length': 200},
+    'role': {'type': str, 'max_length': 200},
+    'latitude': {'type': (int, float)},
+    'longitude': {'type': (int, float)},
+    'altitude_m': {'type': (int, float)},
+    'battery_level': {'type': (int, float)},
+    'voltage': {'type': (int, float)},
+    'channel_utilization': {'type': (int, float)},
+    'air_util_tx': {'type': (int, float)},
+    'snr': {'type': (int, float)},
+    'rssi': {'type': (int, float)},
+    'hops_away': {'type': (int, float)},
+    'last_heard': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def mesh_update(mid):
     """Update a mesh node."""
     data = request.get_json() or {}
@@ -687,6 +809,24 @@ def weather_list():
 
 
 @hardware_sensors_bp.route('/weather-stations', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'station_type': {'type': str, 'max_length': 200},
+    'brand': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'protocol': {'type': str, 'max_length': 200},
+    'ip_address': {'type': str, 'max_length': 200},
+    'api_key': {'type': str, 'max_length': 500},
+    'location': {'type': str, 'max_length': 200},
+    'latitude': {'type': (int, float)},
+    'longitude': {'type': (int, float)},
+    'elevation_ft': {'type': (int, float)},
+    'polling_interval_sec': {'type': (int, float)},
+    'last_poll': {'type': str, 'max_length': 200},
+    'current_data': {'type': (dict, str)},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def weather_create():
     """Add a weather station."""
     data = request.get_json() or {}
@@ -744,6 +884,24 @@ def weather_get(wid):
 
 
 @hardware_sensors_bp.route('/weather-stations/<int:wid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'station_type': {'type': str, 'max_length': 200},
+    'brand': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'protocol': {'type': str, 'max_length': 200},
+    'ip_address': {'type': str, 'max_length': 200},
+    'api_key': {'type': str, 'max_length': 500},
+    'location': {'type': str, 'max_length': 200},
+    'latitude': {'type': (int, float)},
+    'longitude': {'type': (int, float)},
+    'elevation_ft': {'type': (int, float)},
+    'polling_interval_sec': {'type': (int, float)},
+    'last_poll': {'type': str, 'max_length': 200},
+    'current_data': {'type': (dict, str)},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def weather_update(wid):
     """Update a weather station."""
     data = request.get_json() or {}
@@ -799,6 +957,25 @@ def gps_list():
 
 
 @hardware_sensors_bp.route('/gps', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'device_type': {'type': str, 'max_length': 200},
+    'brand': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'serial_number': {'type': str, 'max_length': 200},
+    'connection_type': {'type': str, 'max_length': 200},
+    'port': {'type': str, 'max_length': 200},
+    'baud_rate': {'type': (int, float)},
+    'last_fix_lat': {'type': (int, float)},
+    'last_fix_lon': {'type': (int, float)},
+    'last_fix_alt': {'type': (int, float)},
+    'last_fix_time': {'type': str, 'max_length': 200},
+    'accuracy_m': {'type': (int, float)},
+    'satellites': {'type': (int, float)},
+    'battery_pct': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def gps_create():
     """Add a GPS device."""
     data = request.get_json() or {}
@@ -847,6 +1024,25 @@ def gps_get(gid):
 
 
 @hardware_sensors_bp.route('/gps/<int:gid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'device_type': {'type': str, 'max_length': 200},
+    'brand': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'serial_number': {'type': str, 'max_length': 200},
+    'connection_type': {'type': str, 'max_length': 200},
+    'port': {'type': str, 'max_length': 200},
+    'baud_rate': {'type': (int, float)},
+    'last_fix_lat': {'type': (int, float)},
+    'last_fix_lon': {'type': (int, float)},
+    'last_fix_alt': {'type': (int, float)},
+    'last_fix_time': {'type': str, 'max_length': 200},
+    'accuracy_m': {'type': (int, float)},
+    'satellites': {'type': (int, float)},
+    'battery_pct': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def gps_update(gid):
     """Update a GPS device."""
     data = request.get_json() or {}
@@ -884,6 +1080,17 @@ def gps_delete(gid):
 
 
 @hardware_sensors_bp.route('/gps/<int:gid>/fix', methods=['POST'])
+@validate_json({
+    'lat': {'type': (int, float)},
+    'lon': {'type': (int, float)},
+    'latitude': {'type': (int, float)},
+    'longitude': {'type': (int, float)},
+    'alt': {'type': (int, float)},
+    'altitude': {'type': (int, float)},
+    'timestamp': {'type': str, 'max_length': 200},
+    'accuracy_m': {'type': (int, float)},
+    'satellites': {'type': (int, float)},
+})
 def gps_record_fix(gid):
     """Record a new GPS fix (lat, lon, alt, accuracy, satellites)."""
     data = request.get_json() or {}
@@ -951,6 +1158,19 @@ def wearables_list():
 
 
 @hardware_sensors_bp.route('/wearables', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'device_type': {'type': str, 'max_length': 200},
+    'brand': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'wearer': {'type': str, 'max_length': 200},
+    'connection_type': {'type': str, 'max_length': 200},
+    'last_sync': {'type': str, 'max_length': 200},
+    'battery_pct': {'type': (int, float)},
+    'current_data': {'type': (dict, str)},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def wearables_create():
     """Add a wearable device."""
     data = request.get_json() or {}
@@ -1002,6 +1222,19 @@ def wearables_get(wid):
 
 
 @hardware_sensors_bp.route('/wearables/<int:wid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'device_type': {'type': str, 'max_length': 200},
+    'brand': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'wearer': {'type': str, 'max_length': 200},
+    'connection_type': {'type': str, 'max_length': 200},
+    'last_sync': {'type': str, 'max_length': 200},
+    'battery_pct': {'type': (int, float)},
+    'current_data': {'type': (dict, str)},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def wearables_update(wid):
     """Update a wearable device."""
     data = request.get_json() or {}
@@ -1065,6 +1298,21 @@ def integrations_list():
 
 
 @hardware_sensors_bp.route('/integrations', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'integration_type': {'type': str, 'max_length': 200},
+    'endpoint_url': {'type': str, 'max_length': 2000},
+    'api_key': {'type': str, 'max_length': 500},
+    'username': {'type': str, 'max_length': 200},
+    'auth_token': {'type': str, 'max_length': 2000},
+    'config_json': {'type': (dict, str)},
+    'polling_interval_sec': {'type': (int, float)},
+    'last_sync': {'type': str, 'max_length': 200},
+    'sync_count': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+    'error_message': {'type': str, 'max_length': 2000},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def integrations_create():
     """Add an integration config."""
     data = request.get_json() or {}
@@ -1119,6 +1367,21 @@ def integrations_get(iid):
 
 
 @hardware_sensors_bp.route('/integrations/<int:iid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'integration_type': {'type': str, 'max_length': 200},
+    'endpoint_url': {'type': str, 'max_length': 2000},
+    'api_key': {'type': str, 'max_length': 500},
+    'username': {'type': str, 'max_length': 200},
+    'auth_token': {'type': str, 'max_length': 2000},
+    'config_json': {'type': (dict, str)},
+    'polling_interval_sec': {'type': (int, float)},
+    'last_sync': {'type': str, 'max_length': 200},
+    'sync_count': {'type': (int, float)},
+    'status': {'type': str, 'max_length': 200},
+    'error_message': {'type': str, 'max_length': 2000},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def integrations_update(iid):
     """Update an integration config."""
     data = request.get_json() or {}

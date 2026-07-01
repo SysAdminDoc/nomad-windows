@@ -187,3 +187,103 @@ class TestOfflineMapBootstrapResilience:
         monkeypatch.setattr('urllib.request.urlopen', lambda *args, **kwargs: _BadReleaseResponse())
 
         assert maps._get_pmtiles_cli() is None
+
+
+# ── PAYLOAD VALIDATION ───────────────────────────────────────────────────
+
+class TestMapsPayloadValidation:
+    """Verify the validate_json decorator rejects malformed, non-object,
+    and wrong-shape payloads on representative maps POST routes."""
+
+    # -- /api/waypoints POST --
+
+    def test_waypoints_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/waypoints',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_waypoints_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/waypoints',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_waypoints_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': []},
+            {'lat': 'north'},
+            {'lng': True},
+        ]
+        for payload in cases:
+            resp = client.post('/api/waypoints', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/maps/routes POST --
+
+    def test_routes_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/maps/routes',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_routes_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/maps/routes',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_routes_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': 42},
+            {'waypoint_ids': 'one,two'},
+            {'distance_km': 'far'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/maps/routes', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/geofences POST --
+
+    def test_geofences_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/geofences',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_geofences_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/geofences',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_geofences_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'radius_m': 'wide'},
+            {'lat': []},
+            {'waypoint_id': 'abc'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/geofences', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'

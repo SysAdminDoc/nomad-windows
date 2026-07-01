@@ -330,3 +330,103 @@ class TestHardwareIntegrations:
                           json={'status': 'active'}).status_code == 404
         assert client.delete(f'/api/hardware/integrations/{iid}').status_code == 200
         assert client.post(f'/api/hardware/integrations/{iid}/test').status_code == 404
+
+
+# ── PAYLOAD VALIDATION ───────────────────────────────────────────────────
+
+class TestHardwareSensorsPayloadValidation:
+    """Verify the validate_json decorator rejects malformed, non-object,
+    and wrong-shape payloads on representative hardware POST routes."""
+
+    # -- /api/hardware/sensors POST --
+
+    def test_sensors_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/hardware/sensors',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_sensors_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/hardware/sensors',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_sensors_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': []},
+            {'min_threshold': 'low'},
+            {'alert_enabled': 'yes'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/hardware/sensors', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/hardware/network POST --
+
+    def test_network_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/hardware/network',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_network_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/hardware/network',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_network_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': 99},
+            {'port_count': 'many'},
+            {'uplink_to': []},
+        ]
+        for payload in cases:
+            resp = client.post('/api/hardware/network', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/hardware/gps POST --
+
+    def test_gps_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/hardware/gps',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_gps_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/hardware/gps',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_gps_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': True},
+            {'baud_rate': 'fast'},
+            {'last_fix_lat': 'north'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/hardware/gps', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'

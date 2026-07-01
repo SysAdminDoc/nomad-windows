@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.validation import validate_json, validate_optional_json
 
 disaster_modules_bp = Blueprint('disaster_modules', __name__, url_prefix='/api/disaster')
 
@@ -211,6 +212,23 @@ def api_plans_get(pid):
 
 
 @disaster_modules_bp.route('/plans', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'disaster_type': {'type': str, 'max_length': 200},
+    'environment_type': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 5000},
+    'trigger_conditions': {'type': str, 'max_length': 2000},
+    'immediate_actions': {'type': list},
+    'sustained_actions': {'type': list},
+    'resources_required': {'type': list},
+    'shelter_plan': {'type': str, 'max_length': 5000},
+    'evacuation_triggers': {'type': str, 'max_length': 2000},
+    'communication_plan': {'type': str, 'max_length': 5000},
+    'estimated_duration': {'type': str, 'max_length': 200},
+    'personnel_assignments': {'type': list},
+    'last_reviewed': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_plans_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -242,6 +260,23 @@ def api_plans_create():
 
 
 @disaster_modules_bp.route('/plans/<int:pid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'disaster_type': {'type': str, 'max_length': 200},
+    'environment_type': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 5000},
+    'trigger_conditions': {'type': str, 'max_length': 2000},
+    'immediate_actions': {'type': list},
+    'sustained_actions': {'type': list},
+    'resources_required': {'type': list},
+    'shelter_plan': {'type': str, 'max_length': 5000},
+    'evacuation_triggers': {'type': str, 'max_length': 2000},
+    'communication_plan': {'type': str, 'max_length': 5000},
+    'estimated_duration': {'type': str, 'max_length': 200},
+    'personnel_assignments': {'type': list},
+    'last_reviewed': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_plans_update(pid):
     data = request.get_json() or {}
     allowed = _DISASTER_PLANS_ALLOWED_FIELDS
@@ -309,6 +344,15 @@ def api_checklists_list():
 
 
 @disaster_modules_bp.route('/checklists', methods=['POST'])
+@validate_json({
+    'title': {'type': str, 'max_length': 200},
+    'plan_id': {'type': (int, float)},
+    'category': {'type': str, 'max_length': 200},
+    'items': {'type': list},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'due_date': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_checklists_create():
     data = request.get_json() or {}
     title = (data.get('title') or '').strip()
@@ -334,6 +378,15 @@ def api_checklists_create():
 
 
 @disaster_modules_bp.route('/checklists/<int:cid>', methods=['PUT'])
+@validate_json({
+    'plan_id': {'type': (int, float)},
+    'title': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'items': {'type': list},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'due_date': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_checklists_update(cid):
     data = request.get_json() or {}
     allowed = _DISASTER_CHECKLISTS_ALLOWED_FIELDS
@@ -368,6 +421,7 @@ def api_checklists_update(cid):
 
 
 @disaster_modules_bp.route('/checklists/seed', methods=['POST'])
+@validate_optional_json({})
 def api_checklists_seed():
     count = 0
     with db_session() as db:
@@ -411,6 +465,20 @@ def api_energy_list():
 
 
 @disaster_modules_bp.route('/energy', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'energy_type': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'capacity': {'type': str, 'max_length': 200},
+    'fuel_source': {'type': str, 'max_length': 200},
+    'output_rating': {'type': str, 'max_length': 200},
+    'efficiency_pct': {'type': (int, float)},
+    'installation_date': {'type': str, 'max_length': 200},
+    'condition': {'type': str, 'max_length': 200},
+    'maintenance_schedule': {'type': str, 'max_length': 2000},
+    'inventory_link': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_energy_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -437,6 +505,20 @@ def api_energy_create():
 
 
 @disaster_modules_bp.route('/energy/<int:eid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'energy_type': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'capacity': {'type': str, 'max_length': 200},
+    'fuel_source': {'type': str, 'max_length': 200},
+    'output_rating': {'type': str, 'max_length': 200},
+    'efficiency_pct': {'type': (int, float)},
+    'installation_date': {'type': str, 'max_length': 200},
+    'condition': {'type': str, 'max_length': 200},
+    'maintenance_schedule': {'type': str, 'max_length': 2000},
+    'inventory_link': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_energy_update(eid):
     data = request.get_json() or {}
     allowed = _ENERGY_SYSTEMS_ALLOWED_FIELDS
@@ -500,6 +582,23 @@ def api_construction_list():
 
 
 @disaster_modules_bp.route('/construction', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'project_type': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 5000},
+    'materials': {'type': list},
+    'labor_hours_estimated': {'type': (int, float)},
+    'labor_hours_actual': {'type': (int, float)},
+    'start_date': {'type': str, 'max_length': 200},
+    'target_date': {'type': str, 'max_length': 200},
+    'completion_date': {'type': str, 'max_length': 200},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'blueprint_ref': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'priority': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_construction_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -527,6 +626,23 @@ def api_construction_create():
 
 
 @disaster_modules_bp.route('/construction/<int:cid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'project_type': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 5000},
+    'materials': {'type': list},
+    'labor_hours_estimated': {'type': (int, float)},
+    'labor_hours_actual': {'type': (int, float)},
+    'start_date': {'type': str, 'max_length': 200},
+    'target_date': {'type': str, 'max_length': 200},
+    'completion_date': {'type': str, 'max_length': 200},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'blueprint_ref': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'priority': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_construction_update(cid):
     data = request.get_json() or {}
     allowed = _CONSTRUCTION_PROJECTS_ALLOWED_FIELDS
@@ -600,6 +716,17 @@ def api_materials_list():
 
 
 @disaster_modules_bp.route('/materials', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'quantity': {'type': (int, float)},
+    'unit': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'cost_per_unit': {'type': (int, float)},
+    'supplier': {'type': str, 'max_length': 200},
+    'min_stock': {'type': (int, float)},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_materials_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -623,6 +750,17 @@ def api_materials_create():
 
 
 @disaster_modules_bp.route('/materials/<int:mid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'quantity': {'type': (int, float)},
+    'unit': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'cost_per_unit': {'type': (int, float)},
+    'supplier': {'type': str, 'max_length': 200},
+    'min_stock': {'type': (int, float)},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_materials_update(mid):
     data = request.get_json() or {}
     allowed = _BUILDING_MATERIALS_ALLOWED_FIELDS
@@ -678,6 +816,22 @@ def api_fortifications_list():
 
 
 @disaster_modules_bp.route('/fortifications', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'fortification_type': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'protection_level': {'type': str, 'max_length': 200},
+    'dimensions': {'type': str, 'max_length': 200},
+    'materials_used': {'type': list},
+    'capacity_persons': {'type': (int, float)},
+    'construction_time_hours': {'type': (int, float)},
+    'condition': {'type': str, 'max_length': 200},
+    'last_inspection': {'type': str, 'max_length': 200},
+    'vulnerabilities': {'type': str, 'max_length': 2000},
+    'improvements_needed': {'type': str, 'max_length': 2000},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_fortifications_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -705,6 +859,22 @@ def api_fortifications_create():
 
 
 @disaster_modules_bp.route('/fortifications/<int:fid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'fortification_type': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'protection_level': {'type': str, 'max_length': 200},
+    'dimensions': {'type': str, 'max_length': 200},
+    'materials_used': {'type': list},
+    'capacity_persons': {'type': (int, float)},
+    'construction_time_hours': {'type': (int, float)},
+    'condition': {'type': str, 'max_length': 200},
+    'last_inspection': {'type': str, 'max_length': 200},
+    'vulnerabilities': {'type': str, 'max_length': 2000},
+    'improvements_needed': {'type': str, 'max_length': 2000},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_fortifications_update(fid):
     data = request.get_json() or {}
     allowed = _FORTIFICATIONS_ALLOWED_FIELDS

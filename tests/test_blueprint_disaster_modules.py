@@ -352,3 +352,103 @@ class TestDisasterSummary:
         assert body['plans']['total'] == 3
         assert body['plans']['by_disaster_type']['earthquake'] == 2
         assert body['plans']['by_disaster_type']['flood'] == 1
+
+
+# ── PAYLOAD VALIDATION ───────────────────────────────────────────────────
+
+class TestDisasterModulesPayloadValidation:
+    """Verify the validate_json decorator rejects malformed, non-object,
+    and wrong-shape payloads on representative disaster POST routes."""
+
+    # -- /api/disaster/plans POST --
+
+    def test_plans_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/disaster/plans',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_plans_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/disaster/plans',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_plans_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': 123},
+            {'immediate_actions': 'run'},
+            {'resources_required': 'rope'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/disaster/plans', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/disaster/checklists POST --
+
+    def test_checklists_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/disaster/checklists',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_checklists_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/disaster/checklists',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_checklists_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'title': []},
+            {'items': 'check valve'},
+            {'plan_id': 'abc'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/disaster/checklists', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/disaster/energy POST --
+
+    def test_energy_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/disaster/energy',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_energy_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/disaster/energy',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_energy_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': []},
+            {'efficiency_pct': 'high'},
+            {'energy_type': 99},
+        ]
+        for payload in cases:
+            resp = client.post('/api/disaster/energy', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'

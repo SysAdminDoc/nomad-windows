@@ -117,3 +117,103 @@ class TestMediaUpdaterResilience:
         data = resp.get_json()
         assert data['latest'] == ''
         assert data['update_available'] is False
+
+
+# ── PAYLOAD VALIDATION ───────────────────────────────────────────────────
+
+class TestMediaPayloadValidation:
+    """Verify the validate_json decorator rejects malformed, non-object,
+    and wrong-shape payloads on representative media POST routes."""
+
+    # -- /api/subscriptions POST --
+
+    def test_subscriptions_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/subscriptions',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_subscriptions_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/subscriptions',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_subscriptions_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': []},
+            {'url': 999},
+            {'category': True},
+        ]
+        for payload in cases:
+            resp = client.post('/api/subscriptions', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/ytdlp/download POST --
+
+    def test_ytdlp_download_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/ytdlp/download',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_ytdlp_download_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/ytdlp/download',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_ytdlp_download_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'url': 123},
+            {'folder': []},
+            {'category': True},
+        ]
+        for payload in cases:
+            resp = client.post('/api/ytdlp/download', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/playlists POST --
+
+    def test_playlists_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/playlists',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_playlists_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/playlists',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_playlists_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': 42},
+            {'media_type': []},
+            {'items': 'track1,track2'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/playlists', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'

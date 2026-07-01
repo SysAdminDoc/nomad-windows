@@ -340,3 +340,103 @@ class TestGridDownRecipes:
         reference = client.get('/api/daily-living/reference/work-rest').get_json()
         assert reference['heavy_work']['work_minutes'] == 30
         assert reference['night_ops']['rest_minutes'] == 15
+
+
+# ── PAYLOAD VALIDATION ───────────────────────────────────────────────────
+
+class TestDailyLivingPayloadValidation:
+    """Verify the validate_json decorator rejects malformed, non-object,
+    and wrong-shape payloads on representative daily-living POST routes."""
+
+    # -- /api/daily-living/schedules POST --
+
+    def test_schedules_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/daily-living/schedules',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_schedules_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/daily-living/schedules',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_schedules_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': 123},
+            {'time_blocks': 'not-a-list'},
+            {'is_template': 'yes'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/daily-living/schedules', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/daily-living/chores POST --
+
+    def test_chores_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/daily-living/chores',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_chores_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/daily-living/chores',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_chores_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'chore_name': []},
+            {'duration_minutes': 'slow'},
+            {'schedule_id': 'abc'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/daily-living/chores', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
+
+    # -- /api/daily-living/recipes POST --
+
+    def test_recipes_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/daily-living/recipes',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_recipes_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/daily-living/recipes',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_recipes_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'name': 99},
+            {'servings': 'many'},
+            {'ingredients': 'flour, eggs'},
+        ]
+        for payload in cases:
+            resp = client.post('/api/daily-living/recipes', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'

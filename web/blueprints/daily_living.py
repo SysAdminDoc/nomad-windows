@@ -7,6 +7,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.validation import validate_json, validate_optional_json
 
 _log = logging.getLogger(__name__)
 
@@ -185,6 +186,18 @@ def api_schedules_list():
 
 
 @daily_living_bp.route('/schedules', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'schedule_type': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'time_blocks': {'type': list},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'is_template': {'type': bool},
+    'active_days': {'type': list},
+    'start_date': {'type': str, 'max_length': 200},
+    'end_date': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_schedules_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -232,6 +245,18 @@ def api_schedules_get(sid):
 
 
 @daily_living_bp.route('/schedules/<int:sid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'schedule_type': {'type': str, 'max_length': 200},
+    'description': {'type': str, 'max_length': 2000},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'start_date': {'type': str, 'max_length': 200},
+    'end_date': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+    'time_blocks': {'type': list},
+    'active_days': {'type': list},
+    'is_template': {'type': bool},
+})
 def api_schedules_update(sid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -306,6 +331,20 @@ def api_chores_list():
 
 
 @daily_living_bp.route('/chores', methods=['POST'])
+@validate_json({
+    'chore_name': {'type': str, 'max_length': 200},
+    'schedule_id': {'type': (int, float)},
+    'category': {'type': str, 'max_length': 200},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'frequency': {'type': str, 'max_length': 200},
+    'time_slot': {'type': str, 'max_length': 200},
+    'duration_minutes': {'type': (int, float)},
+    'priority': {'type': str, 'max_length': 200},
+    'instructions': {'type': str, 'max_length': 5000},
+    'rotation_group': {'type': str, 'max_length': 200},
+    'last_completed': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_chores_create():
     data = request.get_json() or {}
     chore_name = (data.get('chore_name') or '').strip()
@@ -343,6 +382,20 @@ def api_chores_get(cid):
 
 
 @daily_living_bp.route('/chores/<int:cid>', methods=['PUT'])
+@validate_json({
+    'schedule_id': {'type': (int, float)},
+    'chore_name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'assigned_to': {'type': str, 'max_length': 200},
+    'frequency': {'type': str, 'max_length': 200},
+    'time_slot': {'type': str, 'max_length': 200},
+    'duration_minutes': {'type': (int, float)},
+    'priority': {'type': str, 'max_length': 200},
+    'instructions': {'type': str, 'max_length': 5000},
+    'rotation_group': {'type': str, 'max_length': 200},
+    'last_completed': {'type': str, 'max_length': 200},
+    'status': {'type': str, 'max_length': 200},
+})
 def api_chores_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -458,6 +511,20 @@ def api_clothing_list():
 
 
 @daily_living_bp.route('/clothing', methods=['POST'])
+@validate_json({
+    'item_name': {'type': str, 'max_length': 200},
+    'person': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'size': {'type': str, 'max_length': 200},
+    'quantity': {'type': (int, float)},
+    'condition': {'type': str, 'max_length': 200},
+    'season': {'type': str, 'max_length': 200},
+    'warmth_rating': {'type': (int, float)},
+    'waterproof': {'type': bool},
+    'material': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_clothing_create():
     data = request.get_json() or {}
     item_name = (data.get('item_name') or '').strip()
@@ -495,6 +562,20 @@ def api_clothing_get(cid):
 
 
 @daily_living_bp.route('/clothing/<int:cid>', methods=['PUT'])
+@validate_json({
+    'person': {'type': str, 'max_length': 200},
+    'item_name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'size': {'type': str, 'max_length': 200},
+    'quantity': {'type': (int, float)},
+    'condition': {'type': str, 'max_length': 200},
+    'season': {'type': str, 'max_length': 200},
+    'warmth_rating': {'type': (int, float)},
+    'material': {'type': str, 'max_length': 200},
+    'location': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+    'waterproof': {'type': bool},
+})
 def api_clothing_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -597,6 +678,18 @@ def api_sanitation_list():
 
 
 @daily_living_bp.route('/sanitation', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'quantity': {'type': (int, float)},
+    'unit': {'type': str, 'max_length': 200},
+    'min_stock': {'type': (int, float)},
+    'daily_usage_rate': {'type': (int, float)},
+    'persons_served': {'type': (int, float)},
+    'location': {'type': str, 'max_length': 200},
+    'expiration_date': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_sanitation_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -633,6 +726,18 @@ def api_sanitation_get(sid):
 
 
 @daily_living_bp.route('/sanitation/<int:sid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'quantity': {'type': (int, float)},
+    'unit': {'type': str, 'max_length': 200},
+    'min_stock': {'type': (int, float)},
+    'daily_usage_rate': {'type': (int, float)},
+    'persons_served': {'type': (int, float)},
+    'location': {'type': str, 'max_length': 200},
+    'expiration_date': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_sanitation_update(sid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -731,6 +836,19 @@ def api_morale_list():
 
 
 @daily_living_bp.route('/morale', methods=['POST'])
+@validate_json({
+    'person': {'type': str, 'max_length': 200},
+    'date': {'type': str, 'max_length': 200},
+    'morale_score': {'type': (int, float)},
+    'stress_level': {'type': (int, float)},
+    'sleep_quality': {'type': (int, float)},
+    'physical_health': {'type': (int, float)},
+    'social_connection': {'type': (int, float)},
+    'activities': {'type': list},
+    'concerns': {'type': str, 'max_length': 2000},
+    'positive_notes': {'type': str, 'max_length': 2000},
+    'interventions': {'type': str, 'max_length': 2000},
+})
 def api_morale_create():
     data = request.get_json() or {}
     person = (data.get('person') or '').strip()
@@ -850,6 +968,21 @@ def api_sleep_list():
 
 
 @daily_living_bp.route('/sleep', methods=['POST'])
+@validate_json({
+    'person': {'type': str, 'max_length': 200},
+    'date': {'type': str, 'max_length': 200},
+    'sleep_start': {'type': str, 'max_length': 200},
+    'sleep_end': {'type': str, 'max_length': 200},
+    'duration_hours': {'type': (int, float)},
+    'quality': {'type': (int, float)},
+    'interruptions': {'type': (int, float)},
+    'watch_duty': {'type': bool},
+    'watch_start': {'type': str, 'max_length': 200},
+    'watch_end': {'type': str, 'max_length': 200},
+    'sleep_debt_hours': {'type': (int, float)},
+    'environment': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_sleep_create():
     data = request.get_json() or {}
     person = (data.get('person') or '').strip()
@@ -1015,6 +1148,22 @@ def api_performance_list():
 
 
 @daily_living_bp.route('/performance', methods=['POST'])
+@validate_json({
+    'person': {'type': str, 'max_length': 200},
+    'date': {'type': str, 'max_length': 200},
+    'check_type': {'type': str, 'max_length': 200},
+    'reaction_time_ms': {'type': (int, float)},
+    'cognitive_score': {'type': (int, float)},
+    'physical_score': {'type': (int, float)},
+    'fatigue_level': {'type': (int, float)},
+    'hours_awake': {'type': (int, float)},
+    'hours_since_last_sleep': {'type': (int, float)},
+    'ambient_temp_f': {'type': (int, float)},
+    'hydration_status': {'type': str, 'max_length': 200},
+    'caloric_intake': {'type': (int, float)},
+    'recommendations': {'type': str, 'max_length': 2000},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_performance_create():
     data = request.get_json() or {}
     person = (data.get('person') or '').strip()
@@ -1147,6 +1296,25 @@ def api_recipes_list():
 
 
 @daily_living_bp.route('/recipes', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'cooking_method': {'type': str, 'max_length': 200},
+    'prep_time_minutes': {'type': (int, float)},
+    'cook_time_minutes': {'type': (int, float)},
+    'servings': {'type': (int, float)},
+    'calories_per_serving': {'type': (int, float)},
+    'protein_per_serving': {'type': (int, float)},
+    'ingredients': {'type': list},
+    'instructions': {'type': str, 'max_length': 5000},
+    'water_required_ml': {'type': (int, float)},
+    'fuel_required': {'type': str, 'max_length': 200},
+    'equipment_needed': {'type': list},
+    'shelf_stable_only': {'type': bool},
+    'tags': {'type': list},
+    'rating': {'type': (int, float)},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_recipes_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -1193,6 +1361,25 @@ def api_recipes_get(rid):
 
 
 @daily_living_bp.route('/recipes/<int:rid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'category': {'type': str, 'max_length': 200},
+    'cooking_method': {'type': str, 'max_length': 200},
+    'prep_time_minutes': {'type': (int, float)},
+    'cook_time_minutes': {'type': (int, float)},
+    'servings': {'type': (int, float)},
+    'calories_per_serving': {'type': (int, float)},
+    'protein_per_serving': {'type': (int, float)},
+    'ingredients': {'type': list},
+    'instructions': {'type': str, 'max_length': 5000},
+    'water_required_ml': {'type': (int, float)},
+    'fuel_required': {'type': str, 'max_length': 200},
+    'equipment_needed': {'type': list},
+    'shelf_stable_only': {'type': bool},
+    'tags': {'type': list},
+    'rating': {'type': (int, float)},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_recipes_update(rid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -1263,6 +1450,10 @@ def api_recipes_search():
 
 
 @daily_living_bp.route('/recipes/calculate-fuel', methods=['POST'])
+@validate_optional_json({
+    'recipe_id': {'type': (int, float)},
+    'servings': {'type': (int, float)},
+})
 def api_recipes_calculate_fuel():
     """Estimate fuel needed for a recipe at a given serving count."""
     data = request.get_json() or {}

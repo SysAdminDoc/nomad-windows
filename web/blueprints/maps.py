@@ -880,9 +880,9 @@ def api_map_routes_list():
 @maps_bp.route('/api/maps/routes', methods=['POST'])
 @validate_json({
     'name': {'type': str, 'max_length': 200},
-    'waypoint_ids': {'type': list},
-    'distance_km': {'type': (int, float)},
-    'estimated_time_min': {'type': (int, float)},
+    'waypoint_ids': {'type': (list, str)},
+    'distance_km': {'type': (int, float, str)},
+    'estimated_time_min': {'type': (int, float, str)},
     'terrain_difficulty': {'type': str, 'max_length': 200},
     'notes': {'type': str, 'max_length': 2000},
 })

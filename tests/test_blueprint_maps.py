@@ -249,8 +249,8 @@ class TestMapsPayloadValidation:
     def test_routes_rejects_wrong_shape_fields(self, client):
         cases = [
             {'name': 42},
-            {'waypoint_ids': 'one,two'},
-            {'distance_km': 'far'},
+            {'waypoint_ids': 99},
+            {'distance_km': []},
         ]
         for payload in cases:
             resp = client.post('/api/maps/routes', json=payload)

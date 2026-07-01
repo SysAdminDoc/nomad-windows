@@ -17,6 +17,7 @@ from services import ollama, qdrant, stirling
 from web.state import (
     _embed_state, _ocr_pipeline_state, _ocr_processed_files, _OCR_PROCESSED_MAX,
     set_embed_state, get_embed_state,
+    request_embed_cancel, clear_embed_cancel, is_embed_cancelled,
     ocr_check_and_add_file, ocr_increment_processed, ocr_increment_errors,
     set_ocr_pipeline_state, get_ocr_pipeline_state,
 )
@@ -287,6 +288,7 @@ def api_kb_upload():
     # Start embedding in background
     def do_embed():
         import web.state as _ws
+        _ws.clear_embed_cancel()
         _ws.set_embed_state(status='processing', doc_id=doc_id, progress=0, detail=f'Processing {filename}...')
         with db_session() as db2:
             try:
@@ -311,6 +313,13 @@ def api_kb_upload():
                 all_points = []
                 import hashlib
                 for i in range(0, total, batch_size):
+                    if _ws.is_embed_cancelled():
+                        db2.execute('UPDATE documents SET status = ?, error = ? WHERE id = ?',
+                                    ('cancelled', 'Cancelled by user', doc_id))
+                        db2.commit()
+                        _ws.set_embed_state(status='idle', doc_id=None, progress=0,
+                                            detail=f'{filename}: cancelled by user')
+                        return
                     batch = chunks[i:i + batch_size]
                     vectors = embed_text(batch)
                     for j, (chunk, vec) in enumerate(zip(batch, vectors)):
@@ -376,6 +385,75 @@ def api_kb_document_delete(doc_id):
             db.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
             db.commit()
     return jsonify({'status': 'deleted'})
+
+
+# ─── KB Indexing Controls ────────────────────────────────────────────
+
+@kb_bp.route('/api/kb/cancel', methods=['POST'])
+def api_kb_cancel():
+    """Cancel the current embedding job."""
+    state = get_embed_state()
+    if state.get('status') not in ('processing',):
+        return jsonify({'status': 'no_active_job'}), 200
+    request_embed_cancel()
+    return jsonify({'status': 'cancel_requested', 'doc_id': state.get('doc_id')})
+
+
+@kb_bp.route('/api/kb/estimate', methods=['POST'])
+def api_kb_estimate():
+    """Estimate indexing cost for a document before starting."""
+    data = request.get_json() or {}
+    file_size = data.get('file_size', 0)
+    content_type = data.get('content_type', 'text/plain')
+
+    chars_per_byte = 0.5 if 'pdf' in content_type else 1.0
+    estimated_chars = int(file_size * chars_per_byte)
+    chunk_size = 500
+    estimated_chunks = max(1, estimated_chars // chunk_size)
+    secs_per_chunk = 0.5
+    estimated_seconds = int(estimated_chunks * secs_per_chunk)
+    estimated_vector_bytes = estimated_chunks * 768 * 4
+
+    return jsonify({
+        'estimated_chunks': estimated_chunks,
+        'estimated_seconds': estimated_seconds,
+        'estimated_vector_bytes': estimated_vector_bytes,
+        'file_size': file_size,
+    })
+
+
+@kb_bp.route('/api/kb/purge', methods=['POST'])
+def api_kb_purge():
+    """Purge all vectors and files for a specific source or all sources."""
+    data = request.get_json() or {}
+    doc_id = data.get('doc_id')
+    purge_all = data.get('all', False)
+
+    if not doc_id and not purge_all:
+        return jsonify({'error': 'Provide doc_id or set all=true'}), 400
+
+    upload_dir = get_kb_upload_dir()
+    purged = 0
+
+    with db_session() as db:
+        if purge_all:
+            docs = db.execute('SELECT id, filename FROM documents').fetchall()
+        else:
+            docs = db.execute('SELECT id, filename FROM documents WHERE id = ?',
+                              (doc_id,)).fetchall()
+
+        for doc in docs:
+            filepath = os.path.normpath(os.path.join(upload_dir, doc['filename']))
+            if (os.path.normcase(filepath).startswith(os.path.normcase(upload_dir) + os.sep)
+                    and os.path.isfile(filepath)):
+                os.remove(filepath)
+            qdrant.delete_by_doc_id(doc['id'])
+            db.execute('DELETE FROM documents WHERE id = ?', (doc['id'],))
+            purged += 1
+        db.commit()
+
+    log_activity('kb_purged', detail=f'Purged {purged} document(s)')
+    return jsonify({'status': 'purged', 'count': purged})
 
 
 # ─── KB Status & Search ────────────────────────────────────────────

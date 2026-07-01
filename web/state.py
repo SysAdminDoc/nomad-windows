@@ -218,6 +218,7 @@ _motion_config = {'threshold': 25, 'check_interval': 2, 'cooldown': 60}
 # ─── RAG / Embedding ────────────────────────────────────────────────
 _embed_lock = threading.Lock()
 _embed_state = {'status': 'idle', 'doc_id': None, 'progress': 0, 'detail': ''}
+_embed_cancel = threading.Event()
 
 
 def get_embed_state():
@@ -229,6 +230,18 @@ def set_embed_state(**kwargs):
     with _embed_lock:
         _embed_state.update(kwargs)
         return dict(_embed_state)
+
+
+def request_embed_cancel():
+    _embed_cancel.set()
+
+
+def clear_embed_cancel():
+    _embed_cancel.clear()
+
+
+def is_embed_cancelled():
+    return _embed_cancel.is_set()
 
 
 # ─── Auto-OCR Pipeline ───────────────────────────────────────────────

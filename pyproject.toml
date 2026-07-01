@@ -1,6 +1,6 @@
 [project]
 name = "nomad-field-desk"
-version = "7.66.37"
+version = "7.66.38"
 description = "Offline-first preparedness command center"
 requires-python = ">=3.10"
 license = {text = "MIT"}

@@ -101,3 +101,32 @@ class TestInventorySummary:
         client.post('/api/inventory', json={'name': 'Summary Test Item'})
         after = client.get('/api/inventory/summary').get_json()['total']
         assert after == before + 1
+
+
+class TestStructuredItemParsing:
+    def test_parse_structured_object_with_items_key(self):
+        from web.blueprints.inventory import _parse_structured_items
+        raw = '{"items": [{"name": "Milk", "quantity": 1, "unit_price": 3.99}]}'
+        result = _parse_structured_items(raw)
+        assert len(result) == 1
+        assert result[0]['name'] == 'Milk'
+
+    def test_parse_structured_falls_back_to_array(self):
+        from web.blueprints.inventory import _parse_structured_items
+        raw = '[{"name": "Bread", "quantity": 2}]'
+        result = _parse_structured_items(raw)
+        assert len(result) == 1
+        assert result[0]['name'] == 'Bread'
+
+    def test_parse_structured_handles_embedded_array(self):
+        from web.blueprints.inventory import _parse_structured_items
+        raw = 'Here are the items: [{"name": "Eggs", "quantity": 12}]'
+        result = _parse_structured_items(raw)
+        assert len(result) == 1
+        assert result[0]['name'] == 'Eggs'
+
+    def test_parse_structured_returns_empty_for_garbage(self):
+        from web.blueprints.inventory import _parse_structured_items
+        assert _parse_structured_items('') == []
+        assert _parse_structured_items('not json') == []
+        assert _parse_structured_items(None) == []

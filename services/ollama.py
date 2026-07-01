@@ -475,12 +475,19 @@ def delete_model(model_name: str) -> bool:
                 pass
 
 
-def chat(model: str, messages: list[dict], stream: bool = True):
-    """Send chat request to Ollama. Caller must consume or close the response for streaming."""
+def chat(model: str, messages: list[dict], stream: bool = True, format=None):
+    """Send chat request to Ollama. Caller must consume or close the response for streaming.
+
+    ``format`` accepts ``"json"`` for unstructured JSON mode, or a dict
+    containing a JSON Schema for structured output (Ollama >= 0.5.0).
+    """
+    body = {'model': model, 'messages': messages, 'stream': stream}
+    if format is not None:
+        body['format'] = format
     try:
         resp = requests.post(
             f'http://localhost:{OLLAMA_PORT}/api/chat',
-            json={'model': model, 'messages': messages, 'stream': stream},
+            json=body,
             stream=stream,
             timeout=300,
         )

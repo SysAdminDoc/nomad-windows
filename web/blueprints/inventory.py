@@ -37,6 +37,29 @@ def _extract_json_array(raw_text):
     return parsed if isinstance(parsed, list) else []
 
 
+def _parse_structured_items(raw_text):
+    """Parse structured output from Ollama, falling back to array extraction."""
+    if not isinstance(raw_text, str) or not raw_text.strip():
+        return []
+    try:
+        parsed = json.loads(raw_text)
+        if isinstance(parsed, dict) and 'items' in parsed:
+            return parsed['items'] if isinstance(parsed['items'], list) else []
+        if isinstance(parsed, list):
+            return parsed
+    except (json.JSONDecodeError, TypeError, ValueError):
+        pass
+    return _extract_json_array(raw_text)
+
+
+def _log_raw_extraction(raw_text, extraction_type):
+    """Keep a debug trail of raw AI extraction responses."""
+    _log = logging.getLogger('nomad.inventory')
+    if raw_text and len(raw_text) > 0:
+        _log.debug('AI %s extraction raw response (%d chars): %s',
+                   extraction_type, len(raw_text), raw_text[:500])
+
+
 inventory_bp = Blueprint('inventory', __name__)
 
 # ─── Inventory API ────────────────────────────────────────────────
@@ -246,15 +269,35 @@ def api_inventory_receipt_scan():
                     img_b64 = base64.b64encode(f.read()).decode('utf-8')
 
                 prompt = (
-                    "Extract all line items from this receipt. For each item, return a JSON array "
-                    "of objects with keys: name, quantity (number, default 1), unit_price (number), "
-                    "total_price (number). Only return the JSON array, nothing else."
+                    "Extract all line items from this receipt. For each item, return a JSON object "
+                    "with keys: name, quantity (number, default 1), unit_price (number), "
+                    "total_price (number)."
                 )
+                receipt_schema = {
+                    'type': 'object',
+                    'properties': {
+                        'items': {
+                            'type': 'array',
+                            'items': {
+                                'type': 'object',
+                                'properties': {
+                                    'name': {'type': 'string'},
+                                    'quantity': {'type': 'number'},
+                                    'unit_price': {'type': 'number'},
+                                    'total_price': {'type': 'number'},
+                                },
+                                'required': ['name'],
+                            },
+                        },
+                    },
+                    'required': ['items'],
+                }
                 payload = json.dumps({
                     'model': 'llava',
                     'prompt': prompt,
                     'images': [img_b64],
                     'stream': False,
+                    'format': receipt_schema,
                 })
 
                 req_ollama = urllib.request.Request(
@@ -267,7 +310,9 @@ def api_inventory_receipt_scan():
                     result = _safe_json_value(resp.read(), {})
 
                 raw_text = result.get('response', '') if isinstance(result, dict) else ''
-                for item in _extract_json_array(raw_text):
+                _log_raw_extraction(raw_text, 'receipt')
+                extracted_items = _parse_structured_items(raw_text)
+                for item in extracted_items:
                     if not isinstance(item, dict):
                         continue
                     items.append({

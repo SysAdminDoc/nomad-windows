@@ -5,6 +5,57 @@ import json
 from db import db_session
 
 
+def _garden_mutation_routes():
+    return [
+        ('post', '/api/garden/plots'),
+        ('put', '/api/garden/plots/99999'),
+        ('post', '/api/garden/seeds'),
+        ('post', '/api/garden/harvests'),
+        ('post', '/api/garden/preservation'),
+        ('put', '/api/garden/preservation/99999'),
+        ('post', '/api/garden/seeds/inventory'),
+        ('post', '/api/garden/water-log'),
+    ]
+
+
+class TestGardenPayloadValidation:
+    def test_mutation_routes_reject_malformed_json(self, client):
+        for method, path in _garden_mutation_routes():
+            resp = getattr(client, method)(
+                path,
+                data='{bad',
+                content_type='application/json',
+            )
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_mutation_routes_reject_non_object_json(self, client):
+        for method, path in _garden_mutation_routes():
+            resp = getattr(client, method)(
+                path,
+                data='[]',
+                content_type='application/json',
+            )
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_mutation_routes_reject_wrong_shape_fields(self, client):
+        cases = [
+            ('post', '/api/garden/plots', {'name': ['bad']}),
+            ('put', '/api/garden/plots/99999', {'width_ft': []}),
+            ('post', '/api/garden/seeds', {'quantity': []}),
+            ('post', '/api/garden/harvests', {'quantity': []}),
+            ('post', '/api/garden/preservation', {'success': []}),
+            ('put', '/api/garden/preservation/99999', {'jar_count': []}),
+            ('post', '/api/garden/seeds/inventory', {'viability_pct': []}),
+            ('post', '/api/garden/water-log', {'gallons': []}),
+        ]
+        for method, path, payload in cases:
+            resp = getattr(client, method)(path, json=payload)
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Validation failed'
+
+
 class TestGardenPlotsCRUD:
     def test_list_plots(self, client):
         resp = client.get('/api/garden/plots')

@@ -7,6 +7,7 @@ from datetime import date, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_optional_json
 
 garden_bp = Blueprint('garden', __name__)
 
@@ -29,6 +30,59 @@ SEED_VIABILITY = {
     'tomato': 4, 'squash': 4, 'pumpkin': 4, 'melon': 4, 'watermelon': 4, 'cucumber': 5,
     'radish': 5, 'beet': 4, 'cabbage': 4, 'turnip': 4, 'eggplant': 4,
 }
+
+_TEXT_INPUT = {'type': str, 'max_length': 5000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_BOOLISH_INPUT = {'type': (bool, int, float, str)}
+_JSON_OBJECT_OR_TEXT_INPUT = {'type': (dict, str)}
+_NUMERIC_FIELDS = {
+    'width_ft', 'length_ft', 'lat', 'lng', 'quantity', 'year_harvested',
+    'days_to_maturity', 'plot_id', 'shelf_life_months', 'jar_count',
+    'processing_time_min', 'pressure_psi', 'yield_amount', 'calories_per_unit',
+    'viability_pct', 'year_acquired', 'gallons',
+}
+_BOOLISH_FIELDS = {'success'}
+_JSON_FIELDS = {'boundary_geojson'}
+
+PLOT_FIELDS = ['name', 'width_ft', 'length_ft', 'sun_exposure', 'soil_type', 'notes', 'lat', 'lng', 'boundary_geojson']
+SEED_FIELDS = [
+    'species', 'variety', 'quantity', 'unit', 'year_harvested', 'source',
+    'days_to_maturity', 'planting_season', 'notes',
+]
+HARVEST_FIELDS = ['crop', 'quantity', 'unit', 'plot_id', 'notes']
+_PRESERVATION_FIELDS = [
+    'crop', 'method', 'quantity', 'unit', 'batch_date', 'shelf_life_months',
+    'notes', 'jar_size', 'jar_count', 'processing_time_min', 'pressure_psi',
+    'storage_temp', 'storage_location', 'batch_label', 'success',
+    'yield_amount', 'yield_unit', 'calories_per_unit',
+]
+SEED_INVENTORY_FIELDS = [
+    'species', 'variety', 'quantity', 'unit', 'viability_pct', 'year_acquired',
+    'source', 'days_to_maturity', 'notes',
+]
+WATER_LOG_FIELDS = ['plot_id', 'source', 'gallons', 'date', 'notes']
+
+
+def _schema_for_fields(fields):
+    schema = {}
+    for field in fields:
+        if field in _JSON_FIELDS:
+            schema[field] = _JSON_OBJECT_OR_TEXT_INPUT
+        elif field in _BOOLISH_FIELDS:
+            schema[field] = _BOOLISH_INPUT
+        elif field in _NUMERIC_FIELDS:
+            schema[field] = _NUMBER_INPUT
+        else:
+            schema[field] = _TEXT_INPUT
+    return schema
+
+
+PLOT_SCHEMA = _schema_for_fields(PLOT_FIELDS)
+SEED_SCHEMA = _schema_for_fields(SEED_FIELDS)
+HARVEST_SCHEMA = _schema_for_fields(HARVEST_FIELDS)
+PRESERVATION_SCHEMA = _schema_for_fields(_PRESERVATION_FIELDS)
+SEED_INVENTORY_SCHEMA = _schema_for_fields(SEED_INVENTORY_FIELDS)
+WATER_LOG_SCHEMA = _schema_for_fields(WATER_LOG_FIELDS)
 
 
 def _normalize_boundary_geojson(value):
@@ -91,6 +145,7 @@ def api_garden_plots():
 
 
 @garden_bp.route('/api/garden/plots', methods=['POST'])
+@validate_optional_json(PLOT_SCHEMA)
 def api_garden_plots_create():
     data = request.get_json() or {}
     if not data.get('name'):
@@ -105,6 +160,7 @@ def api_garden_plots_create():
 
 
 @garden_bp.route('/api/garden/plots/<int:pid>', methods=['PUT'])
+@validate_optional_json(PLOT_SCHEMA)
 def api_garden_plots_update(pid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -181,6 +237,7 @@ def api_garden_seeds():
 
 
 @garden_bp.route('/api/garden/seeds', methods=['POST'])
+@validate_optional_json(SEED_SCHEMA)
 def api_garden_seeds_create():
     data = request.get_json() or {}
     if not data.get('species'):
@@ -217,6 +274,7 @@ def api_garden_harvests():
 
 
 @garden_bp.route('/api/garden/harvests', methods=['POST'])
+@validate_optional_json(HARVEST_SCHEMA)
 def api_garden_harvests_create():
     data = request.get_json() or {}
     if not data.get('crop'):
@@ -344,6 +402,7 @@ def api_preservation_list():
 
 
 @garden_bp.route('/api/garden/preservation', methods=['POST'])
+@validate_optional_json(PRESERVATION_SCHEMA)
 def api_preservation_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -448,6 +507,7 @@ def api_seed_inventory():
         rows = db.execute('SELECT * FROM seed_inventory ORDER BY species, variety LIMIT 10000').fetchall()
         return jsonify([dict(r) for r in rows])
 @garden_bp.route('/api/garden/seeds/inventory', methods=['POST'])
+@validate_optional_json(SEED_INVENTORY_SCHEMA)
 def api_seed_add():
     """Add seeds to inventory."""
     d = request.json or {}
@@ -506,6 +566,7 @@ def api_water_log():
             rows = db.execute('SELECT * FROM water_log ORDER BY date DESC LIMIT 100').fetchall()
         return jsonify([dict(r) for r in rows])
 @garden_bp.route('/api/garden/water-log', methods=['POST'])
+@validate_optional_json(WATER_LOG_SCHEMA)
 def api_water_log_create():
     d = request.json or {}
     with db_session() as db:
@@ -616,15 +677,9 @@ def api_rotation_suggestions(pid):
 
 # ─── Food Preservation Batch Tracker (expanded) ──────────────────────
 
-_PRESERVATION_FIELDS = [
-    'crop', 'method', 'quantity', 'unit', 'batch_date', 'shelf_life_months',
-    'notes', 'jar_size', 'jar_count', 'processing_time_min', 'pressure_psi',
-    'storage_temp', 'storage_location', 'batch_label', 'success',
-    'yield_amount', 'yield_unit', 'calories_per_unit',
-]
-
 
 @garden_bp.route('/api/garden/preservation/<int:pid>', methods=['PUT'])
+@validate_optional_json(PRESERVATION_SCHEMA)
 def api_preservation_update(pid):
     """Update a preservation record."""
     data = request.get_json() or {}

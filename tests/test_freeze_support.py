@@ -83,3 +83,15 @@ def test_build_spec_references_runtime_hook():
     assert 'runtime_hook.py' in content, (
         'build.spec must reference runtime_hook.py in runtime_hooks'
     )
+
+
+def test_pyinstaller_floor_pinned():
+    """requirements-dev.txt must pin PyInstaller >= 6.10.0 (CVE-2025-59042)."""
+    req_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), 'requirements-dev.txt'
+    )
+    with open(req_path) as f:
+        content = f.read().lower()
+    assert 'pyinstaller>=6.10.0' in content.replace(' ', ''), (
+        'requirements-dev.txt must pin pyinstaller>=6.10.0'
+    )

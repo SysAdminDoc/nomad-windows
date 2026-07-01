@@ -16,6 +16,10 @@ class _FakeResponse:
         self.content = self._body
         self.closed = False
 
+    def json(self):
+        import json as _json
+        return _json.loads(self._body)
+
     def raise_for_status(self):
         if self.status_code >= 400:
             raise RuntimeError(f'HTTP {self.status_code}')
@@ -200,3 +204,53 @@ def test_resolve_url_sidecar_checksum_reads_asset_sidecar():
         request_get=_get,
     ) == digest
     assert calls[0][0] == 'https://example.test/payload.zip.sha256'
+
+
+class TestResolveGithubRelease:
+    def test_caches_on_success(self, tmp_path, monkeypatch):
+        payload = {'tag_name': 'v1.0', 'assets': [{'name': 'app.zip', 'browser_download_url': 'https://example.test/app.zip'}]}
+
+        def _get(url, **kw):
+            return _FakeResponse(
+                __import__('json').dumps(payload),
+                headers={'content-type': 'application/json'},
+            )
+
+        monkeypatch.setattr(manager, '_release_cache_dir', str(tmp_path))
+        result = manager.resolve_github_release(
+            'https://api.github.com/repos/test/test/releases/latest',
+            'test_svc',
+            request_get=_get,
+        )
+        assert result['tag_name'] == 'v1.0'
+        cache_file = tmp_path / 'test_svc.json'
+        assert cache_file.exists()
+
+    def test_falls_back_to_cache_on_failure(self, tmp_path, monkeypatch):
+        import json
+        cached = {'tag_name': 'v0.9', 'assets': [{'name': 'old.zip'}]}
+        cache_file = tmp_path / 'test_svc.json'
+        cache_file.write_text(json.dumps(cached))
+
+        def _get(url, **kw):
+            raise ConnectionError('offline')
+
+        monkeypatch.setattr(manager, '_release_cache_dir', str(tmp_path))
+        result = manager.resolve_github_release(
+            'https://api.github.com/repos/test/test/releases/latest',
+            'test_svc',
+            request_get=_get,
+        )
+        assert result['tag_name'] == 'v0.9'
+
+    def test_raises_when_no_cache_and_offline(self, tmp_path, monkeypatch):
+        def _get(url, **kw):
+            raise ConnectionError('offline')
+
+        monkeypatch.setattr(manager, '_release_cache_dir', str(tmp_path))
+        with pytest.raises(RuntimeError, match='no cached release'):
+            manager.resolve_github_release(
+                'https://api.github.com/repos/test/test/releases/latest',
+                'test_svc',
+                request_get=_get,
+            )

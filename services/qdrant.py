@@ -7,7 +7,8 @@ import logging
 import requests as req
 from services.manager import (
     get_services_dir, download_file, stop_process, is_running, check_port,
-    resolve_release_asset_checksum, _download_progress, _dl_progress_lock,
+    resolve_release_asset_checksum, resolve_github_release,
+    _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -85,11 +86,7 @@ def install(callback=None):
         }
 
     try:
-        # Resolve download URL from GitHub releases
-        from services.manager import GITHUB_API_HEADERS
-        resp = req.get(QDRANT_RELEASE_API, timeout=15, headers=GITHUB_API_HEADERS)
-        resp.raise_for_status()
-        release = _safe_response_payload(resp, {})
+        release = resolve_github_release(QDRANT_RELEASE_API, SERVICE_ID)
         zip_url = None
         zip_name = ''
         asset_keyword = get_qdrant_asset_filter()

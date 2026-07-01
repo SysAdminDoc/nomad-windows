@@ -9,7 +9,7 @@ import requests as req
 from services.manager import (
     get_services_dir, download_file, stop_process, is_running, check_port,
     resolve_release_asset_checksum, resolve_url_sidecar_checksum,
-    _download_progress, _dl_progress_lock,
+    resolve_github_release, _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -152,11 +152,7 @@ def install(callback=None):
         }
 
     try:
-        # Resolve download URL from GitHub releases
-        from services.manager import GITHUB_API_HEADERS
-        resp = req.get(STIRLING_RELEASE_API, timeout=15, headers=GITHUB_API_HEADERS)
-        resp.raise_for_status()
-        release = _safe_response_payload(resp, {})
+        release = resolve_github_release(STIRLING_RELEASE_API, SERVICE_ID)
         jar_url = None
         jar_name = ''
         assets = release.get('assets', []) if isinstance(release, dict) else []

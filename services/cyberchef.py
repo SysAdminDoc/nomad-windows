@@ -7,7 +7,7 @@ import logging
 import requests
 from services.manager import (
     get_services_dir, download_file, check_port, _download_progress, _dl_progress_lock,
-    resolve_release_asset_checksum,
+    resolve_release_asset_checksum, resolve_github_release,
 )
 from db import get_db
 
@@ -66,11 +66,7 @@ def install(callback=None):
         _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading', 'error': None, 'speed': '', 'downloaded': 0, 'total': 0}
 
     try:
-        # Resolve actual zip URL from GitHub releases API
-        from services.manager import GITHUB_API_HEADERS
-        _api_resp = requests.get(CYBERCHEF_RELEASE_API, timeout=15, headers=GITHUB_API_HEADERS)
-        _api_resp.raise_for_status()
-        release = _safe_response_payload(_api_resp, {})
+        release = resolve_github_release(CYBERCHEF_RELEASE_API, SERVICE_ID)
         zip_url = None
         zip_name = ''
         assets = release.get('assets', []) if isinstance(release, dict) else []

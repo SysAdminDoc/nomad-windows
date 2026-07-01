@@ -74,6 +74,54 @@ GITHUB_API_HEADERS = {
 }
 
 
+# ─── GitHub release cache ─────────────────────────────────────────────
+
+_release_cache_dir = None
+
+
+def _get_release_cache_dir():
+    global _release_cache_dir
+    if _release_cache_dir is None:
+        _release_cache_dir = os.path.join(get_services_dir(), '.release_cache')
+        os.makedirs(_release_cache_dir, exist_ok=True)
+    return _release_cache_dir
+
+
+def resolve_github_release(api_url, service_id, *, request_get=None):
+    """Fetch a GitHub release with cached fallback.
+
+    On success the response payload is cached.  When the API is unreachable
+    or returns an error, the most-recent cached payload is returned so that
+    service installs survive transient GitHub outages.
+    """
+    import json as _json
+    cache_path = os.path.join(_get_release_cache_dir(), f'{service_id}.json')
+    getter = request_get or requests.get
+
+    try:
+        resp = getter(api_url, timeout=15, headers=GITHUB_API_HEADERS)
+        resp.raise_for_status()
+        payload = resp.json()
+        if isinstance(payload, dict) and payload.get('assets'):
+            try:
+                with open(cache_path, 'w', encoding='utf-8') as fh:
+                    _json.dump(payload, fh)
+            except OSError:
+                pass
+        return payload
+    except Exception as exc:
+        log.warning('GitHub API unavailable for %s (%s), trying cache', service_id, exc)
+        try:
+            with open(cache_path, 'r', encoding='utf-8') as fh:
+                cached = _json.load(fh)
+            log.info('Using cached release metadata for %s', service_id)
+            return cached
+        except (OSError, ValueError):
+            raise RuntimeError(
+                f'GitHub API unreachable and no cached release for {service_id}'
+            ) from exc
+
+
 # ─── GPU Detection ────────────────────────────────────────────────────
 
 _gpu_info = None

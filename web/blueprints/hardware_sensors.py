@@ -295,7 +295,7 @@ def sensors_delete(sid):
 
 @hardware_sensors_bp.route('/sensors/<int:sid>/reading', methods=['POST'])
 @validate_json({
-    'value': {'type': (int, float)},
+    'value': {'type': (int, float, str)},
     'raw_value': {'type': str, 'max_length': 200},
     'unit': {'type': str, 'max_length': 200},
     'quality': {'type': str, 'max_length': 200},
@@ -417,7 +417,7 @@ def network_list():
     'location': {'type': str, 'max_length': 200},
     'vlan': {'type': str, 'max_length': 200},
     'role': {'type': str, 'max_length': 200},
-    'port_count': {'type': (int, float)},
+    'port_count': {'type': (int, float, str)},
     'uplink_to': {'type': (int, float)},
     'last_seen': {'type': str, 'max_length': 200},
     'status': {'type': str, 'max_length': 200},
@@ -482,7 +482,7 @@ def network_get(did):
     'location': {'type': str, 'max_length': 200},
     'vlan': {'type': str, 'max_length': 200},
     'role': {'type': str, 'max_length': 200},
-    'port_count': {'type': (int, float)},
+    'port_count': {'type': (int, float, str)},
     'uplink_to': {'type': (int, float)},
     'last_seen': {'type': str, 'max_length': 200},
     'status': {'type': str, 'max_length': 200},

@@ -583,7 +583,7 @@ def api_seed_isolation():
 
 @homestead_bp.route('/api/calculators/varroa-calendar', methods=['POST'])
 @validate_optional_json({
-    'lat': {'type': (int, float)},
+    'lat': {'type': (int, float, str)},
 })
 def api_varroa_calendar():
     """Generate a varroa mite management calendar.

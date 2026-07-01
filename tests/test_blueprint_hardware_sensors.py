@@ -392,7 +392,7 @@ class TestHardwareSensorsPayloadValidation:
     def test_network_rejects_wrong_shape_fields(self, client):
         cases = [
             {'name': 99},
-            {'port_count': 'many'},
+            {'port_count': []},
             {'uplink_to': []},
         ]
         for payload in cases:

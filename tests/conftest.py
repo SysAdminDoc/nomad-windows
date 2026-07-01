@@ -4,6 +4,7 @@ import os
 import sys
 import uuid
 import shutil
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -16,15 +17,43 @@ if PROJECT_ROOT not in sys.path:
 TEST_TMP_ROOT = Path(PROJECT_ROOT) / "test_runtime"
 TEST_TMP_ROOT.mkdir(exist_ok=True)
 
+# Session-scoped template database: init_db() runs once, then each test
+# clones the result via sqlite3.backup() — much faster than replaying
+# 264 CREATE TABLE + 611 CREATE INDEX per test.
+_template_conn = None
+
+
+@pytest.fixture(scope='session', autouse=True)
+def _init_template_db():
+    global _template_conn
+    template_uri = f'file:nomad_template_{uuid.uuid4().hex}?mode=memory&cache=shared'
+    _template_conn = sqlite3.connect(template_uri, uri=True)
+
+    import config
+    template_data = TEST_TMP_ROOT / f'nomad_template_data_{uuid.uuid4().hex}'
+    template_data.mkdir()
+    config._config_cache = {'db_path': template_uri, 'data_dir': str(template_data)}
+    try:
+        config._config_mtime = os.path.getmtime(config.get_config_path())
+    except OSError:
+        config._config_mtime = 0
+
+    from db import init_db
+    init_db()
+
+    yield
+
+    _template_conn.close()
+    shutil.rmtree(template_data, ignore_errors=True)
+
+
 @pytest.fixture()
-def app():
+def app(_init_template_db):
     """Create a Flask app backed by a temporary SQLite database."""
     db_uri = f'file:nomad_test_{uuid.uuid4().hex}?mode=memory&cache=shared'
     data_dir = TEST_TMP_ROOT / f'nomad_data_{uuid.uuid4().hex}'
     data_dir.mkdir()
-    keeper = None
 
-    # Point config at temp directory before any imports touch it
     import config
     config._config_cache = {'db_path': db_uri, 'data_dir': str(data_dir)}
     try:
@@ -32,23 +61,16 @@ def app():
     except OSError:
         config._config_mtime = 0
 
-    # Keep one connection open so the shared in-memory database persists
-    import sqlite3
     keeper = sqlite3.connect(db_uri, uri=True)
+    _template_conn.backup(keeper)
 
-    # Initialize the DB schema in the shared in-memory database
-    from db import init_db
-    init_db()
-
-    # Create the Flask app
     from web.app import create_app
     application = create_app()
     application.config['TESTING'] = True
 
     yield application
 
-    if keeper is not None:
-        keeper.close()
+    keeper.close()
     shutil.rmtree(data_dir, ignore_errors=True)
 
 

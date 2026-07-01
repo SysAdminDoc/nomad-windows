@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify, Response
 from db import db_session, log_activity
+from web.validation import validate_json, validate_optional_json
 
 field_tools_bp = Blueprint('field_tools', __name__)
 _log = logging.getLogger('nomad.field_tools')
@@ -36,6 +37,14 @@ def api_codeplug_radios():
 
 
 @field_tools_bp.route('/api/codeplug/radios', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'brand': {'type': str, 'max_length': 200},
+    'model': {'type': str, 'max_length': 200},
+    'max_channels': {'type': (int, float)},
+    'freq_range_mhz': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_codeplug_radio_create():
     data = request.get_json() or {}
     name = data.get('name', '').strip()
@@ -84,6 +93,10 @@ def api_codeplug_zones(radio_id):
 
 
 @field_tools_bp.route('/api/codeplug/<int:radio_id>/zones', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'sort_order': {'type': (int, float)},
+})
 def api_codeplug_zone_create(radio_id):
     data = request.get_json() or {}
     name = data.get('name', '').strip()
@@ -133,6 +146,21 @@ def api_codeplug_channels(radio_id):
 
 
 @field_tools_bp.route('/api/codeplug/<int:radio_id>/channels', methods=['POST'])
+@validate_json({
+    'frequency_mhz': {'type': (int, float)},
+    'zone_id': {'type': (int, float)},
+    'channel_number': {'type': (int, float)},
+    'name': {'type': str, 'max_length': 200},
+    'offset_mhz': {'type': (int, float)},
+    'offset_dir': {'type': str, 'max_length': 10},
+    'tone_mode': {'type': str, 'max_length': 50},
+    'ctcss_tone': {'type': str, 'max_length': 50},
+    'dcs_code': {'type': str, 'max_length': 50},
+    'power': {'type': str, 'max_length': 20},
+    'mode': {'type': str, 'max_length': 20},
+    'bandwidth_khz': {'type': (int, float)},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_codeplug_channel_create(radio_id):
     data = request.get_json() or {}
     freq = data.get('frequency_mhz', 0)
@@ -177,6 +205,10 @@ def api_codeplug_channel_delete(ch_id):
 
 
 @field_tools_bp.route('/api/codeplug/<int:radio_id>/import-frequencies', methods=['POST'])
+@validate_optional_json({
+    'zone_id': {'type': (int, float)},
+    'service': {'type': str, 'max_length': 100},
+})
 def api_codeplug_import_freqs(radio_id):
     """Import frequencies from the freq_database into a codeplug zone."""
     data = request.get_json() or {}
@@ -448,6 +480,13 @@ def _freq_to_band(freq_mhz):
 # ═══════════════════════════════════════════════════════════════════
 
 @field_tools_bp.route('/api/calculators/rainwater', methods=['POST'])
+@validate_optional_json({
+    'roof_sqft': {'type': (int, float)},
+    'annual_rainfall_in': {'type': (int, float)},
+    'efficiency': {'type': (int, float)},
+    'daily_usage_gal': {'type': (int, float)},
+    'people': {'type': (int, float)},
+})
 def api_rainwater_calculator():
     """Calculate rainwater catchment potential.
 

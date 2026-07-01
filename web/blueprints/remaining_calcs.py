@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json, validate_optional_json
 
 remaining_calcs_bp = Blueprint('remaining_calcs', __name__)
 _log = logging.getLogger('nomad.remaining_calcs')
@@ -22,6 +23,10 @@ _log = logging.getLogger('nomad.remaining_calcs')
 # ═══════════════════════════════════════════════════════════════════
 
 @remaining_calcs_bp.route('/api/calculators/polaris-latitude', methods=['POST'])
+@validate_optional_json({
+    'polaris_altitude_deg': {'type': (int, float)},
+    'hemisphere': {'type': str, 'max_length': 200},
+})
 def api_polaris_latitude():
     """AJ2: Determine latitude from Polaris altitude (Northern Hemisphere)
     or Southern Cross (Southern Hemisphere)."""
@@ -79,6 +84,11 @@ def api_lunar_azimuth():
 
 
 @remaining_calcs_bp.route('/api/calculators/sun-clock', methods=['POST'])
+@validate_optional_json({
+    'sun_altitude_deg': {'type': (int, float)},
+    'sun_azimuth_deg': {'type': (int, float)},
+    'lat': {'type': (int, float)},
+})
 def api_sun_clock():
     """AJ4: Estimate time from sun position (no watch)."""
     data = request.get_json() or {}
@@ -111,6 +121,11 @@ def api_sun_clock():
 
 
 @remaining_calcs_bp.route('/api/calculators/barometric-altimeter', methods=['POST'])
+@validate_optional_json({
+    'pressure_hpa': {'type': (int, float)},
+    'known_elevation_ft': {'type': (int, float)},
+    'temperature_c': {'type': (int, float)},
+})
 def api_barometric_altimeter():
     """AJ8: Calibrate barometric altimeter from known elevation or pressure."""
     data = request.get_json() or {}
@@ -180,6 +195,9 @@ def api_fire_heat_chart():
 
 
 @remaining_calcs_bp.route('/api/calculators/rocket-stove', methods=['POST'])
+@validate_optional_json({
+    'pot_diameter_in': {'type': (int, float)},
+})
 def api_rocket_stove():
     """AL3: Rocket stove design calculator."""
     data = request.get_json() or {}
@@ -280,6 +298,12 @@ def api_pit_cooking():
 
 
 @remaining_calcs_bp.route('/api/calculators/haybox', methods=['POST'])
+@validate_optional_json({
+    'initial_temp_f': {'type': (int, float)},
+    'target_temp_f': {'type': (int, float)},
+    'pot_volume_qt': {'type': (int, float)},
+    'insulation': {'type': str, 'max_length': 200},
+})
 def api_haybox():
     """AL7: Haybox (retained-heat) cooker calculator."""
     data = request.get_json() or {}
@@ -325,6 +349,11 @@ def api_haybox():
 
 
 @remaining_calcs_bp.route('/api/calculators/bulk-cooking', methods=['POST'])
+@validate_optional_json({
+    'recipe_servings': {'type': (int, float)},
+    'target_servings': {'type': (int, float)},
+    'ingredients': {'type': list},
+})
 def api_bulk_cooking():
     """AL8: Bulk cooking scaling math."""
     data = request.get_json() or {}
@@ -365,6 +394,9 @@ def api_bulk_cooking():
 # ═══════════════════════════════════════════════════════════════════
 
 @remaining_calcs_bp.route('/api/calculators/portfolio-stress', methods=['POST'])
+@validate_json({
+    'assets': {'type': list, 'required': True},
+})
 def api_portfolio_stress():
     """AT1: Portfolio stress-test against historical scenarios."""
     data = request.get_json() or {}
@@ -483,6 +515,9 @@ def api_credit_freeze():
 
 
 @remaining_calcs_bp.route('/api/calculators/income-diversification', methods=['POST'])
+@validate_json({
+    'income_streams': {'type': list, 'required': True},
+})
 def api_income_diversification():
     """AT7: Income diversification tracker."""
     data = request.get_json() or {}

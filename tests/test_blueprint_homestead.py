@@ -416,3 +416,92 @@ class TestWithdrawalTimer:
                            json={'drug': 'penicillin',
                                  'administered_date': 'last tuesday'})
         assert resp.status_code == 400
+
+
+class TestHomesteadPayloadValidation:
+    def test_greywater_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/calculators/greywater',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_greywater_rejects_non_object(self, client):
+        resp = client.post(
+            '/api/calculators/greywater',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_humanure_create_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/homestead/humanure',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_humanure_create_rejects_non_object(self, client):
+        resp = client.post(
+            '/api/homestead/humanure',
+            data='"string"',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_humanure_create_rejects_wrong_shape(self, client):
+        resp = client.post('/api/homestead/humanure', json={'bin_name': 123})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_humanure_temp_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/homestead/humanure/1/temp',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_wood_heating_rejects_wrong_shape(self, client):
+        resp = client.post('/api/calculators/wood-heating', json={'sqft': 'bad'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_battery_bank_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/calculators/battery-bank',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_curing_salt_rejects_wrong_shape(self, client):
+        resp = client.post('/api/calculators/curing-salt', json={'meat_weight_lb': 'bad'})
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Validation failed'
+
+    def test_withdrawal_timer_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/calculators/withdrawal-timer',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_withdrawal_timer_rejects_non_object(self, client):
+        resp = client.post(
+            '/api/calculators/withdrawal-timer',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'

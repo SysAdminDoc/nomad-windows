@@ -19,6 +19,7 @@ from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json, validate_optional_json
 
 homestead_bp = Blueprint('homestead', __name__)
 _log = logging.getLogger('nomad.homestead')
@@ -29,6 +30,12 @@ _log = logging.getLogger('nomad.homestead')
 # ═══════════════════════════════════════════════════════════════════
 
 @homestead_bp.route('/api/calculators/greywater', methods=['POST'])
+@validate_optional_json({
+    'daily_gallons': {'type': (int, float)},
+    'num_outlets': {'type': (int, float)},
+    'soil_type': {'type': str, 'max_length': 200},
+    'sources': {'type': list},
+})
 def api_greywater():
     """Design a branched-drain greywater system.
 
@@ -102,6 +109,12 @@ def api_humanure_list():
 
 
 @homestead_bp.route('/api/homestead/humanure', methods=['POST'])
+@validate_json({
+    'bin_name': {'type': str, 'max_length': 200},
+    'started_at': {'type': str, 'max_length': 200},
+    'carbon_source': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_humanure_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -121,6 +134,9 @@ def api_humanure_create():
 
 
 @homestead_bp.route('/api/homestead/humanure/<int:bid>/temp', methods=['POST'])
+@validate_optional_json({
+    'temp_f': {'type': (int, float)},
+})
 def api_humanure_temp(bid):
     """Log a temperature reading for a batch."""
     data = request.get_json() or {}
@@ -188,6 +204,13 @@ def api_wood_btu_reference():
 
 
 @homestead_bp.route('/api/calculators/wood-heating', methods=['POST'])
+@validate_optional_json({
+    'sqft': {'type': (int, float)},
+    'heating_degree_days': {'type': (int, float)},
+    'stove_efficiency': {'type': (int, float)},
+    'wood_species': {'type': str, 'max_length': 200},
+    'insulation_quality': {'type': str, 'max_length': 200},
+})
 def api_wood_heating():
     """Calculate heating needs in cords of wood.
 
@@ -233,6 +256,11 @@ def api_wood_heating():
 # ═══════════════════════════════════════════════════════════════════
 
 @homestead_bp.route('/api/calculators/sun-path', methods=['POST'])
+@validate_optional_json({
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'date': {'type': str, 'max_length': 200},
+})
 def api_sun_path():
     """Calculate sun position throughout the day for passive solar design.
 
@@ -339,6 +367,13 @@ def api_sun_path():
 # ═══════════════════════════════════════════════════════════════════
 
 @homestead_bp.route('/api/calculators/battery-bank', methods=['POST'])
+@validate_optional_json({
+    'daily_kwh': {'type': (int, float)},
+    'voltage': {'type': (int, float)},
+    'dod_pct': {'type': (int, float)},
+    'autonomy_days': {'type': (int, float)},
+    'battery_type': {'type': str, 'max_length': 200},
+})
 def api_battery_bank():
     """Model battery bank sizing and cycle life.
 
@@ -405,6 +440,12 @@ def api_battery_bank():
 # ═══════════════════════════════════════════════════════════════════
 
 @homestead_bp.route('/api/calculators/curing-salt', methods=['POST'])
+@validate_optional_json({
+    'meat_weight_lb': {'type': (int, float)},
+    'cure_type': {'type': str, 'max_length': 200},
+    'nitrite_ppm_target': {'type': (int, float)},
+    'brine_salt_pct': {'type': (int, float)},
+})
 def api_curing_salt():
     """Calculate curing salt ratios for meat preservation.
 
@@ -460,6 +501,10 @@ def api_curing_salt():
 
 
 @homestead_bp.route('/api/calculators/fermentation', methods=['POST'])
+@validate_optional_json({
+    'vessel_ml': {'type': (int, float)},
+    'salt_pct': {'type': (int, float)},
+})
 def api_fermentation():
     """Fermentation salt brine calculator.
 
@@ -537,6 +582,9 @@ def api_seed_isolation():
 # ═══════════════════════════════════════════════════════════════════
 
 @homestead_bp.route('/api/calculators/varroa-calendar', methods=['POST'])
+@validate_optional_json({
+    'lat': {'type': (int, float)},
+})
 def api_varroa_calendar():
     """Generate a varroa mite management calendar.
 
@@ -617,6 +665,10 @@ def api_withdrawal_reference():
 
 
 @homestead_bp.route('/api/calculators/withdrawal-timer', methods=['POST'])
+@validate_json({
+    'drug': {'type': str, 'max_length': 200},
+    'administered_date': {'type': str, 'max_length': 200},
+})
 def api_withdrawal_timer():
     """Calculate safe harvest/milk/egg date after drug administration."""
     data = request.get_json() or {}

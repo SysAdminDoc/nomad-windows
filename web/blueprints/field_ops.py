@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json, validate_optional_json
 
 field_ops_bp = Blueprint('field_ops', __name__)
 _log = logging.getLogger('nomad.field_ops')
@@ -25,6 +26,12 @@ _log = logging.getLogger('nomad.field_ops')
 # ═══════════════════════════════════════════════════════════════════
 
 @field_ops_bp.route('/api/ics/comms-plan', methods=['POST'])
+@validate_optional_json({
+    'incident_name': {'type': str, 'max_length': 200},
+    'operational_period': {'type': str, 'max_length': 200},
+    'special_instructions': {'type': str, 'max_length': 5000},
+    'prepared_by': {'type': str, 'max_length': 200},
+})
 def api_ics_comms_plan():
     """Auto-generate an ICS-205 Communications Plan from existing data.
 
@@ -179,6 +186,18 @@ def api_sar_clues():
 
 
 @field_ops_bp.route('/api/sar/clues', methods=['POST'])
+@validate_json({
+    'description': {'type': str, 'max_length': 2000},
+    'clue_type': {'type': str, 'max_length': 50},
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'elevation_ft': {'type': (int, float)},
+    'found_by': {'type': str, 'max_length': 200},
+    'sector': {'type': str, 'max_length': 100},
+    'significance': {'type': str, 'max_length': 50},
+    'photo_ref': {'type': str, 'max_length': 500},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_sar_clue_create():
     data = request.get_json() or {}
     desc = data.get('description', '').strip()
@@ -257,6 +276,16 @@ def api_sar_containment():
 
 
 @field_ops_bp.route('/api/sar/containment', methods=['POST'])
+@validate_json({
+    'sector': {'type': str, 'max_length': 100},
+    'status': {'type': str, 'max_length': 50},
+    'pod': {'type': (int, float)},
+    'searchers': {'type': (int, float)},
+    'search_type': {'type': str, 'max_length': 50},
+    'started_at': {'type': str, 'max_length': 50},
+    'completed_at': {'type': str, 'max_length': 50},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_sar_containment_update():
     data = request.get_json() or {}
     sector = data.get('sector', '').strip()
@@ -288,6 +317,13 @@ def api_sar_containment_update():
 # ═══════════════════════════════════════════════════════════════════
 
 @field_ops_bp.route('/api/calculators/tire-pressure', methods=['POST'])
+@validate_optional_json({
+    'base_psi': {'type': (int, float)},
+    'vehicle_weight_lb': {'type': (int, float)},
+    'load_pct': {'type': (int, float)},
+    'terrain': {'type': str, 'max_length': 50},
+    'gvwr_lb': {'type': (int, float)},
+})
 def api_tire_pressure():
     """Calculate recommended tire pressure for terrain type.
 
@@ -352,6 +388,11 @@ def api_tire_pressure():
 # ═══════════════════════════════════════════════════════════════════
 
 @field_ops_bp.route('/api/calculators/tides', methods=['POST'])
+@validate_optional_json({
+    'lat': {'type': (int, float)},
+    'lng': {'type': (int, float)},
+    'date': {'type': str, 'max_length': 30},
+})
 def api_tide_predictor():
     """Estimate tide times from lunar position.
 
@@ -441,6 +482,15 @@ def api_tide_predictor():
 # ═══════════════════════════════════════════════════════════════════
 
 @field_ops_bp.route('/api/calculators/density-altitude', methods=['POST'])
+@validate_optional_json({
+    'field_elevation_ft': {'type': (int, float)},
+    'temperature_c': {'type': (int, float)},
+    'altimeter_inhg': {'type': (int, float)},
+    'runway_length_ft': {'type': (int, float)},
+    'weight_lb': {'type': (int, float)},
+    'base_takeoff_ft': {'type': (int, float)},
+    'gross_weight_lb': {'type': (int, float)},
+})
 def api_density_altitude():
     """Calculate density altitude and estimated takeoff distance.
 

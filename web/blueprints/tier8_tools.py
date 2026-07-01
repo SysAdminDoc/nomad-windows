@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json, validate_optional_json
 
 tier8_bp = Blueprint('tier8_tools', __name__)
 _log = logging.getLogger('nomad.tier8')
@@ -35,6 +36,16 @@ def api_ooda_list():
 
 
 @tier8_bp.route('/api/doctrine/ooda', methods=['POST'])
+@validate_json({
+    'situation': {'type': str, 'required': True, 'max_length': 200},
+    'observe': {'type': str, 'max_length': 2000},
+    'orient': {'type': str, 'max_length': 2000},
+    'decide': {'type': str, 'max_length': 2000},
+    'act': {'type': str, 'max_length': 2000},
+    'outcome': {'type': str, 'max_length': 2000},
+    'cycle_time_min': {'type': (int, float)},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_ooda_create():
     data = request.get_json() or {}
     situation = data.get('situation', '').strip()
@@ -87,6 +98,21 @@ def api_aar_list():
 
 
 @tier8_bp.route('/api/doctrine/aar', methods=['POST'])
+@validate_json({
+    'event_name': {'type': str, 'required': True, 'max_length': 200},
+    'event_date': {'type': str, 'max_length': 200},
+    'facilitator': {'type': str, 'max_length': 200},
+    'participants': {'type': list},
+    'q1_plan': {'type': str, 'max_length': 2000},
+    'q2_happened': {'type': str, 'max_length': 2000},
+    'q3_why': {'type': str, 'max_length': 2000},
+    'q4_improve': {'type': str, 'max_length': 2000},
+    'sustains': {'type': list},
+    'improves': {'type': list},
+    'action_items': {'type': list},
+    'status': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+})
 def api_aar_create():
     data = request.get_json() or {}
     event_name = data.get('event_name', '').strip()
@@ -200,6 +226,14 @@ def api_cynefin_reference():
 
 
 @tier8_bp.route('/api/doctrine/cynefin/classify', methods=['POST'])
+@validate_optional_json({
+    'known_solution': {'type': bool},
+    'expert_needed': {'type': bool},
+    'unpredictable': {'type': bool},
+    'time_critical': {'type': bool},
+    'multiple_valid_approaches': {'type': bool},
+    'never_seen_before': {'type': bool},
+})
 def api_cynefin_classify():
     """Guided Cynefin classification from situation indicators."""
     data = request.get_json() or {}
@@ -237,6 +271,13 @@ def api_cynefin_classify():
 # ═══════════════════════════════════════════════════════════════════
 
 @tier8_bp.route('/api/calculators/pack-animal', methods=['POST'])
+@validate_optional_json({
+    'animal': {'type': str, 'max_length': 200},
+    'load_lb': {'type': (int, float)},
+    'trip_days': {'type': (int, float)},
+    'num_animals': {'type': (int, float)},
+    'terrain': {'type': str, 'max_length': 200},
+})
 def api_pack_animal():
     """Pack animal load calculator."""
     data = request.get_json() or {}
@@ -283,6 +324,13 @@ def api_pack_animal():
 
 
 @tier8_bp.route('/api/calculators/portage', methods=['POST'])
+@validate_optional_json({
+    'distance_mi': {'type': (int, float)},
+    'boat_lb': {'type': (int, float)},
+    'gear_lb': {'type': (int, float)},
+    'people': {'type': (int, float)},
+    'carries_per_person': {'type': (int, float)},
+})
 def api_portage():
     """Canoe/kayak portage planner."""
     data = request.get_json() or {}
@@ -313,6 +361,14 @@ def api_portage():
 
 
 @tier8_bp.route('/api/calculators/ebike-range', methods=['POST'])
+@validate_optional_json({
+    'battery_wh': {'type': (int, float)},
+    'motor_w': {'type': (int, float)},
+    'rider_lb': {'type': (int, float)},
+    'cargo_lb': {'type': (int, float)},
+    'terrain': {'type': str, 'max_length': 200},
+    'assist_level': {'type': str, 'max_length': 200},
+})
 def api_ebike_range():
     """E-bike range calculator."""
     data = request.get_json() or {}
@@ -356,6 +412,10 @@ def api_ebike_range():
 # ═══════════════════════════════════════════════════════════════════
 
 @tier8_bp.route('/api/calculators/dutch-oven', methods=['POST'])
+@validate_optional_json({
+    'diameter_in': {'type': (int, float)},
+    'target_temp_f': {'type': (int, float)},
+})
 def api_dutch_oven():
     """Dutch oven coal calculator — top/bottom split for baking."""
     data = request.get_json() or {}
@@ -427,6 +487,11 @@ def api_altitude_boiling():
 # ═══════════════════════════════════════════════════════════════════
 
 @tier8_bp.route('/api/calculators/emergency-fund', methods=['POST'])
+@validate_optional_json({
+    'monthly_expenses': {'type': (int, float)},
+    'current_savings': {'type': (int, float)},
+    'monthly_contribution': {'type': (int, float)},
+})
 def api_emergency_fund():
     """Emergency fund tier calculator."""
     data = request.get_json() or {}
@@ -472,6 +537,11 @@ def api_emergency_fund():
 
 
 @tier8_bp.route('/api/calculators/debt-snowball', methods=['POST'])
+@validate_json({
+    'debts': {'type': list, 'required': True},
+    'extra_monthly': {'type': (int, float)},
+    'method': {'type': str, 'max_length': 200},
+})
 def api_debt_snowball():
     """Debt elimination calculator (snowball method)."""
     data = request.get_json() or {}
@@ -541,6 +611,9 @@ def api_debt_snowball():
 # ═══════════════════════════════════════════════════════════════════
 
 @tier8_bp.route('/api/calculators/shadow-stick', methods=['POST'])
+@validate_optional_json({
+    'lat': {'type': (int, float)},
+})
 def api_shadow_stick():
     """Shadow stick compass — find true north from sun shadow movement."""
     data = request.get_json() or {}
@@ -572,6 +645,12 @@ def api_shadow_stick():
 
 
 @tier8_bp.route('/api/calculators/dead-reckoning', methods=['POST'])
+@validate_optional_json({
+    'distance_mi': {'type': (int, float)},
+    'pace_count': {'type': (int, float)},
+    'compass_error_deg': {'type': (int, float)},
+    'terrain': {'type': str, 'max_length': 200},
+})
 def api_dead_reckoning():
     """Dead reckoning error budget calculator."""
     data = request.get_json() or {}

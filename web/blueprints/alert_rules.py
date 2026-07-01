@@ -3,6 +3,7 @@
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.validation import validate_json, validate_optional_json
 import json
 
 alert_rules_bp = Blueprint('alert_rules', __name__)
@@ -44,6 +45,19 @@ def api_alert_rules_list():
 
 
 @alert_rules_bp.route('/api/alert-rules', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'condition_type': {'type': str, 'max_length': 100},
+    'threshold': {'type': (int, float)},
+    'comparison': {'type': str, 'max_length': 10},
+    'action_type': {'type': str, 'max_length': 50},
+    'action_data': {'type': (dict, str)},
+    'enabled': {'type': (bool, int)},
+    'cooldown_minutes': {'type': (int, float)},
+    'severity': {'type': str, 'max_length': 50},
+    'category': {'type': str, 'max_length': 100},
+    'description': {'type': str, 'max_length': 2000},
+})
 def api_alert_rules_create():
     data = request.get_json() or {}
     if not data.get('name') or not data.get('condition_type'):
@@ -73,6 +87,19 @@ def api_alert_rules_create():
 
 
 @alert_rules_bp.route('/api/alert-rules/<int:rid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+    'condition_type': {'type': str, 'max_length': 100},
+    'threshold': {'type': (int, float)},
+    'comparison': {'type': str, 'max_length': 10},
+    'action_type': {'type': str, 'max_length': 50},
+    'action_data': {'type': (dict, str)},
+    'enabled': {'type': (bool, int)},
+    'cooldown_minutes': {'type': (int, float)},
+    'severity': {'type': str, 'max_length': 50},
+    'category': {'type': str, 'max_length': 100},
+    'description': {'type': str, 'max_length': 2000},
+})
 def api_alert_rules_update(rid):
     data = request.get_json() or {}
     # POST validates condition_type and comparison against allowlists; PUT

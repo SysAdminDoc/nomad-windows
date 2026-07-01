@@ -5,6 +5,9 @@ NOMAD Field Desk desktop launcher.
 Desktop-first preparedness, reference, and local operations workspace.
 """
 
+import multiprocessing
+multiprocessing.freeze_support()
+
 import sys
 import os
 import subprocess

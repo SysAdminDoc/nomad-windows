@@ -151,7 +151,7 @@ a = Analysis(
     hiddenimports=_hiddenimports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=['runtime_hook.py'],
     excludes=['tkinter', 'unittest', 'test'],
     noarchive=False,
 )

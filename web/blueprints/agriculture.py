@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.validation import validate_optional_json
 
 _log = logging.getLogger(__name__)
 
@@ -43,6 +44,52 @@ _AQUAPONICS_SYSTEMS_ALLOWED_FIELDS = frozenset({'name', 'system_type', 'location
 _RECYCLING_SYSTEMS_ALLOWED_FIELDS = frozenset({'name', 'system_type', 'location', 'capacity', 'input_sources',
                                                'output_products', 'processing_time_days', 'current_status',
                                                'last_turned', 'temperature_f', 'metrics', 'notes'})
+
+_TEXT_INPUT = {'type': str, 'max_length': 5000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_JSONISH_INPUT = {'type': (list, dict, str)}
+_NUMERIC_FIELDS = frozenset({
+    'spacing_ft', 'mature_height_ft', 'years_to_production', 'guild_id',
+    'years_to_bearing', 'start_year', 'end_year',
+    'carrying_capacity_persons', 'land_acres', 'offspring_count',
+    'quantity_lbs', 'cost_per_unit', 'fish_count', 'water_volume_gal',
+    'ph_level', 'ammonia_ppm', 'nitrite_ppm', 'nitrate_ppm',
+    'temperature_f', 'processing_time_days',
+})
+_JSON_FIELDS = frozenset({
+    'support_species', 'nitrogen_fixers', 'dynamic_accumulators',
+    'pest_confusers', 'ground_covers', 'materials', 'soil_test_before',
+    'soil_test_after', 'goals', 'milestones', 'adaptation_strategies',
+    'offspring_names', 'metrics', 'plant_species', 'input_sources',
+    'output_products',
+})
+
+
+def _schema_for_fields(fields):
+    schema = {}
+    for field in fields:
+        if field in _JSON_FIELDS:
+            schema[field] = _JSONISH_INPUT
+        elif field in _NUMERIC_FIELDS:
+            schema[field] = _NUMBER_INPUT
+        else:
+            schema[field] = _TEXT_INPUT
+    return schema
+
+
+GUILD_SCHEMA = _schema_for_fields(_FOOD_FOREST_GUILDS_ALLOWED_FIELDS)
+LAYER_SCHEMA = _schema_for_fields(_FOOD_FOREST_LAYERS_ALLOWED_FIELDS)
+SOIL_SCHEMA = _schema_for_fields(_SOIL_PROJECTS_ALLOWED_FIELDS)
+PERENNIAL_SCHEMA = _schema_for_fields(_PERENNIAL_PLANTS_ALLOWED_FIELDS)
+PLAN_SCHEMA = _schema_for_fields(_MULTI_YEAR_PLANS_ALLOWED_FIELDS)
+BREEDING_SCHEMA = _schema_for_fields(_BREEDING_RECORDS_ALLOWED_FIELDS)
+FEED_SCHEMA = _schema_for_fields({
+    'animal_group', 'feed_type', 'quantity_lbs', 'cost_per_unit',
+    'fed_date', 'fed_by', 'notes',
+})
+HOMESTEAD_SCHEMA = _schema_for_fields(_HOMESTEAD_SYSTEMS_ALLOWED_FIELDS)
+AQUAPONICS_SCHEMA = _schema_for_fields(_AQUAPONICS_SYSTEMS_ALLOWED_FIELDS)
+RECYCLING_SCHEMA = _schema_for_fields(_RECYCLING_SYSTEMS_ALLOWED_FIELDS)
 
 
 def _jp(val):
@@ -87,6 +134,7 @@ def api_guilds_list():
 
 
 @agriculture_bp.route('/food-forest/guilds', methods=['POST'])
+@validate_optional_json(GUILD_SCHEMA)
 def api_guilds_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -113,6 +161,7 @@ def api_guilds_create():
 
 
 @agriculture_bp.route('/food-forest/guilds/<int:gid>', methods=['PUT'])
+@validate_optional_json(GUILD_SCHEMA)
 def api_guilds_update(gid):
     data = request.get_json() or {}
     allowed = _FOOD_FOREST_GUILDS_ALLOWED_FIELDS
@@ -166,6 +215,7 @@ def api_layers_list():
 
 
 @agriculture_bp.route('/food-forest/layers', methods=['POST'])
+@validate_optional_json(LAYER_SCHEMA)
 def api_layers_create():
     data = request.get_json() or {}
     species = (data.get('species') or '').strip()
@@ -189,6 +239,7 @@ def api_layers_create():
 
 
 @agriculture_bp.route('/food-forest/layers/<int:lid>', methods=['PUT'])
+@validate_optional_json(LAYER_SCHEMA)
 def api_layers_update(lid):
     data = request.get_json() or {}
     allowed = _FOOD_FOREST_LAYERS_ALLOWED_FIELDS
@@ -258,6 +309,7 @@ def api_soil_list():
 
 
 @agriculture_bp.route('/soil', methods=['POST'])
+@validate_optional_json(SOIL_SCHEMA)
 def api_soil_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -284,6 +336,7 @@ def api_soil_create():
 
 
 @agriculture_bp.route('/soil/<int:sid>', methods=['PUT'])
+@validate_optional_json(SOIL_SCHEMA)
 def api_soil_update(sid):
     data = request.get_json() or {}
     allowed = _SOIL_PROJECTS_ALLOWED_FIELDS
@@ -340,6 +393,7 @@ def api_perennials_list():
 
 
 @agriculture_bp.route('/perennials', methods=['POST'])
+@validate_optional_json(PERENNIAL_SCHEMA)
 def api_perennials_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -367,6 +421,7 @@ def api_perennials_create():
 
 
 @agriculture_bp.route('/perennials/<int:pid>', methods=['PUT'])
+@validate_optional_json(PERENNIAL_SCHEMA)
 def api_perennials_update(pid):
     data = request.get_json() or {}
     allowed = _PERENNIAL_PLANTS_ALLOWED_FIELDS
@@ -414,6 +469,7 @@ def api_plans_list():
 
 
 @agriculture_bp.route('/plans', methods=['POST'])
+@validate_optional_json(PLAN_SCHEMA)
 def api_plans_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -443,6 +499,7 @@ def api_plans_create():
 
 
 @agriculture_bp.route('/plans/<int:pid>', methods=['PUT'])
+@validate_optional_json(PLAN_SCHEMA)
 def api_plans_update(pid):
     data = request.get_json() or {}
     allowed = _MULTI_YEAR_PLANS_ALLOWED_FIELDS
@@ -514,6 +571,7 @@ def api_breeding_list():
 
 
 @agriculture_bp.route('/breeding', methods=['POST'])
+@validate_optional_json(BREEDING_SCHEMA)
 def api_breeding_create():
     data = request.get_json() or {}
     name = (data.get('animal_name') or '').strip()
@@ -541,6 +599,7 @@ def api_breeding_create():
 
 
 @agriculture_bp.route('/breeding/<int:bid>', methods=['PUT'])
+@validate_optional_json(BREEDING_SCHEMA)
 def api_breeding_update(bid):
     data = request.get_json() or {}
     allowed = _BREEDING_RECORDS_ALLOWED_FIELDS
@@ -608,6 +667,7 @@ def api_feed_list():
 
 
 @agriculture_bp.route('/feed', methods=['POST'])
+@validate_optional_json(FEED_SCHEMA)
 def api_feed_create():
     data = request.get_json() or {}
     group = (data.get('animal_group') or '').strip()
@@ -668,6 +728,7 @@ def api_homestead_list():
 
 
 @agriculture_bp.route('/homestead', methods=['POST'])
+@validate_optional_json(HOMESTEAD_SCHEMA)
 def api_homestead_create():
     data = request.get_json() or {}
     name = (data.get('system_name') or '').strip()
@@ -692,6 +753,7 @@ def api_homestead_create():
 
 
 @agriculture_bp.route('/homestead/<int:hid>', methods=['PUT'])
+@validate_optional_json(HOMESTEAD_SCHEMA)
 def api_homestead_update(hid):
     data = request.get_json() or {}
     allowed = _HOMESTEAD_SYSTEMS_ALLOWED_FIELDS
@@ -763,6 +825,7 @@ def api_aquaponics_list():
 
 
 @agriculture_bp.route('/aquaponics', methods=['POST'])
+@validate_optional_json(AQUAPONICS_SCHEMA)
 def api_aquaponics_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -794,6 +857,7 @@ def api_aquaponics_create():
 
 
 @agriculture_bp.route('/aquaponics/<int:aid>', methods=['PUT'])
+@validate_optional_json(AQUAPONICS_SCHEMA)
 def api_aquaponics_update(aid):
     data = request.get_json() or {}
     allowed = _AQUAPONICS_SYSTEMS_ALLOWED_FIELDS
@@ -882,6 +946,7 @@ def api_recycling_list():
 
 
 @agriculture_bp.route('/recycling', methods=['POST'])
+@validate_optional_json(RECYCLING_SCHEMA)
 def api_recycling_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -911,6 +976,7 @@ def api_recycling_create():
 
 
 @agriculture_bp.route('/recycling/<int:rid>', methods=['PUT'])
+@validate_optional_json(RECYCLING_SCHEMA)
 def api_recycling_update(rid):
     data = request.get_json() or {}
     allowed = _RECYCLING_SYSTEMS_ALLOWED_FIELDS

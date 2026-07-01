@@ -640,13 +640,18 @@ pip install pyinstaller
 pyinstaller build.spec
 ```
 
-### CI/CD
+### Release packaging
 
-GitHub Actions builds multi-platform binaries on every tagged release:
-- Windows: `.exe` + Inno Setup installer (optional code signing)
-- Linux: Binary + AppImage
-- macOS: Universal binary
-- All releases include `SHA256SUMS.txt` for integrity verification
+Releases are built locally via the release pipeline script:
+
+```bash
+py -3.12 tools/release.py
+```
+
+This verifies version consistency across all 4 version files, runs the full test suite, builds the JS/CSS bundle, produces the PyInstaller executable, and generates `SHA256SUMS.txt` + `build-manifest.json`. Use `--skip-tests` or `--skip-build` for iterative development.
+
+- Windows: `NOMADFieldDesk.exe` (portable) + Inno Setup installer via `installer.iss`
+- Linux: Binary + AppImage via `tools/build_appimage.sh`
 
 ---
 

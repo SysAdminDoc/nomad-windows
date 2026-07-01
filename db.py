@@ -2149,9 +2149,10 @@ def _create_readiness_alerts_threat_drill_tables(conn):
     conn.commit()
 
 
-def _apply_column_migrations(conn):
-    """Apply ALTER TABLE column migrations (before indexes that depend on new columns)."""
-    for migration in [
+_COLUMN_MIGRATION_VERSION = 1
+
+_COLUMN_MIGRATIONS = {
+    1: [
         'ALTER TABLE inventory ADD COLUMN daily_usage REAL DEFAULT 0',
         'ALTER TABLE inventory ADD COLUMN barcode TEXT DEFAULT ""',
         'ALTER TABLE inventory ADD COLUMN cost REAL DEFAULT 0',
@@ -2176,7 +2177,6 @@ def _apply_column_migrations(conn):
         'ALTER TABLE patients ADD COLUMN care_phase TEXT DEFAULT ""',
         'ALTER TABLE wound_log ADD COLUMN tourniquet_time TEXT DEFAULT ""',
         'ALTER TABLE wound_log ADD COLUMN intervention_type TEXT DEFAULT ""',
-        # v5.0 migrations
         'ALTER TABLE inventory ADD COLUMN lot_number TEXT DEFAULT ""',
         'ALTER TABLE inventory ADD COLUMN photo_path TEXT DEFAULT ""',
         'ALTER TABLE inventory ADD COLUMN checked_out_to TEXT DEFAULT ""',
@@ -2198,37 +2198,29 @@ def _apply_column_migrations(conn):
         'ALTER TABLE freq_database ADD COLUMN tone_freq REAL',
         'ALTER TABLE map_routes ADD COLUMN gpx_data TEXT DEFAULT ""',
         'ALTER TABLE map_routes ADD COLUMN elevation_profile TEXT DEFAULT "[]"',
-        # v4.6.0 — garden geo overlay
         'ALTER TABLE garden_plots ADD COLUMN lat REAL',
         'ALTER TABLE garden_plots ADD COLUMN lng REAL',
         'ALTER TABLE garden_plots ADD COLUMN boundary_geojson TEXT DEFAULT ""',
-        # v4.6.0 — federation peer geo for supply chain map
         'ALTER TABLE federation_peers ADD COLUMN lat REAL',
         'ALTER TABLE federation_peers ADD COLUMN lng REAL',
-        # v4.8.0 — vector clocks for federation conflict detection
         'ALTER TABLE sync_log ADD COLUMN vector_clock TEXT DEFAULT "{}"',
         'ALTER TABLE sync_log ADD COLUMN conflicts_detected INTEGER DEFAULT 0',
         'ALTER TABLE sync_log ADD COLUMN conflict_details TEXT DEFAULT "[]"',
-        # v4.9.0 — conflict resolution tracking
         'ALTER TABLE sync_log ADD COLUMN resolved INTEGER DEFAULT 0',
         'ALTER TABLE sync_log ADD COLUMN resolution TEXT DEFAULT ""',
-        # GPS tracks & geofence support
         'ALTER TABLE map_annotations ADD COLUMN name TEXT DEFAULT ""',
         'ALTER TABLE map_annotations ADD COLUMN lat REAL',
         'ALTER TABLE map_annotations ADD COLUMN lng REAL',
         'ALTER TABLE map_annotations ADD COLUMN is_geofence INTEGER DEFAULT 0',
         'ALTER TABLE map_annotations ADD COLUMN properties TEXT DEFAULT "{}"',
         'ALTER TABLE map_annotations ADD COLUMN radius_m REAL DEFAULT 0',
-        # Nutrition tracking columns for food security dashboard
         'ALTER TABLE inventory ADD COLUMN calories_per_unit REAL DEFAULT 0',
         'ALTER TABLE inventory ADD COLUMN protein_g REAL DEFAULT 0',
         'ALTER TABLE inventory ADD COLUMN fat_g REAL DEFAULT 0',
         'ALTER TABLE inventory ADD COLUMN carbs_g REAL DEFAULT 0',
         'ALTER TABLE preservation_log ADD COLUMN calories_per_unit REAL DEFAULT 0',
-        # v7.9.0 — Container management
         'ALTER TABLE inventory ADD COLUMN container_id INTEGER DEFAULT NULL',
         'ALTER TABLE inventory ADD COLUMN weight_oz REAL DEFAULT 0',
-        # v7.9.0 — Preservation batch tracker expansion
         'ALTER TABLE preservation_log ADD COLUMN jar_size TEXT DEFAULT ""',
         'ALTER TABLE preservation_log ADD COLUMN jar_count INTEGER DEFAULT 0',
         'ALTER TABLE preservation_log ADD COLUMN processing_time_min INTEGER DEFAULT 0',
@@ -2239,26 +2231,54 @@ def _apply_column_migrations(conn):
         'ALTER TABLE preservation_log ADD COLUMN success INTEGER DEFAULT 1',
         'ALTER TABLE preservation_log ADD COLUMN yield_amount REAL DEFAULT 0',
         'ALTER TABLE preservation_log ADD COLUMN yield_unit TEXT DEFAULT ""',
-        # v7.0.11 — AI conversation tags
         'ALTER TABLE conversations ADD COLUMN tags TEXT DEFAULT "[]"',
-        # V8-18 — Soft delete / trash pattern for critical tables
         'ALTER TABLE inventory ADD COLUMN deleted_at TIMESTAMP',
         'ALTER TABLE contacts ADD COLUMN deleted_at TIMESTAMP',
         'ALTER TABLE notes ADD COLUMN deleted_at TIMESTAMP',
         'ALTER TABLE patients ADD COLUMN deleted_at TIMESTAMP',
-        # V8-05 — Per-conversation KB scope
         'ALTER TABLE conversations ADD COLUMN kb_scope TEXT DEFAULT "[]"',
-    ]:
-        try:
-            conn.execute(migration)
-            conn.commit()
-        except sqlite3.OperationalError as e:
-            # Only silently skip the expected "duplicate column name" case.
-            # Any other OperationalError (disk full, corrupt page, malformed
-            # SQL) should propagate so the caller knows the schema is broken.
-            if 'duplicate column name' not in str(e).lower():
-                _log.error('Column migration FAILED (%s): %s', migration[:80], e)
-                raise
+    ],
+}
+
+
+def _apply_column_migrations(conn):
+    """Apply ALTER TABLE column migrations, skipping already-applied versions.
+
+    On an existing database where all columns already exist, this reduces
+    startup from ~80 try/except ALTER TABLE calls to a single SELECT.
+    """
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS _column_migration_versions (
+            version    INTEGER PRIMARY KEY,
+            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+
+    applied = {
+        row[0]
+        for row in conn.execute('SELECT version FROM _column_migration_versions').fetchall()
+    }
+
+    for version in sorted(_COLUMN_MIGRATIONS):
+        if version in applied:
+            continue
+        _log.info('Applying column migration batch v%d (%d statements)',
+                  version, len(_COLUMN_MIGRATIONS[version]))
+        for migration in _COLUMN_MIGRATIONS[version]:
+            try:
+                conn.execute(migration)
+                conn.commit()
+            except sqlite3.OperationalError as e:
+                if 'duplicate column name' not in str(e).lower():
+                    _log.error('Column migration FAILED (%s): %s', migration[:80], e)
+                    raise
+        conn.execute(
+            'INSERT OR IGNORE INTO _column_migration_versions (version) VALUES (?)',
+            (version,),
+        )
+        conn.commit()
+        _log.info('Column migration batch v%d applied', version)
 
 
 def _create_indexes(conn):

@@ -2900,5 +2900,143 @@ def get_guidance_source(domain, content_key):
     }
 
 
+# ─── Storage Relocation ──────────────────────────────────────────
+
+@system_bp.route('/api/storage/preflight', methods=['POST'])
+@validate_json({
+    'target_path': {'type': str, 'required': True, 'min_length': 1, 'max_length': 1000},
+})
+def api_storage_preflight():
+    """Check if a target directory is viable for data relocation."""
+    data = request.get_json() or {}
+    target = os.path.abspath(data['target_path'])
+    current = get_data_dir()
+
+    if os.path.normcase(target) == os.path.normcase(current):
+        return jsonify({'error': 'Target is the same as current data directory'}), 400
+
+    writable = False
+    try:
+        os.makedirs(target, exist_ok=True)
+        test_file = os.path.join(target, '.nomad_preflight_test')
+        with open(test_file, 'w') as f:
+            f.write('preflight')
+        os.remove(test_file)
+        writable = True
+    except OSError:
+        pass
+
+    current_size = 0
+    file_count = 0
+    for dirpath, dirnames, filenames in os.walk(current):
+        for fn in filenames:
+            fp = os.path.join(dirpath, fn)
+            try:
+                current_size += os.path.getsize(fp)
+                file_count += 1
+            except OSError:
+                pass
+
+    free_space = 0
+    try:
+        stat = shutil.disk_usage(target if os.path.isdir(target) else os.path.dirname(target))
+        free_space = stat.free
+    except (OSError, AttributeError):
+        pass
+
+    enough_space = free_space > current_size * 1.1
+
+    return jsonify({
+        'target_path': target,
+        'current_path': current,
+        'writable': writable,
+        'current_size_bytes': current_size,
+        'current_size_mb': round(current_size / (1024 * 1024), 1),
+        'current_file_count': file_count,
+        'target_free_bytes': free_space,
+        'target_free_mb': round(free_space / (1024 * 1024), 1),
+        'enough_space': enough_space,
+        'viable': writable and enough_space,
+    })
+
+
+@system_bp.route('/api/storage/relocate', methods=['POST'])
+@require_auth('admin')
+@validate_json({
+    'target_path': {'type': str, 'required': True, 'min_length': 1, 'max_length': 1000},
+})
+def api_storage_relocate():
+    """Relocate the data directory to a new path.
+
+    Copies all data, verifies the copy, atomically switches config,
+    and keeps the old path as a rollback reference.
+    """
+    data = request.get_json() or {}
+    target = os.path.abspath(data['target_path'])
+    current = get_data_dir()
+
+    if os.path.normcase(target) == os.path.normcase(current):
+        return jsonify({'error': 'Target is the same as current data directory'}), 400
+
+    try:
+        os.makedirs(target, exist_ok=True)
+        test_file = os.path.join(target, '.nomad_write_test')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+    except OSError as e:
+        return jsonify({'error': f'Target not writable: {e}'}), 400
+
+    try:
+        stat = shutil.disk_usage(target)
+        current_size = sum(
+            os.path.getsize(os.path.join(dp, fn))
+            for dp, _, fns in os.walk(current)
+            for fn in fns
+        )
+        if stat.free < current_size * 1.1:
+            return jsonify({'error': 'Insufficient space on target drive'}), 400
+    except OSError:
+        pass
+
+    copied = 0
+    errors = []
+    for dirpath, dirnames, filenames in os.walk(current):
+        rel = os.path.relpath(dirpath, current)
+        target_dir = os.path.join(target, rel)
+        os.makedirs(target_dir, exist_ok=True)
+        for fn in filenames:
+            src = os.path.join(dirpath, fn)
+            dst = os.path.join(target_dir, fn)
+            try:
+                shutil.copy2(src, dst)
+                if os.path.getsize(src) != os.path.getsize(dst):
+                    errors.append(f'Size mismatch: {fn}')
+                copied += 1
+            except OSError as e:
+                errors.append(f'{fn}: {e}')
+
+    if errors:
+        log_activity('storage_relocation_failed', detail=f'{len(errors)} errors', level='error')
+        return jsonify({
+            'error': 'Copy errors detected — data directory NOT switched',
+            'errors': errors[:20],
+            'copied': copied,
+        }), 500
+
+    old_path = current
+    try:
+        set_data_dir(target)
+        log_activity('storage_relocated', detail=f'{old_path} -> {target}')
+        return jsonify({
+            'status': 'relocated',
+            'old_path': old_path,
+            'new_path': target,
+            'files_copied': copied,
+        })
+    except Exception as e:
+        return jsonify({'error': f'Config switch failed: {e}', 'rollback': old_path}), 500
+
+
 # ─── Print / Status / PDF Routes ─────────────────────────────────
 # [EXTRACTED to print_routes blueprint]

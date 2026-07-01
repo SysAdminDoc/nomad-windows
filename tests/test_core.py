@@ -1435,14 +1435,14 @@ class TestErrorHandler:
         assert 'AI service returned unreadable pull progress data.' in ollama_text
 
         assert 'def _safe_response_payload(response, fallback=None):' in cyberchef_text
-        assert 'release = _safe_response_payload(_api_resp, {})' in cyberchef_text
+        assert 'resolve_github_release(CYBERCHEF_RELEASE_API' in cyberchef_text
 
         assert 'def _safe_response_payload(response, fallback=None):' in qdrant_text
-        assert 'release = _safe_response_payload(resp, {})' in qdrant_text
+        assert 'resolve_github_release(QDRANT_RELEASE_API' in qdrant_text
         assert "payload = _safe_response_payload(r, {})" in qdrant_text
 
         assert 'def _safe_response_payload(response, fallback=None):' in stirling_text
-        assert 'release = _safe_response_payload(resp, {})' in stirling_text
+        assert 'resolve_github_release(STIRLING_RELEASE_API' in stirling_text
 
         assert "items = json.dumps(_safe_json_list(data.get('items', []), []))" in checklists_text
         assert "update_data['items'] = json.dumps(_safe_json_list(data['items'], []))" in checklists_text

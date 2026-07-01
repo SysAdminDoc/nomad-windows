@@ -334,6 +334,15 @@ class TestFederationRelayAlertValidation:
 
 
 class TestGroupExercises:
+    def _exercise_mutation_routes(self, exercise_id='exercise-validation'):
+        return [
+            '/api/group-exercises',
+            '/api/group-exercises/invite',
+            f'/api/group-exercises/{exercise_id}/participant-joined',
+            f'/api/group-exercises/{exercise_id}/update-state',
+            f'/api/group-exercises/{exercise_id}/sync-state',
+        ]
+
     def test_group_exercises_list(self, client):
         resp = client.get('/api/group-exercises')
         assert resp.status_code == 200
@@ -350,6 +359,32 @@ class TestGroupExercises:
         data = resp.get_json()
         assert 'exercise_id' in data
         assert 'invited' in data
+
+    def test_group_exercise_mutations_reject_malformed_json(self, client):
+        for path in self._exercise_mutation_routes():
+            resp = client.post(path, data='{bad', content_type='application/json')
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_group_exercise_mutations_reject_non_object_json(self, client):
+        for path in self._exercise_mutation_routes():
+            resp = client.post(path, data='[]', content_type='application/json')
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_group_exercise_mutations_reject_wrong_shape_fields(self, client):
+        cases = [
+            ('/api/group-exercises', {'title': ['bad']}),
+            ('/api/group-exercises/invite', {'exercise_id': ['bad']}),
+            ('/api/group-exercises/exercise-validation/participant-joined', {'node_id': {'bad': True}}),
+            ('/api/group-exercises/exercise-validation/update-state', {'phase': []}),
+            ('/api/group-exercises/exercise-validation/sync-state', {'shared_state': []}),
+            ('/api/group-exercises/exercise-validation/sync-state', {'decisions_log': {'bad': True}}),
+        ]
+        for path, payload in cases:
+            resp = client.post(path, json=payload)
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Validation failed'
 
     def test_group_exercises_list_recovers_from_corrupted_json_fields(self, client, db):
         create = client.post('/api/group-exercises', json={

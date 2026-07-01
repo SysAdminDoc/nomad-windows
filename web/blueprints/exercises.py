@@ -2,13 +2,13 @@
 
 import json
 import logging
-import platform
 import time
 import uuid as _uuid
 
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.validation import validate_optional_json
 from web.utils import (
     safe_json_list as _safe_json_list,
     safe_json_object as _safe_json_object,
@@ -19,6 +19,49 @@ from web.utils import (
 log = logging.getLogger('nomad.web')
 
 exercises_bp = Blueprint('exercises', __name__)
+
+_TEXT_100 = {'type': str, 'max_length': 100}
+_TEXT_200 = {'type': str, 'max_length': 200}
+_TEXT_1000 = {'type': str, 'max_length': 1000}
+_TEXT_5000 = {'type': str, 'max_length': 5000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_JSONISH_LIST = {'type': (list, str)}
+_JSONISH_OBJECT = {'type': (dict, str)}
+
+_EXERCISE_CREATE_SCHEMA = {
+    'title': _TEXT_200,
+    'scenario_type': _TEXT_100,
+    'description': _TEXT_1000,
+}
+_EXERCISE_INVITE_SCHEMA = {
+    'exercise_id': _TEXT_100,
+    'title': _TEXT_200,
+    'scenario_type': _TEXT_100,
+    'description': _TEXT_1000,
+    'initiator_node': _TEXT_200,
+    'initiator_name': _TEXT_200,
+}
+_PARTICIPANT_JOINED_SCHEMA = {
+    'node_id': _TEXT_200,
+    'node_name': _TEXT_200,
+}
+_EXERCISE_UPDATE_SCHEMA = {
+    'phase': _NUMBER_INPUT,
+    'event': _TEXT_5000,
+    'decision': _TEXT_5000,
+    'status': _TEXT_100,
+    'score': _NUMBER_INPUT,
+    'aar_text': _TEXT_5000,
+}
+_EXERCISE_SYNC_SCHEMA = {
+    'source_node_id': _TEXT_200,
+    'shared_state': _JSONISH_OBJECT,
+    'decisions_log': _JSONISH_LIST,
+    'status': _TEXT_100,
+    'score': _NUMBER_INPUT,
+    'aar_text': _TEXT_5000,
+    'phase': _NUMBER_INPUT,
+}
 
 
 def _get_trusted_peers():
@@ -46,6 +89,7 @@ def api_group_exercises_list():
     return jsonify(result)
 
 @exercises_bp.route('/api/group-exercises', methods=['POST'])
+@validate_optional_json(_EXERCISE_CREATE_SCHEMA)
 def api_group_exercises_create():
     """Create a new group exercise and broadcast to federation peers."""
     data = request.get_json() or {}
@@ -83,6 +127,7 @@ def api_group_exercises_create():
     return jsonify({'exercise_id': exercise_id, 'invited': invited}), 201
 
 @exercises_bp.route('/api/group-exercises/invite', methods=['POST'])
+@validate_optional_json(_EXERCISE_INVITE_SCHEMA)
 def api_group_exercises_invite():
     """Receive an exercise invitation from a peer."""
     data = request.get_json() or {}
@@ -146,6 +191,7 @@ def api_group_exercises_join(exercise_id):
     return jsonify({'status': 'joined', 'participants': len(participants)})
 
 @exercises_bp.route('/api/group-exercises/<exercise_id>/participant-joined', methods=['POST'])
+@validate_optional_json(_PARTICIPANT_JOINED_SCHEMA)
 def api_group_exercises_participant_joined(exercise_id):
     """Receive notification that a peer joined."""
     data = request.get_json() or {}
@@ -163,6 +209,7 @@ def api_group_exercises_participant_joined(exercise_id):
     return jsonify({'status': 'noted'})
 
 @exercises_bp.route('/api/group-exercises/<exercise_id>/update-state', methods=['POST'])
+@validate_optional_json(_EXERCISE_UPDATE_SCHEMA)
 def api_group_exercises_update_state(exercise_id):
     """Update shared exercise state (phase advance, decision, etc.)."""
     data = request.get_json() or {}
@@ -225,6 +272,7 @@ def api_group_exercises_update_state(exercise_id):
     return jsonify({'status': 'updated'})
 
 @exercises_bp.route('/api/group-exercises/<exercise_id>/sync-state', methods=['POST'])
+@validate_optional_json(_EXERCISE_SYNC_SCHEMA)
 def api_group_exercises_sync_state(exercise_id):
     """Receive state update from another participant."""
     data = request.get_json() or {}

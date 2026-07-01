@@ -341,6 +341,13 @@ def api_kb_upload():
 
                 qdrant.upsert_vectors(all_points)
 
+                for idx, chunk in enumerate(chunks):
+                    db2.execute(
+                        'INSERT OR REPLACE INTO kb_chunks (doc_id, chunk_index, text, filename) '
+                        'VALUES (?, ?, ?, ?)',
+                        (doc_id, idx, chunk, filename)
+                    )
+
                 db2.execute('UPDATE documents SET status = ?, chunks_count = ? WHERE id = ?',
                             ('ready', total, doc_id))
                 db2.commit()
@@ -382,6 +389,7 @@ def api_kb_document_delete(doc_id):
             if os.path.normcase(filepath).startswith(os.path.normcase(upload_dir) + os.sep) and os.path.isfile(filepath):
                 os.remove(filepath)
             qdrant.delete_by_doc_id(doc_id)
+            db.execute('DELETE FROM kb_chunks WHERE doc_id = ?', (doc_id,))
             db.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
             db.commit()
     return jsonify({'status': 'deleted'})
@@ -448,6 +456,7 @@ def api_kb_purge():
                     and os.path.isfile(filepath)):
                 os.remove(filepath)
             qdrant.delete_by_doc_id(doc['id'])
+            db.execute('DELETE FROM kb_chunks WHERE doc_id = ?', (doc['id'],))
             db.execute('DELETE FROM documents WHERE id = ?', (doc['id'],))
             purged += 1
         db.commit()
@@ -469,26 +478,116 @@ def api_kb_search():
     data = request.get_json() or {}
     query = data.get('query', '')
     limit = data.get('limit', 5)
+    mode = data.get('mode', 'hybrid')
     workspace_id = data.get('workspace_id') or request.args.get('workspace_id')
     if not query:
         return jsonify([])
+
+    vector_results = []
+    lexical_results = []
+
+    if mode in ('hybrid', 'vector') and qdrant.running():
+        try:
+            vectors = embed_text([query], prefix='search_query: ')
+            if vectors:
+                filter_params = None
+                if workspace_id:
+                    filter_params = {"must": [{"key": "workspace_id", "match": {"value": int(workspace_id)}}]}
+                raw = qdrant.search(vectors[0], limit=limit * 2, filter_params=filter_params)
+                for r in raw:
+                    payload = r.get('payload', {})
+                    vector_results.append({
+                        'text': payload.get('text', ''),
+                        'filename': payload.get('filename', ''),
+                        'doc_id': payload.get('doc_id'),
+                        'chunk_index': payload.get('chunk_index', 0),
+                        'score': round(r.get('score', 0), 4),
+                        'source': 'vector',
+                    })
+        except Exception as e:
+            log.warning('Vector search failed (falling back to lexical): %s', e)
+
+    if mode in ('hybrid', 'lexical'):
+        try:
+            lexical_results = _lexical_search(query, limit=limit * 2, workspace_id=workspace_id)
+        except Exception as e:
+            log.warning('Lexical search failed: %s', e)
+
+    merged = _merge_results(vector_results, lexical_results, limit=limit)
+    return jsonify(merged)
+
+
+def _lexical_search(query, limit=10, workspace_id=None):
+    """BM25 search via SQLite FTS5 on kb_chunks_fts (falls back to LIKE)."""
+    results = []
     try:
-        vectors = embed_text([query], prefix='search_query: ')
-        if not vectors:
-            return jsonify([])
-        # Build filter for workspace-scoped search
-        filter_params = None
-        if workspace_id:
-            filter_params = {"must": [{"key": "workspace_id", "match": {"value": int(workspace_id)}}]}
-        results = qdrant.search(vectors[0], limit=limit, filter_params=filter_params)
-        return jsonify([{
-            'text': r.get('payload', {}).get('text', ''),
-            'filename': r.get('payload', {}).get('filename', ''),
-            'score': r.get('score', 0),
-        } for r in results])
+        with db_session() as db:
+            has_fts = db.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='kb_chunks_fts'"
+            ).fetchone()
+            if has_fts:
+                safe_q = query.replace('"', '""')
+                rows = db.execute(
+                    'SELECT rowid, text, filename, doc_id, chunk_index, '
+                    'bm25(kb_chunks_fts) AS rank '
+                    'FROM kb_chunks_fts WHERE kb_chunks_fts MATCH ? '
+                    'ORDER BY rank LIMIT ?',
+                    (f'"{safe_q}"', limit)
+                ).fetchall()
+                for r in rows:
+                    results.append({
+                        'text': r['text'],
+                        'filename': r['filename'],
+                        'doc_id': r['doc_id'],
+                        'chunk_index': r['chunk_index'],
+                        'score': round(abs(r['rank']), 4),
+                        'source': 'lexical',
+                    })
+            else:
+                like_q = f'%{query}%'
+                rows = db.execute(
+                    'SELECT id, text, filename, doc_id, chunk_index '
+                    'FROM kb_chunks WHERE text LIKE ? LIMIT ?',
+                    (like_q, limit)
+                ).fetchall()
+                for r in rows:
+                    results.append({
+                        'text': r['text'],
+                        'filename': r['filename'],
+                        'doc_id': r['doc_id'],
+                        'chunk_index': r['chunk_index'],
+                        'score': 1.0,
+                        'source': 'lexical',
+                    })
     except Exception as e:
-        log.error(f'KB search failed: {e}')
-        return jsonify([])
+        log.warning('Lexical search error: %s', e)
+    return results
+
+
+def _merge_results(vector_results, lexical_results, limit=5):
+    """Merge and deduplicate vector + lexical results by (doc_id, chunk_index)."""
+    seen = set()
+    merged = []
+
+    for r in vector_results:
+        key = (r.get('doc_id'), r.get('chunk_index', 0))
+        if key not in seen:
+            seen.add(key)
+            merged.append(r)
+
+    for r in lexical_results:
+        key = (r.get('doc_id'), r.get('chunk_index', 0))
+        if key not in seen:
+            seen.add(key)
+            merged.append(r)
+        else:
+            for m in merged:
+                if (m.get('doc_id'), m.get('chunk_index', 0)) == key:
+                    m['source'] = 'hybrid'
+                    break
+
+    merged.sort(key=lambda x: x.get('score', 0), reverse=True)
+    return merged[:limit]
 
 
 # ─── Document Analysis ──────────────────────────────────────────────

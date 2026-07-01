@@ -2241,6 +2241,45 @@ _COLUMN_MIGRATIONS = {
 }
 
 
+def _create_kb_chunks_table(conn):
+    """Store KB chunk text for FTS5 lexical search alongside Qdrant vectors."""
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS kb_chunks (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            doc_id      INTEGER NOT NULL,
+            chunk_index INTEGER NOT NULL DEFAULT 0,
+            text        TEXT NOT NULL DEFAULT '',
+            filename    TEXT NOT NULL DEFAULT '',
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(doc_id, chunk_index)
+        );
+    ''')
+    try:
+        conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='kb_chunks_fts'")
+        has_fts = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='kb_chunks_fts'"
+        ).fetchone()
+        if not has_fts:
+            conn.execute(
+                "CREATE VIRTUAL TABLE IF NOT EXISTS kb_chunks_fts USING fts5("
+                "text, filename, doc_id UNINDEXED, chunk_index UNINDEXED, "
+                "content='kb_chunks', content_rowid='id', "
+                "tokenize='porter unicode61 remove_diacritics 2')"
+            )
+            conn.executescript('''
+                CREATE TRIGGER IF NOT EXISTS kb_chunks_fts_ai AFTER INSERT ON kb_chunks BEGIN
+                    INSERT INTO kb_chunks_fts(rowid, text, filename, doc_id, chunk_index)
+                    VALUES (new.id, new.text, new.filename, new.doc_id, new.chunk_index);
+                END;
+                CREATE TRIGGER IF NOT EXISTS kb_chunks_fts_ad AFTER DELETE ON kb_chunks BEGIN
+                    INSERT INTO kb_chunks_fts(kb_chunks_fts, rowid, text, filename, doc_id, chunk_index)
+                    VALUES('delete', old.id, old.text, old.filename, old.doc_id, old.chunk_index);
+                END;
+            ''')
+    except Exception as e:
+        _log.warning('FTS5 for kb_chunks not available: %s', e)
+
+
 def _create_guidance_sources_table(conn):
     """Track review status and source references for high-risk field guidance."""
     conn.executescript('''
@@ -5849,6 +5888,7 @@ def _init_db_inner(conn):
     _create_platform_security_tables(conn)
     _create_specialized_modules_tables(conn)
     _create_roadmap_v747_tables(conn)
+    _create_kb_chunks_table(conn)
     _create_guidance_sources_table(conn)
     _apply_column_migrations(conn)
     _migrate_access_logs(conn)

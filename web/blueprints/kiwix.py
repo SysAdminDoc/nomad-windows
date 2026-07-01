@@ -28,7 +28,10 @@ _DELETE_SCHEMA = {'filename': _TEXT_255}
 def api_kiwix_zims():
     if not kiwix.is_installed():
         return jsonify([])
-    return jsonify(kiwix.list_zim_files())
+    zims = kiwix.list_zim_files()
+    if request.args.get('lifecycle') == '1':
+        zims = _enrich_lifecycle(zims)
+    return jsonify(zims)
 
 @kiwix_bp.route('/api/kiwix/catalog')
 def api_kiwix_catalog():
@@ -143,3 +146,84 @@ def api_kiwix_wikipedia_options():
                     options.append({**z, 'tier': tier_name})
             return jsonify(options)
     return jsonify([])
+
+
+# ─── Content Lifecycle ───────────────────────────────────────────
+
+import hashlib
+import os
+import re as _re
+
+
+def _parse_zim_filename(filename):
+    """Extract metadata from a ZIM filename like wikipedia_en_all_maxi_2026-02.zim."""
+    m = _re.match(r'^(.+?)_(\d{4}-\d{2})\.zim$', filename)
+    if m:
+        return {'base_name': m.group(1), 'date': m.group(2)}
+    return {'base_name': filename.replace('.zim', ''), 'date': ''}
+
+
+def _enrich_lifecycle(zims):
+    """Add lifecycle metadata: parsed name, date, language, searchable status."""
+    catalog_flat = {}
+    for cat in kiwix.get_catalog():
+        for tier_name, tier_items in cat.get('tiers', {}).items():
+            for item in tier_items:
+                catalog_flat[item['filename']] = item
+
+    enriched = []
+    for z in zims:
+        fname = z.get('filename', '')
+        parsed = _parse_zim_filename(fname)
+        cat_entry = catalog_flat.get(fname, {})
+
+        lang = ''
+        title = parsed['base_name']
+        parts = parsed['base_name'].split('_')
+        if len(parts) >= 2:
+            lang = parts[1]
+            title = cat_entry.get('name', ' '.join(parts).replace('_', ' '))
+
+        is_stale = False
+        available_update = ''
+        for k, v in catalog_flat.items():
+            if k != fname and _parse_zim_filename(k)['base_name'] == parsed['base_name']:
+                if _parse_zim_filename(k)['date'] > parsed['date']:
+                    is_stale = True
+                    available_update = k
+                    break
+
+        enriched.append({
+            **z,
+            'title': title,
+            'language': lang,
+            'content_date': parsed['date'],
+            'searchable': kiwix.running(),
+            'is_stale': is_stale,
+            'available_update': available_update,
+            'catalog_match': bool(cat_entry),
+        })
+    return enriched
+
+
+@kiwix_bp.route('/api/kiwix/lifecycle')
+def api_kiwix_lifecycle():
+    """Full lifecycle view: installed ZIMs with status, staleness, and orphan detection."""
+    if not kiwix.is_installed():
+        return jsonify({'installed': [], 'summary': {
+            'total_count': 0, 'total_size_mb': 0, 'stale_count': 0, 'searchable': False,
+        }})
+
+    zims = _enrich_lifecycle(kiwix.list_zim_files())
+    total_mb = sum(z.get('size_mb', 0) for z in zims)
+    stale_count = sum(1 for z in zims if z.get('is_stale'))
+
+    return jsonify({
+        'installed': zims,
+        'summary': {
+            'total_count': len(zims),
+            'total_size_mb': round(total_mb, 1),
+            'stale_count': stale_count,
+            'searchable': kiwix.running(),
+        },
+    })

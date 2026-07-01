@@ -1247,6 +1247,7 @@ class TestErrorHandler:
         federation_text = (REPO_ROOT / 'web' / 'blueprints' / 'federation.py').read_text(encoding='utf-8')
         inventory_text = (REPO_ROOT / 'web' / 'blueprints' / 'inventory.py').read_text(encoding='utf-8')
         sitroom_blueprint_text = (REPO_ROOT / 'web' / 'blueprints' / 'situation_room.py').read_text(encoding='utf-8')
+        sr_fetchers_text = (REPO_ROOT / 'web' / 'sr_fetchers.py').read_text(encoding='utf-8')
         exercises_text = (REPO_ROOT / 'web' / 'blueprints' / 'exercises.py').read_text(encoding='utf-8')
         preparedness_text = (REPO_ROOT / 'web' / 'blueprints' / 'preparedness.py').read_text(encoding='utf-8')
         tasks_text = (REPO_ROOT / 'web' / 'blueprints' / 'tasks.py').read_text(encoding='utf-8')
@@ -1391,15 +1392,16 @@ class TestErrorHandler:
         assert "extracted_items = _parse_structured_items(raw_text)" in inventory_text
         assert "for item in _extract_json_array(raw_response):" in inventory_text
 
-        assert "prices = _safe_json_value(m.get('outcomePrices', '[]'), [])" in sitroom_blueprint_text
+        # Fetcher-level safety patterns live in sr_fetchers.py (extracted from situation_room.py)
+        assert "prices = _safe_json_value(m.get('outcomePrices', '[]'), [])" in sr_fetchers_text
         assert "sw = _safe_json_object(sw_row['value_json'], {})" in sitroom_blueprint_text
-        assert 'def _safe_response_json(response, fallback=None):' in sitroom_blueprint_text
+        assert 'def _safe_response_json(response, fallback=None):' in sr_fetchers_text
         assert "data = _safe_response_json(resp, {})" in sitroom_blueprint_text
-        assert "markets = _safe_response_json(resp, [])" in sitroom_blueprint_text
-        assert "kp_data = _safe_response_json(resp, [])" in sitroom_blueprint_text
-        assert "alerts = _safe_response_json(resp, [])" in sitroom_blueprint_text
-        assert "rows = payload.get('response', {}).get('data', []) if isinstance(payload, dict) else []" in sitroom_blueprint_text
-        assert "data = _safe_response_json(resp, []) if resp.text.strip() else []" in sitroom_blueprint_text
+        assert "markets = _safe_response_json(resp, [])" in sr_fetchers_text
+        assert "kp_data = _safe_response_json(resp, [])" in sr_fetchers_text
+        assert "alerts = _safe_response_json(resp, [])" in sr_fetchers_text
+        assert "rows = payload.get('response', {}).get('data', []) if isinstance(payload, dict) else []" in sr_fetchers_text
+        assert "data = _safe_response_json(resp, []) if resp.text.strip() else []" in sr_fetchers_text
 
         assert 'safe_json_object as _safe_json_object' in exercises_text
         assert "entry['shared_state'] = _safe_json_object(entry.get('shared_state'), {})" in exercises_text

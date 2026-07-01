@@ -958,7 +958,17 @@ def api_edibles_list():
             params.append(f'%{region}%')
         q += ' ORDER BY common_name'
         rows = db.execute(q, params).fetchall()
-    return jsonify([dict(r) for r in rows])
+    results = [dict(r) for r in rows]
+    for item in results:
+        item['_review_status'] = 'unreviewed'
+    try:
+        from web.blueprints.system import get_guidance_source
+        source_meta = get_guidance_source('foraging', 'edibles')
+        for item in results:
+            item['_review_status'] = source_meta.get('review_status', 'unreviewed')
+    except Exception:
+        pass
+    return jsonify(results)
 
 
 @hunting_foraging_bp.route('/edibles', methods=['POST'])

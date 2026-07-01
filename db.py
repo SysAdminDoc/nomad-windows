@@ -2241,6 +2241,24 @@ _COLUMN_MIGRATIONS = {
 }
 
 
+def _create_guidance_sources_table(conn):
+    """Track review status and source references for high-risk field guidance."""
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS guidance_sources (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            domain        TEXT NOT NULL,
+            content_key   TEXT NOT NULL,
+            review_status TEXT NOT NULL DEFAULT 'unreviewed',
+            source_refs   TEXT DEFAULT '[]',
+            last_reviewed TEXT DEFAULT '',
+            reviewer_notes TEXT DEFAULT '',
+            created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(domain, content_key)
+        );
+    ''')
+
+
 def _apply_column_migrations(conn):
     """Apply ALTER TABLE column migrations, skipping already-applied versions.
 
@@ -5831,6 +5849,7 @@ def _init_db_inner(conn):
     _create_platform_security_tables(conn)
     _create_specialized_modules_tables(conn)
     _create_roadmap_v747_tables(conn)
+    _create_guidance_sources_table(conn)
     _apply_column_migrations(conn)
     _migrate_access_logs(conn)
     _create_indexes(conn)

@@ -604,6 +604,31 @@ def api_ai_chat():
     except Exception as e:
         log.warning(f'AI memory injection failed: {e}')
 
+    # High-risk domain guardrails: detect medical/foraging/CBRN topics and
+    # inject non-diagnostic safety posture into the system prompt.
+    _high_risk_keywords = {
+        'medical': ('diagnosis', 'dosage', 'medication', 'symptom', 'treatment', 'prescription'),
+        'foraging': ('edible', 'forag', 'mushroom', 'wild plant', 'wild food', 'berry'),
+        'cbrn': ('cbrn', 'radiation', 'nuclear', 'chemical agent', 'nerve agent', 'decontamination'),
+    }
+    last_user_text = next(
+        (m.get('content', '') for m in reversed(messages) if m.get('role') == 'user'), ''
+    ).lower()
+    _active_domains = [
+        domain for domain, keywords in _high_risk_keywords.items()
+        if any(kw in last_user_text for kw in keywords)
+    ]
+    if _active_domains:
+        guardrail = (
+            '\n\nIMPORTANT SAFETY GUIDELINES for this response:\n'
+            '- Do NOT provide diagnoses, prescriptions, or definitive plant/mushroom identifications.\n'
+            '- Present information as reference material, not medical/foraging advice.\n'
+            '- Recommend professional consultation (doctor, mycologist, hazmat team) when appropriate.\n'
+            '- Cite sources from the knowledge base when available.\n'
+            '- Flag unreviewed or user-contributed content as needing expert verification.'
+        )
+        system_prompt = (system_prompt or '') + guardrail
+
     if system_prompt:
         messages = [{'role': 'system', 'content': system_prompt}] + messages
 

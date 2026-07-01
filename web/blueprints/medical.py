@@ -1357,9 +1357,21 @@ def api_medical_reference():
         },
     }
 
+    try:
+        from web.blueprints.system import get_guidance_source
+        source_meta = get_guidance_source('medical', category or 'all')
+    except Exception:
+        source_meta = {'review_status': 'unreviewed', 'source_refs': [], 'last_reviewed': ''}
+
     if category and category in references:
-        return jsonify(references[category])
-    return jsonify({'categories': list(references.keys()), 'data': references})
+        result = references[category]
+        result['_source'] = source_meta
+        return jsonify(result)
+    return jsonify({
+        'categories': list(references.keys()),
+        'data': references,
+        '_source': source_meta,
+    })
 
 
 @medical_bp.route('/api/medical/reference/search')

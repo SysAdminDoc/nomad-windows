@@ -88,6 +88,11 @@ def api_hazmat_agents_list():
         ]
 
     categories = sorted({a.get('category', '') for a in agents if a.get('category')})
+    try:
+        from web.blueprints.system import get_guidance_source
+        source_meta = get_guidance_source('hazmat', category or 'all')
+    except Exception:
+        source_meta = {'review_status': 'unreviewed', 'source_refs': [], 'last_reviewed': ''}
     return jsonify({
         'count': len(out),
         'total': len(agents),
@@ -101,6 +106,7 @@ def api_hazmat_agents_list():
             'USAMRIID Medical Management of Biological Casualties',
         ],
         'disclaimer': 'Educational reference only — field response requires trained HAZMAT / HMRT personnel with proper PPE and IC authority.',
+        '_source': source_meta,
     })
 
 

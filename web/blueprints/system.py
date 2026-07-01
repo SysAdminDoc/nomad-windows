@@ -2785,5 +2785,120 @@ def api_ollama_host_set():
 # [EXTRACTED to blueprint]
 
 
+# ─── Guidance Source Metadata ─────────────────────────────────────
+
+HIGH_RISK_DOMAINS = frozenset({
+    'medical', 'foraging', 'cbrn', 'nuclear', 'radiation',
+    'hazmat', 'medication', 'first_aid', 'triage',
+})
+
+
+@system_bp.route('/api/guidance-sources')
+def api_guidance_sources_list():
+    """List all guidance source metadata entries."""
+    domain = request.args.get('domain', '')
+    with db_session() as db:
+        if domain:
+            rows = db.execute(
+                'SELECT * FROM guidance_sources WHERE domain = ? ORDER BY content_key',
+                (domain,)
+            ).fetchall()
+        else:
+            rows = db.execute(
+                'SELECT * FROM guidance_sources ORDER BY domain, content_key'
+            ).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        try:
+            d['source_refs'] = json.loads(d.get('source_refs', '[]'))
+        except (json.JSONDecodeError, TypeError):
+            d['source_refs'] = []
+        result.append(d)
+    return jsonify(result)
+
+
+@system_bp.route('/api/guidance-sources', methods=['POST'])
+@validate_json({
+    'domain': {'type': str, 'required': True, 'max_length': 100},
+    'content_key': {'type': str, 'required': True, 'max_length': 200},
+    'review_status': {'type': str, 'max_length': 50,
+                      'choices': ['reviewed', 'unreviewed', 'needs_update', 'deprecated']},
+    'source_refs': {'type': (list, str)},
+    'last_reviewed': {'type': str, 'max_length': 30},
+    'reviewer_notes': {'type': str, 'max_length': 2000},
+})
+def api_guidance_sources_create():
+    data = request.get_json() or {}
+    refs = data.get('source_refs', [])
+    if isinstance(refs, list):
+        refs = json.dumps(refs)
+    with db_session() as db:
+        db.execute(
+            '''INSERT OR REPLACE INTO guidance_sources
+               (domain, content_key, review_status, source_refs, last_reviewed, reviewer_notes, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)''',
+            (data['domain'], data['content_key'],
+             data.get('review_status', 'unreviewed'),
+             refs,
+             data.get('last_reviewed', ''),
+             data.get('reviewer_notes', ''))
+        )
+        db.commit()
+    log_activity('guidance_source_updated', detail=f"{data['domain']}/{data['content_key']}")
+    return jsonify({'status': 'saved'}), 201
+
+
+@system_bp.route('/api/guidance-sources/<domain>/<content_key>')
+def api_guidance_source_detail(domain, content_key):
+    with db_session() as db:
+        row = db.execute(
+            'SELECT * FROM guidance_sources WHERE domain = ? AND content_key = ?',
+            (domain, content_key)
+        ).fetchone()
+    if not row:
+        return jsonify({
+            'domain': domain,
+            'content_key': content_key,
+            'review_status': 'unreviewed',
+            'source_refs': [],
+            'last_reviewed': '',
+            'reviewer_notes': '',
+        })
+    d = dict(row)
+    try:
+        d['source_refs'] = json.loads(d.get('source_refs', '[]'))
+    except (json.JSONDecodeError, TypeError):
+        d['source_refs'] = []
+    return jsonify(d)
+
+
+@system_bp.route('/api/guidance-sources/high-risk-domains')
+def api_high_risk_domains():
+    return jsonify(sorted(HIGH_RISK_DOMAINS))
+
+
+def get_guidance_source(domain, content_key):
+    """Helper for other blueprints to include source metadata in responses."""
+    with db_session() as db:
+        row = db.execute(
+            'SELECT review_status, source_refs, last_reviewed FROM guidance_sources '
+            'WHERE domain = ? AND content_key = ?',
+            (domain, content_key)
+        ).fetchone()
+    if not row:
+        return {'review_status': 'unreviewed', 'source_refs': [], 'last_reviewed': ''}
+    refs = row['source_refs']
+    try:
+        refs = json.loads(refs) if isinstance(refs, str) else refs
+    except (json.JSONDecodeError, TypeError):
+        refs = []
+    return {
+        'review_status': row['review_status'],
+        'source_refs': refs,
+        'last_reviewed': row['last_reviewed'] or '',
+    }
+
+
 # ─── Print / Status / PDF Routes ─────────────────────────────────
 # [EXTRACTED to print_routes blueprint]

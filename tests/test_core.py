@@ -1386,8 +1386,9 @@ class TestErrorHandler:
 
         assert 'from web.utils import' in inventory_text
         assert 'def _extract_json_array(raw_text):' in inventory_text
+        assert 'def _parse_structured_items(raw_text):' in inventory_text
         assert "result = _safe_json_value(resp.read(), {})" in inventory_text
-        assert "for item in _extract_json_array(raw_text):" in inventory_text
+        assert "extracted_items = _parse_structured_items(raw_text)" in inventory_text
         assert "for item in _extract_json_array(raw_response):" in inventory_text
 
         assert "prices = _safe_json_value(m.get('outcomePrices', '[]'), [])" in sitroom_blueprint_text

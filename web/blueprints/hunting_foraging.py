@@ -8,6 +8,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.validation import validate_optional_json
 
 _log = logging.getLogger(__name__)
 
@@ -15,6 +16,35 @@ hunting_foraging_bp = Blueprint('hunting_foraging', __name__, url_prefix='/api/h
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────
+
+_TEXT_INPUT = {'type': str, 'max_length': 5000}
+_NUMBER_INPUT = {'type': (int, float, str)}
+_BOOLISH_INPUT = {'type': (bool, int, float, str)}
+_JSONISH_INPUT = {'type': (list, dict, str)}
+_NUMERIC_FIELDS = {
+    'weight_lbs', 'meat_yield_lbs', 'length_inches', 'water_temp_f',
+    'quantity_harvested', 'check_frequency_hours', 'catches',
+    'projects_completed', 'skill_id', 'time_hours', 'output_quantity',
+    'processing_time_hours', 'shelf_life_days', 'yield_ratio', 'method_id',
+    'input_quantity',
+}
+_BOOLISH_FIELDS = {'field_dressed', 'trophy', 'kept', 'caught'}
+
+
+def _schema_for_fields(fields, json_fields=None):
+    json_fields = set(json_fields or [])
+    schema = {}
+    for field in fields:
+        if field in json_fields:
+            schema[field] = _JSONISH_INPUT
+        elif field in _BOOLISH_FIELDS:
+            schema[field] = _BOOLISH_INPUT
+        elif field in _NUMERIC_FIELDS:
+            schema[field] = _NUMBER_INPUT
+        else:
+            schema[field] = _TEXT_INPUT
+    return schema
+
 
 def _now():
     return datetime.utcnow().isoformat()
@@ -54,6 +84,7 @@ def _build_update(data, allowed, json_fields=None):
 GAME_FIELDS = ['date', 'species', 'game_type', 'location', 'gps_coords', 'method',
                'weapon_details', 'weight_lbs', 'meat_yield_lbs', 'field_dressed',
                'trophy', 'license_tag', 'season', 'weather_conditions', 'notes']
+GAME_SCHEMA = _schema_for_fields(GAME_FIELDS)
 
 
 @hunting_foraging_bp.route('/game/stats')
@@ -107,6 +138,7 @@ def api_game_list():
 
 
 @hunting_foraging_bp.route('/game', methods=['POST'])
+@validate_optional_json(GAME_SCHEMA)
 def api_game_create():
     data = request.get_json() or {}
     species = (data.get('species') or '').strip()
@@ -146,6 +178,7 @@ def api_game_detail(gid):
 
 
 @hunting_foraging_bp.route('/game/<int:gid>', methods=['PUT'])
+@validate_optional_json(GAME_SCHEMA)
 def api_game_update(gid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, GAME_FIELDS)
@@ -183,6 +216,7 @@ def api_game_delete(gid):
 FISHING_FIELDS = ['date', 'species', 'location', 'gps_coords', 'method', 'bait_lure',
                   'weight_lbs', 'length_inches', 'kept', 'water_type', 'water_temp_f',
                   'weather_conditions', 'notes']
+FISHING_SCHEMA = _schema_for_fields(FISHING_FIELDS)
 
 
 @hunting_foraging_bp.route('/fishing/stats')
@@ -230,6 +264,7 @@ def api_fishing_list():
 
 
 @hunting_foraging_bp.route('/fishing', methods=['POST'])
+@validate_optional_json(FISHING_SCHEMA)
 def api_fishing_create():
     data = request.get_json() or {}
     species = (data.get('species') or '').strip()
@@ -268,6 +303,7 @@ def api_fishing_detail(fid):
 
 
 @hunting_foraging_bp.route('/fishing/<int:fid>', methods=['PUT'])
+@validate_optional_json(FISHING_SCHEMA)
 def api_fishing_update(fid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, FISHING_FIELDS)
@@ -305,6 +341,7 @@ def api_fishing_delete(fid):
 FORAGING_FIELDS = ['date', 'plant_name', 'scientific_name', 'category', 'location',
                    'gps_coords', 'quantity_harvested', 'unit', 'season', 'habitat',
                    'confidence_level', 'photo_ref', 'preparation_notes', 'warnings', 'notes']
+FORAGING_SCHEMA = _schema_for_fields(FORAGING_FIELDS)
 
 
 @hunting_foraging_bp.route('/foraging')
@@ -326,6 +363,7 @@ def api_foraging_list():
 
 
 @hunting_foraging_bp.route('/foraging', methods=['POST'])
+@validate_optional_json(FORAGING_SCHEMA)
 def api_foraging_create():
     data = request.get_json() or {}
     plant = (data.get('plant_name') or '').strip()
@@ -363,6 +401,7 @@ def api_foraging_detail(fid):
 
 
 @hunting_foraging_bp.route('/foraging/<int:fid>', methods=['PUT'])
+@validate_optional_json(FORAGING_SCHEMA)
 def api_foraging_update(fid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, FORAGING_FIELDS)
@@ -402,6 +441,8 @@ TRAP_FIELDS = ['name', 'trap_type', 'target_species', 'location', 'gps_coords',
                'set_date', 'check_date', 'check_frequency_hours', 'status', 'catches',
                'materials_used', 'bait', 'instructions', 'legal_notes', 'notes']
 TRAP_JSON = ['materials_used']
+TRAP_SCHEMA = _schema_for_fields(TRAP_FIELDS, TRAP_JSON)
+TRAP_CHECK_SCHEMA = {'caught': _BOOLISH_INPUT, 'status': _TEXT_INPUT}
 
 
 @hunting_foraging_bp.route('/traps')
@@ -423,6 +464,7 @@ def api_traps_list():
 
 
 @hunting_foraging_bp.route('/traps', methods=['POST'])
+@validate_optional_json(TRAP_SCHEMA)
 def api_traps_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -462,6 +504,7 @@ def api_traps_detail(tid):
 
 
 @hunting_foraging_bp.route('/traps/<int:tid>', methods=['PUT'])
+@validate_optional_json(TRAP_SCHEMA)
 def api_traps_update(tid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, TRAP_FIELDS, json_fields=TRAP_JSON)
@@ -493,6 +536,7 @@ def api_traps_delete(tid):
 
 
 @hunting_foraging_bp.route('/traps/<int:tid>/check', methods=['POST'])
+@validate_optional_json(TRAP_CHECK_SCHEMA)
 def api_traps_check(tid):
     """Record a trap check — update check_date, optionally increment catches, update status."""
     data = request.get_json() or {}
@@ -527,6 +571,7 @@ EDIBLE_FIELDS = ['common_name', 'scientific_name', 'category', 'edible_parts',
                  'preparation_methods', 'nutritional_info', 'medicinal_uses',
                  'toxicity_warnings', 'image_ref', 'region', 'confidence_required']
 EDIBLE_JSON = ['edible_parts', 'season_available', 'preparation_methods']
+EDIBLE_SCHEMA = _schema_for_fields(EDIBLE_FIELDS, EDIBLE_JSON)
 
 SEED_WILD_EDIBLES = [
     {
@@ -917,6 +962,7 @@ def api_edibles_list():
 
 
 @hunting_foraging_bp.route('/edibles', methods=['POST'])
+@validate_optional_json(EDIBLE_SCHEMA)
 def api_edibles_create():
     data = request.get_json() or {}
     name = (data.get('common_name') or '').strip()
@@ -958,6 +1004,7 @@ def api_edibles_detail(eid):
 
 
 @hunting_foraging_bp.route('/edibles/<int:eid>', methods=['PUT'])
+@validate_optional_json(EDIBLE_SCHEMA)
 def api_edibles_update(eid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, EDIBLE_FIELDS, json_fields=EDIBLE_JSON)
@@ -1039,6 +1086,7 @@ SKILL_FIELDS = ['skill_name', 'category', 'practitioner', 'skill_level',
                 'tools_required', 'materials_required', 'description',
                 'projects_completed', 'last_practiced', 'learning_resources', 'notes']
 SKILL_JSON = ['tools_required', 'materials_required']
+SKILL_SCHEMA = _schema_for_fields(SKILL_FIELDS, SKILL_JSON)
 
 
 @hunting_foraging_bp.route('/skills')
@@ -1056,6 +1104,7 @@ def api_skills_list():
 
 
 @hunting_foraging_bp.route('/skills', methods=['POST'])
+@validate_optional_json(SKILL_SCHEMA)
 def api_skills_create():
     data = request.get_json() or {}
     name = (data.get('skill_name') or '').strip()
@@ -1093,6 +1142,7 @@ def api_skills_detail(sid):
 
 
 @hunting_foraging_bp.route('/skills/<int:sid>', methods=['PUT'])
+@validate_optional_json(SKILL_SCHEMA)
 def api_skills_update(sid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, SKILL_FIELDS, json_fields=SKILL_JSON)
@@ -1133,6 +1183,7 @@ PROJECT_FIELDS = ['skill_id', 'name', 'description', 'materials', 'tools', 'step
                   'time_hours', 'difficulty', 'output_item', 'output_quantity', 'status',
                   'started_date', 'completed_date', 'notes']
 PROJECT_JSON = ['materials', 'tools', 'steps']
+PROJECT_SCHEMA = _schema_for_fields(PROJECT_FIELDS, PROJECT_JSON)
 
 
 @hunting_foraging_bp.route('/projects')
@@ -1154,6 +1205,7 @@ def api_projects_list():
 
 
 @hunting_foraging_bp.route('/projects', methods=['POST'])
+@validate_optional_json(PROJECT_SCHEMA)
 def api_projects_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -1193,6 +1245,7 @@ def api_projects_detail(pid):
 
 
 @hunting_foraging_bp.route('/projects/<int:pid>', methods=['PUT'])
+@validate_optional_json(PROJECT_SCHEMA)
 def api_projects_update(pid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, PROJECT_FIELDS, json_fields=PROJECT_JSON)
@@ -1232,6 +1285,7 @@ PRES_FIELDS = ['name', 'method_type', 'input_item', 'output_item', 'equipment_ne
                'supplies_needed', 'process_steps', 'processing_time_hours', 'shelf_life_days',
                'yield_ratio', 'safety_notes', 'temperature_requirements', 'notes']
 PRES_JSON = ['equipment_needed', 'supplies_needed', 'process_steps']
+PRES_SCHEMA = _schema_for_fields(PRES_FIELDS, PRES_JSON)
 
 
 @hunting_foraging_bp.route('/preservation')
@@ -1249,6 +1303,7 @@ def api_preservation_list():
 
 
 @hunting_foraging_bp.route('/preservation', methods=['POST'])
+@validate_optional_json(PRES_SCHEMA)
 def api_preservation_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -1290,6 +1345,7 @@ def api_preservation_detail(pid):
 
 
 @hunting_foraging_bp.route('/preservation/<int:pid>', methods=['PUT'])
+@validate_optional_json(PRES_SCHEMA)
 def api_preservation_update(pid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, PRES_FIELDS, json_fields=PRES_JSON)
@@ -1358,6 +1414,7 @@ def api_preservation_seed():
 BATCH_FIELDS = ['method_id', 'batch_name', 'date_processed', 'input_quantity', 'input_unit',
                 'output_quantity', 'output_unit', 'expiration_date', 'storage_location',
                 'quality_check', 'processor', 'notes']
+BATCH_SCHEMA = _schema_for_fields(BATCH_FIELDS)
 
 
 @hunting_foraging_bp.route('/batches')
@@ -1375,6 +1432,7 @@ def api_batches_list():
 
 
 @hunting_foraging_bp.route('/batches', methods=['POST'])
+@validate_optional_json(BATCH_SCHEMA)
 def api_batches_create():
     data = request.get_json() or {}
     batch_name = (data.get('batch_name') or '').strip()
@@ -1413,6 +1471,7 @@ def api_batches_detail(bid):
 
 
 @hunting_foraging_bp.route('/batches/<int:bid>', methods=['PUT'])
+@validate_optional_json(BATCH_SCHEMA)
 def api_batches_update(bid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, BATCH_FIELDS)
@@ -1453,6 +1512,7 @@ ZONE_FIELDS = ['name', 'zone_type', 'location', 'gps_bounds', 'terrain',
                'target_species', 'season_dates', 'regulations', 'access_notes',
                'blind_stand_locations', 'trail_cam_locations', 'last_scouted', 'notes']
 ZONE_JSON = ['target_species', 'blind_stand_locations', 'trail_cam_locations']
+ZONE_SCHEMA = _schema_for_fields(ZONE_FIELDS, ZONE_JSON)
 
 
 @hunting_foraging_bp.route('/zones')
@@ -1470,6 +1530,7 @@ def api_zones_list():
 
 
 @hunting_foraging_bp.route('/zones', methods=['POST'])
+@validate_optional_json(ZONE_SCHEMA)
 def api_zones_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -1509,6 +1570,7 @@ def api_zones_detail(zid):
 
 
 @hunting_foraging_bp.route('/zones/<int:zid>', methods=['PUT'])
+@validate_optional_json(ZONE_SCHEMA)
 def api_zones_update(zid):
     data = request.get_json() or {}
     sets, vals = _build_update(data, ZONE_FIELDS, json_fields=ZONE_JSON)

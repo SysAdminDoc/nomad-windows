@@ -59,6 +59,73 @@ def _make_preservation(client, **overrides):
     return resp.get_json()
 
 
+def _hunting_mutation_routes():
+    return [
+        ('post', '/api/hunting/game'),
+        ('put', '/api/hunting/game/99999'),
+        ('post', '/api/hunting/fishing'),
+        ('put', '/api/hunting/fishing/99999'),
+        ('post', '/api/hunting/foraging'),
+        ('put', '/api/hunting/foraging/99999'),
+        ('post', '/api/hunting/traps'),
+        ('put', '/api/hunting/traps/99999'),
+        ('post', '/api/hunting/traps/99999/check'),
+        ('post', '/api/hunting/edibles'),
+        ('put', '/api/hunting/edibles/99999'),
+        ('post', '/api/hunting/skills'),
+        ('put', '/api/hunting/skills/99999'),
+        ('post', '/api/hunting/projects'),
+        ('put', '/api/hunting/projects/99999'),
+        ('post', '/api/hunting/preservation'),
+        ('put', '/api/hunting/preservation/99999'),
+        ('post', '/api/hunting/batches'),
+        ('put', '/api/hunting/batches/99999'),
+        ('post', '/api/hunting/zones'),
+        ('put', '/api/hunting/zones/99999'),
+    ]
+
+
+class TestHuntingPayloadValidation:
+    def test_mutation_routes_reject_malformed_json(self, client):
+        for method, path in _hunting_mutation_routes():
+            resp = getattr(client, method)(
+                path,
+                data='{bad',
+                content_type='application/json',
+            )
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_mutation_routes_reject_non_object_json(self, client):
+        for method, path in _hunting_mutation_routes():
+            resp = getattr(client, method)(
+                path,
+                data='[]',
+                content_type='application/json',
+            )
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_mutation_routes_reject_wrong_shape_fields(self, client):
+        cases = [
+            ('post', '/api/hunting/game', {'species': ['bad']}),
+            ('post', '/api/hunting/fishing', {'weight_lbs': []}),
+            ('post', '/api/hunting/foraging', {'quantity_harvested': []}),
+            ('post', '/api/hunting/traps', {'materials_used': 42}),
+            ('post', '/api/hunting/traps/99999/check', {'caught': []}),
+            ('post', '/api/hunting/edibles', {'edible_parts': 42}),
+            ('post', '/api/hunting/skills', {'tools_required': 42}),
+            ('post', '/api/hunting/projects', {'materials': 42}),
+            ('post', '/api/hunting/preservation', {'process_steps': 42}),
+            ('post', '/api/hunting/batches', {'input_quantity': []}),
+            ('post', '/api/hunting/zones', {'target_species': 42}),
+        ]
+        for method, path, payload in cases:
+            resp = getattr(client, method)(path, json=payload)
+            assert resp.status_code == 400, path
+            assert resp.get_json()['error'] == 'Validation failed'
+
+
 class TestHuntingGameAndFishing:
     def test_game_crud_filters_and_stats(self, client):
         deer = _make_game(client)

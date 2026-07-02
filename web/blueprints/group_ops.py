@@ -4,7 +4,7 @@ community warnings (Phase 11)."""
 
 import json
 import logging
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 from flask import Blueprint, request, jsonify
 
@@ -75,7 +75,7 @@ def api_pod_create():
     data = request.get_json() or {}
     if not data.get('name'):
         return jsonify({'error': 'Name required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO pods (name, description, location, status, leader_contact_id,
@@ -117,7 +117,7 @@ def api_pod_update(pid):
             data.get('resource_sharing_policy', existing['resource_sharing_policy']),
             data.get('communication_plan', existing['communication_plan']),
             data.get('meeting_schedule', existing['meeting_schedule']),
-            datetime.utcnow().isoformat(), pid,
+            datetime.now(timezone.utc).isoformat(), pid,
         ))
         db.commit()
         row = db.execute('SELECT * FROM pods WHERE id = ?', (pid,)).fetchone()
@@ -178,7 +178,7 @@ def api_pod_member_create(pid):
     if not data.get('person_name'):
         return jsonify({'error': 'person_name required'}), 400
     skills = json.dumps(data.get('skills', []))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO pod_members (pod_id, contact_id, person_name, role, skills,
@@ -269,7 +269,7 @@ def api_governance_role_create(pid):
     if not data.get('role_title') or not data.get('person_name'):
         return jsonify({'error': 'role_title and person_name required'}), 400
     chain = json.dumps(data.get('chain_of_command', []))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO governance_roles (pod_id, role_title, person_name, authority_level,
@@ -313,7 +313,7 @@ def api_governance_role_update(rid):
             data.get('term_start', existing['term_start']),
             data.get('term_end', existing['term_end']),
             data.get('status', existing['status']),
-            datetime.utcnow().isoformat(), rid,
+            datetime.now(timezone.utc).isoformat(), rid,
         ))
         db.commit()
         row = db.execute('SELECT * FROM governance_roles WHERE id = ?', (rid,)).fetchone()
@@ -373,7 +373,7 @@ def api_sop_create():
     data = request.get_json() or {}
     if not data.get('title') or not data.get('pod_id'):
         return jsonify({'error': 'title and pod_id required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO governance_sops (pod_id, title, category, content, version,
@@ -413,7 +413,7 @@ def api_sop_update(sid):
             data.get('review_date', existing['review_date']),
             data.get('approved_by', existing['approved_by']),
             data.get('status', existing['status']),
-            datetime.utcnow().isoformat(), sid,
+            datetime.now(timezone.utc).isoformat(), sid,
         ))
         db.commit()
         row = db.execute('SELECT * FROM governance_sops WHERE id = ?', (sid,)).fetchone()
@@ -463,7 +463,7 @@ def api_duty_create():
     data = request.get_json() or {}
     if not data.get('pod_id') or not data.get('person_name') or not data.get('duty_type'):
         return jsonify({'error': 'pod_id, person_name, and duty_type required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO duty_roster (pod_id, person_name, duty_type, shift_start,
@@ -560,7 +560,7 @@ def api_dispute_create():
     if not data.get('pod_id') or not data.get('title'):
         return jsonify({'error': 'pod_id and title required'}), 400
     parties = json.dumps(data.get('parties_involved', []))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO disputes (pod_id, title, description, parties_involved, dispute_type,
@@ -607,7 +607,7 @@ def api_dispute_update(did):
             data.get('status', existing['status']),
             data.get('opened_date', existing['opened_date']),
             data.get('resolved_date', existing['resolved_date']),
-            datetime.utcnow().isoformat(), did,
+            datetime.now(timezone.utc).isoformat(), did,
         ))
         db.commit()
         row = db.execute('SELECT * FROM disputes WHERE id = ?', (did,)).fetchone()
@@ -622,7 +622,7 @@ def api_dispute_vote_create(did):
         return jsonify({'error': 'question required'}), 400
     options = json.dumps(data.get('options', []))
     results = json.dumps(data.get('results', {}))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         dispute = db.execute('SELECT id FROM disputes WHERE id = ?', (did,)).fetchone()
         if not dispute:
@@ -741,7 +741,7 @@ def api_ics_form_create():
     if data['form_type'] not in ICS_TEMPLATES:
         return jsonify({'error': f'Invalid form_type. Valid: {", ".join(ICS_TEMPLATES.keys())}'}), 400
     form_data = json.dumps(data.get('form_data', {}))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO ics_forms (pod_id, form_type, incident_name, operational_period,
@@ -777,7 +777,7 @@ def api_ics_form_update(fid):
             data.get('prepared_by', existing['prepared_by']),
             form_data,
             data.get('status', existing['status']),
-            datetime.utcnow().isoformat(), fid,
+            datetime.now(timezone.utc).isoformat(), fid,
         ))
         db.commit()
         row = db.execute('SELECT * FROM ics_forms WHERE id = ?', (fid,)).fetchone()
@@ -834,7 +834,7 @@ def api_cert_team_create():
         return jsonify({'error': 'pod_id and team_name required'}), 400
     members = json.dumps(data.get('members', []))
     equipment = json.dumps(data.get('equipment', []))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO cert_teams (pod_id, team_name, team_type, leader_name, members,
@@ -873,7 +873,7 @@ def api_cert_team_update(tid):
             data.get('status', existing['status']),
             data.get('deployment_location', existing['deployment_location']),
             data.get('notes', existing['notes']),
-            datetime.utcnow().isoformat(), tid,
+            datetime.now(timezone.utc).isoformat(), tid,
         ))
         db.commit()
         row = db.execute('SELECT * FROM cert_teams WHERE id = ?', (tid,)).fetchone()
@@ -907,7 +907,7 @@ def api_damage_assessment_create():
     utilities = json.dumps(data.get('utilities', {'power': 'ok', 'water': 'ok', 'gas': 'ok', 'sewer': 'ok'}))
     hazards = json.dumps(data.get('hazards', []))
     photo_refs = json.dumps(data.get('photo_refs', []))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO damage_assessments (pod_id, cert_team_id, location, assessment_date,
@@ -963,7 +963,7 @@ def api_shelter_create():
     if not data.get('pod_id') or not data.get('name'):
         return jsonify({'error': 'pod_id and name required'}), 400
     amenities = json.dumps(data.get('amenities', []))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO shelters (pod_id, name, location, capacity, current_occupancy,
@@ -1010,7 +1010,7 @@ def api_shelter_update(sid):
             data.get('status', existing['status']),
             data.get('opened_date', existing['opened_date']),
             data.get('notes', existing['notes']),
-            datetime.utcnow().isoformat(), sid,
+            datetime.now(timezone.utc).isoformat(), sid,
         ))
         db.commit()
         row = db.execute('SELECT * FROM shelters WHERE id = ?', (sid,)).fetchone()
@@ -1082,7 +1082,7 @@ def api_warning_create():
         return jsonify({'error': 'pod_id, title, and message required'}), 400
     delivery = json.dumps(data.get('delivery_methods', []))
     acknowledged = json.dumps(data.get('acknowledged_by', []))
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         db.execute('''
             INSERT INTO community_warnings (pod_id, title, message, severity, target_area,

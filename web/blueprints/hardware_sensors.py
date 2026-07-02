@@ -3,7 +3,7 @@ GPS devices, wearables, integrations, and reference data."""
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, request, jsonify
 
@@ -163,7 +163,7 @@ def _sensor_int(val, default):
 
 
 def _sqlite_utc_cutoff(hours):
-    return (datetime.utcnow() - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
+    return (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
 
 
 @hardware_sensors_bp.route('/sensors', methods=['POST'])
@@ -311,7 +311,7 @@ def sensors_add_reading(sid):
         value_f = float(value)
     except (TypeError, ValueError):
         return jsonify({'error': 'value must be numeric'}), 400
-    now_str = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    now_str = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         sensor = db.execute('SELECT id, unit FROM iot_sensors WHERE id = ?', (sid,)).fetchone()
         if not sensor:
@@ -1103,7 +1103,7 @@ def gps_record_fix(gid):
         lon_f = float(lon)
     except (TypeError, ValueError):
         return jsonify({'error': 'lat and lon must be numeric'}), 400
-    now_str = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    now_str = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         device = db.execute('SELECT id FROM gps_devices WHERE id = ?', (gid,)).fetchone()
         if not device:

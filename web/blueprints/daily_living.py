@@ -3,7 +3,7 @@ morale tracking, sleep management, performance monitoring, and grid-down recipes
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
@@ -203,7 +203,7 @@ def api_schedules_create():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Name required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO daily_schedules
@@ -283,7 +283,7 @@ def api_schedules_update(sid):
         if not updates:
             return jsonify({'error': 'No fields to update'}), 400
         updates.append('updated_at = ?')
-        values.append(datetime.utcnow().isoformat())
+        values.append(datetime.now(timezone.utc).isoformat())
         values.append(sid)
         db.execute(
             f"UPDATE daily_schedules SET {', '.join(updates)} WHERE id = ?",
@@ -350,7 +350,7 @@ def api_chores_create():
     chore_name = (data.get('chore_name') or '').strip()
     if not chore_name:
         return jsonify({'error': 'chore_name required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO chore_assignments
@@ -412,7 +412,7 @@ def api_chores_update(cid):
         if not updates:
             return jsonify({'error': 'No fields to update'}), 400
         updates.append('updated_at = ?')
-        values.append(datetime.utcnow().isoformat())
+        values.append(datetime.now(timezone.utc).isoformat())
         values.append(cid)
         db.execute(
             f"UPDATE chore_assignments SET {', '.join(updates)} WHERE id = ?",
@@ -437,7 +437,7 @@ def api_chores_delete(cid):
 
 @daily_living_bp.route('/chores/<int:cid>/complete', methods=['POST'])
 def api_chores_complete(cid):
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         existing = db.execute('SELECT * FROM chore_assignments WHERE id = ?', (cid,)).fetchone()
         if not existing:
@@ -461,7 +461,7 @@ def api_chores_rotate():
             "ORDER BY rotation_group"
         ).fetchall()
         rotated = 0
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for g in groups:
             group_name = g['rotation_group']
             chores = db.execute(
@@ -530,7 +530,7 @@ def api_clothing_create():
     item_name = (data.get('item_name') or '').strip()
     if not item_name:
         return jsonify({'error': 'item_name required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO clothing_inventory
@@ -595,7 +595,7 @@ def api_clothing_update(cid):
         if not updates:
             return jsonify({'error': 'No fields to update'}), 400
         updates.append('updated_at = ?')
-        values.append(datetime.utcnow().isoformat())
+        values.append(datetime.now(timezone.utc).isoformat())
         values.append(cid)
         db.execute(
             f"UPDATE clothing_inventory SET {', '.join(updates)} WHERE id = ?",
@@ -695,7 +695,7 @@ def api_sanitation_create():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Name required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO sanitation_supplies
@@ -754,7 +754,7 @@ def api_sanitation_update(sid):
         if not updates:
             return jsonify({'error': 'No fields to update'}), 400
         updates.append('updated_at = ?')
-        values.append(datetime.utcnow().isoformat())
+        values.append(datetime.now(timezone.utc).isoformat())
         values.append(sid)
         db.execute(
             f"UPDATE sanitation_supplies SET {', '.join(updates)} WHERE id = ?",
@@ -854,7 +854,7 @@ def api_morale_create():
     person = (data.get('person') or '').strip()
     if not person:
         return jsonify({'error': 'person required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO morale_logs
@@ -906,7 +906,7 @@ def api_morale_trends():
         ).fetchall()
 
     from datetime import timedelta
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).date()
     periods = {'7d': 7, '14d': 14, '30d': 30}
     people = {}
 
@@ -988,7 +988,7 @@ def api_sleep_create():
     person = (data.get('person') or '').strip()
     if not person:
         return jsonify({'error': 'person required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO sleep_logs
@@ -1169,7 +1169,7 @@ def api_performance_create():
     person = (data.get('person') or '').strip()
     if not person:
         return jsonify({'error': 'person required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     fatigue = data.get('fatigue_level', 0)
     hours_awake = data.get('hours_awake', 0)
     risk = _calculate_risk(fatigue, hours_awake)
@@ -1320,7 +1320,7 @@ def api_recipes_create():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Name required'}), 400
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO grid_down_recipes
@@ -1409,7 +1409,7 @@ def api_recipes_update(rid):
         if not updates:
             return jsonify({'error': 'No fields to update'}), 400
         updates.append('updated_at = ?')
-        values.append(datetime.utcnow().isoformat())
+        values.append(datetime.now(timezone.utc).isoformat())
         values.append(rid)
         db.execute(
             f"UPDATE grid_down_recipes SET {', '.join(updates)} WHERE id = ?",
@@ -1492,7 +1492,7 @@ def api_recipes_seed():
         count = db.execute('SELECT COUNT(*) as cnt FROM grid_down_recipes').fetchone()['cnt']
         if count > 0:
             return jsonify({'status': 'skipped', 'message': f'Table already has {count} recipes'})
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         inserted = 0
         for recipe in SEED_RECIPES:
             db.execute(

@@ -4,7 +4,7 @@ preservation batches, and hunting zones."""
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.blueprints import get_pagination
@@ -47,7 +47,7 @@ def _schema_for_fields(fields, json_fields=None):
 
 
 def _now():
-    return datetime.utcnow().isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _row(r, json_cols=None):

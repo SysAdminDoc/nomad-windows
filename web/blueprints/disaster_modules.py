@@ -5,7 +5,7 @@ building materials, fortifications, and calculators."""
 
 import json
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
@@ -909,7 +909,7 @@ def api_fortifications_assessment():
     cond_scores = {'excellent': 4, 'good': 3, 'fair': 2, 'poor': 1, 'planned': 0}
     cond_total, cond_count = 0, 0
     overdue = 0
-    cutoff = (datetime.utcnow() - timedelta(days=90)).strftime('%Y-%m-%d')
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).strftime('%Y-%m-%d')
     for r in rows:
         ft = r['fortification_type']
         by_type[ft] = by_type.get(ft, 0) + 1

@@ -2,7 +2,7 @@
 
 import json
 import math
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
@@ -719,7 +719,7 @@ def api_op_log_create():
     data = request.get_json() or {}
     if not data.get('description'):
         return jsonify({'error': 'Description required'}), 400
-    entry_time = data.get('entry_time', datetime.utcnow().isoformat())
+    entry_time = data.get('entry_time', datetime.now(timezone.utc).isoformat())
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO op_log_entries
@@ -974,7 +974,7 @@ def api_night_ops_conditions():
     try:
         target = datetime.strptime(date_str, '%Y-%m-%d')
     except ValueError:
-        target = datetime.utcnow()
+        target = datetime.now(timezone.utc)
     # Simplified lunar phase calculation (Metonic cycle approximation)
     known_new_moon = datetime(2024, 1, 11, 11, 57)  # Known new moon reference
     lunar_cycle = 29.53058770576

@@ -7,7 +7,7 @@ import logging
 import hashlib
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, request, jsonify
 
@@ -118,7 +118,7 @@ def _get_current_session(db):
         token = request.args.get('token', '').strip()
     if not token:
         return None, None
-    now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     sess = db.execute(
         'SELECT * FROM app_sessions WHERE session_token = ? AND is_active = 1',
         (token,)
@@ -319,7 +319,7 @@ def auth_login():
         if not user['is_active']:
             return jsonify({'error': 'account is disabled'}), 403
         # Check lockout
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         now_str = now.strftime('%Y-%m-%dT%H:%M:%SZ')
         if user['locked_until'] and user['locked_until'] > now_str:
             return jsonify({'error': 'account is locked, try again later',
@@ -428,7 +428,7 @@ def auth_session():
         if not user:
             return jsonify({'error': 'user not found'}), 404
         # Update last activity
-        now_str = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        now_str = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         db.execute(
             'UPDATE app_sessions SET last_activity = ? WHERE id = ?',
             (now_str, sess['id'])
@@ -538,7 +538,7 @@ def sessions_revoke(sid):
 @require_auth('admin')
 def sessions_cleanup():
     """Expire old sessions past their expires_at."""
-    now_str = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    now_str = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         r = db.execute(
             "UPDATE app_sessions SET is_active = 0 "
@@ -589,7 +589,7 @@ def access_logs_list():
 def access_logs_clear():
     """Clear logs older than ?days=30."""
     days = _coerce_int(request.args.get('days', 30), 30, minimum=1, maximum=36500)
-    cutoff = (datetime.utcnow() - timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         r = db.execute(
             'DELETE FROM platform_access_log WHERE created_at < ?', (cutoff,)
@@ -763,7 +763,7 @@ def metrics_list():
     """List metrics with optional ?type= and ?hours=24 filters."""
     metric_type = request.args.get('type', '').strip()
     hours = _coerce_int(request.args.get('hours', 24), 24, minimum=1, maximum=24 * 365)
-    cutoff = (datetime.utcnow() - timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ')
     clauses = ['recorded_at >= ?']
     params = [cutoff]
     if metric_type:
@@ -801,7 +801,7 @@ def metrics_summary():
 def metrics_cleanup():
     """Delete metrics older than ?days=7."""
     days = _coerce_int(request.args.get('days', 7), 7, minimum=1, maximum=36500)
-    cutoff = (datetime.utcnow() - timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         r = db.execute(
             'DELETE FROM performance_metrics WHERE recorded_at < ?', (cutoff,)

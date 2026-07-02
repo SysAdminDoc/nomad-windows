@@ -112,6 +112,13 @@ class TestHardwareReferenceAndSensors:
             def utcnow(cls):
                 return real_datetime(2026, 1, 1, 12, 0, 0)
 
+            @classmethod
+            def now(cls, tz=None):
+                if tz is not None:
+                    from datetime import timezone
+                    return real_datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+                return real_datetime.now()
+
         monkeypatch.setattr(hw, 'datetime', FrozenDateTime)
         sid = _create_sensor(client)
         with db_session() as db:

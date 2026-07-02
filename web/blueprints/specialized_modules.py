@@ -4,7 +4,7 @@ drones, flights, fitness, and content packs."""
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
@@ -1318,7 +1318,7 @@ def api_awards_create():
             '''INSERT INTO badge_awards (badge_id, person, awarded_date, awarded_by, notes)
                VALUES (?,?,?,?,?)''',
             (badge_id, person,
-             data.get('awarded_date', datetime.utcnow().strftime('%Y-%m-%d')),
+             data.get('awarded_date', datetime.now(timezone.utc).strftime('%Y-%m-%d')),
              data.get('awarded_by', 'system'), data.get('notes', ''))
         )
         db.commit()
@@ -1504,8 +1504,8 @@ def api_calendar_delete(eid):
 
 @specialized_modules_bp.route('/calendar/upcoming')
 def api_calendar_upcoming():
-    today = datetime.utcnow().strftime('%Y-%m-%d')
-    cutoff = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    cutoff = (datetime.now(timezone.utc) + timedelta(days=30)).strftime('%Y-%m-%d')
     with db_session() as db:
         rows = db.execute(
             'SELECT * FROM seasonal_events WHERE date >= ? AND date <= ? AND completed = 0 ORDER BY date ASC',
@@ -1645,8 +1645,8 @@ def api_legal_delete(lid):
 
 @specialized_modules_bp.route('/legal/expiring')
 def api_legal_expiring():
-    today = datetime.utcnow().strftime('%Y-%m-%d')
-    cutoff = (datetime.utcnow() + timedelta(days=90)).strftime('%Y-%m-%d')
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    cutoff = (datetime.now(timezone.utc) + timedelta(days=90)).strftime('%Y-%m-%d')
     with db_session() as db:
         rows = db.execute(
             "SELECT * FROM legal_documents WHERE expiry_date != '' AND expiry_date >= ? AND expiry_date <= ? ORDER BY expiry_date ASC",
@@ -1883,7 +1883,7 @@ def api_flights_create():
                 observations, media_captured, pilot, notes)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (drone_id,
-             data.get('date', datetime.utcnow().strftime('%Y-%m-%d')),
+             data.get('date', datetime.now(timezone.utc).strftime('%Y-%m-%d')),
              data.get('mission_type', 'recon'),
              data.get('location', ''), data.get('gps_coords', ''),
              data.get('duration_min', 0), data.get('max_altitude_m', 0),
@@ -1906,7 +1906,7 @@ def api_flights_create():
                updated_at = CURRENT_TIMESTAMP
                WHERE id = ?''',
             (round(dur / 60.0, 2),
-             data.get('date', datetime.utcnow().strftime('%Y-%m-%d')),
+             data.get('date', datetime.now(timezone.utc).strftime('%Y-%m-%d')),
              drone_id)
         )
         db.commit()
@@ -2044,7 +2044,7 @@ def api_fitness_create():
                 heart_rate_avg, heart_rate_max, perceived_exertion, notes)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (person,
-             data.get('date', datetime.utcnow().strftime('%Y-%m-%d')),
+             data.get('date', datetime.now(timezone.utc).strftime('%Y-%m-%d')),
              exercise_type, data.get('activity', ''), duration_min,
              distance_km, data.get('reps', 0), data.get('sets', 0),
              data.get('weight_lbs', 0), calories_burned,
@@ -2093,7 +2093,7 @@ def api_fitness_weekly():
     person = (request.args.get('person') or '').strip()
     if not person:
         return jsonify({'error': 'person is required'}), 400
-    seven_days_ago = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d')
+    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%d')
     with db_session() as db:
         row = db.execute(
             '''SELECT COUNT(*) as workouts,
@@ -2116,7 +2116,7 @@ def api_fitness_weekly():
 
 @specialized_modules_bp.route('/fitness/stats')
 def api_fitness_stats():
-    seven_days_ago = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d')
+    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%d')
     with db_session() as db:
         rows = db.execute(
             '''SELECT person, exercise_type,
@@ -2206,7 +2206,7 @@ def api_content_packs_create():
              data.get('description', ''),
              json.dumps(data.get('contents_manifest', [])),
              data.get('size_bytes', 0),
-             data.get('install_date', datetime.utcnow().strftime('%Y-%m-%d')),
+             data.get('install_date', datetime.now(timezone.utc).strftime('%Y-%m-%d')),
              data.get('source_url', ''), data.get('checksum', ''),
              data.get('status', 'installed'), data.get('notes', ''))
         )

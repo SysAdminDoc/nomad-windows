@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, request, jsonify, Response
 
@@ -1179,7 +1179,7 @@ def api_vitals_trend(patient_id):
 @medical_bp.route('/api/medical/expiring-meds')
 def api_expiring_meds():
     """Cross-reference medication inventory with expiry dates."""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     with db_session() as db:
         soon = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
         rows = db.execute(
@@ -1437,7 +1437,7 @@ def api_medication_log_create(pid):
     route = data.get('route', '')
     administered_by = data.get('administered_by', '')
     notes = data.get('notes', '')
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # Look up interval from DOSAGE_GUIDE
     next_dose_due = None
@@ -1472,7 +1472,7 @@ def api_medication_log_create(pid):
 @medical_bp.route('/api/medical/overdue-doses', methods=['GET'])
 def api_overdue_doses():
     """Query medication_log for entries where next_dose_due < now and no newer entry for same patient+drug."""
-    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    now = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
     with db_session() as db:
         rows = db.execute('''
             SELECT ml.*, p.name AS patient_name, p.triage_category
@@ -1494,7 +1494,7 @@ def api_overdue_doses():
             if entry.get('next_dose_due'):
                 try:
                     due_dt = datetime.strptime(entry['next_dose_due'], '%Y-%m-%d %H:%M:%S')
-                    overdue_minutes = int((datetime.utcnow() - due_dt).total_seconds() / 60)
+                    overdue_minutes = int((datetime.now(timezone.utc) - due_dt).total_seconds() / 60)
                     entry['overdue_minutes'] = overdue_minutes
                     entry['overdue_display'] = f'{overdue_minutes // 60}h {overdue_minutes % 60}m' if overdue_minutes >= 60 else f'{overdue_minutes}m'
                 except (ValueError, TypeError):
@@ -1525,7 +1525,7 @@ def api_triage_reassessment_due():
         'delayed': 60,
         'minimal': 120,
     }
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     with db_session() as db:
         patients = db.execute(
             "SELECT id, name, triage_category, age, blood_type FROM patients WHERE triage_category IN ('immediate', 'delayed', 'minimal')"
@@ -1547,7 +1547,8 @@ def api_triage_reassessment_due():
             ).fetchone()
             if not last_assess:
                 last_assess = db.execute(
-                    'SELECT created_at FROM triage_events ORDER BY created_at DESC LIMIT 1'
+                    'SELECT created_at FROM triage_events WHERE patient_id = ? ORDER BY created_at DESC LIMIT 1',
+                    (pid,)
                 ).fetchone()
 
             if last_assess and last_assess['created_at']:

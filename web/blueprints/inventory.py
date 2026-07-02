@@ -256,7 +256,7 @@ def api_inventory_receipt_scan():
         ollama_available = False
         try:
             import urllib.request
-            req_check = urllib.request.Request('http://localhost:11434/api/tags', method='GET')
+            req_check = urllib.request.Request(f'http://localhost:{ollama.OLLAMA_PORT}/api/tags', method='GET')
             with urllib.request.urlopen(req_check, timeout=3) as resp:
                 if resp.status == 200:
                     ollama_available = True
@@ -301,7 +301,7 @@ def api_inventory_receipt_scan():
                 })
 
                 req_ollama = urllib.request.Request(
-                    'http://localhost:11434/api/generate',
+                    f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
                     data=payload.encode('utf-8'),
                     headers={'Content-Type': 'application/json'},
                     method='POST',
@@ -449,7 +449,7 @@ def api_inventory_vision_scan():
         import urllib.request
         ollama_available = False
         try:
-            req_check = urllib.request.Request('http://localhost:11434/api/tags', method='GET')
+            req_check = urllib.request.Request(f'http://localhost:{ollama.OLLAMA_PORT}/api/tags', method='GET')
             with urllib.request.urlopen(req_check, timeout=3) as resp:
                 if resp.status == 200:
                     ollama_available = True
@@ -495,7 +495,7 @@ def api_inventory_vision_scan():
                 })
 
                 req_ollama = urllib.request.Request(
-                    'http://localhost:11434/api/generate',
+                    f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
                     data=payload.encode('utf-8'),
                     headers={'Content-Type': 'application/json'},
                     method='POST',

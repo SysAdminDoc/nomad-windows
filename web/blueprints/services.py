@@ -228,31 +228,45 @@ def api_uninstall_service(service_id):
 @require_auth('admin')
 def api_start_all():
     started = []
+    skipped = []
     errors = []
     for sid, mod in SERVICE_MODULES.items():
         if mod.is_installed() and not mod.running():
+            lock = _action_lock(sid)
+            if not lock.acquire(blocking=False):
+                skipped.append(sid)
+                continue
             try:
                 mod.start()
                 started.append(sid)
             except Exception as e:
                 log.exception('Start failed for %s', sid)
                 errors.append(f'{sid}: start failed')
-    return jsonify({'started': started, 'errors': errors})
+            finally:
+                lock.release()
+    return jsonify({'started': started, 'skipped': skipped, 'errors': errors})
 
 @services_bp.route('/api/services/stop-all', methods=['POST'])
 @require_auth('admin')
 def api_stop_all():
     stopped = []
+    skipped = []
     errors = []
     for sid, mod in SERVICE_MODULES.items():
         if mod.is_installed() and mod.running():
+            lock = _action_lock(sid)
+            if not lock.acquire(blocking=False):
+                skipped.append(sid)
+                continue
             try:
                 mod.stop()
                 stopped.append(sid)
             except Exception as e:
                 log.exception('Stop failed for %s', sid)
                 errors.append(f'{sid}: stop failed')
-    return jsonify({'stopped': stopped, 'errors': errors})
+            finally:
+                lock.release()
+    return jsonify({'stopped': stopped, 'skipped': skipped, 'errors': errors})
 
 @services_bp.route('/api/services/<service_id>/progress')
 def api_service_progress(service_id):
@@ -519,7 +533,7 @@ def api_service_journal(service_id):
     """Return install/update activity journal for a service."""
     if service_id not in SERVICE_MODULES:
         return jsonify({'error': 'Unknown service'}), 404
-    limit = _get_query_int('limit', 20, 1, 100)
+    limit = _get_query_int(request, 'limit', 20, 1, 100)
     with db_session() as db:
         rows = db.execute(
             "SELECT event, detail, level, created_at FROM activity_log "

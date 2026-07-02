@@ -163,7 +163,8 @@ def pool_stats():
 
 def pool_shutdown():
     """Drain and close all pooled connections. Call at process exit."""
-    _pool_clear()
+    with _pool_lock:
+        _pool_clear()
 
 
 @contextmanager

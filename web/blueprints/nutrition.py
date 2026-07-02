@@ -1,12 +1,19 @@
 """Nutrition database — USDA FoodData search, inventory linking, and analysis."""
 
-import json
 import logging
 from flask import Blueprint, request, jsonify
-from db import get_db, db_session, log_activity
+from db import db_session, log_activity
+from web.validation import validate_optional_json
 
 nutrition_bp = Blueprint('nutrition', __name__)
 _log = logging.getLogger('nomad.nutrition')
+
+_NUMBER_INPUT = {'type': (int, float, str)}
+_LINK_SCHEMA = {
+    'inventory_id': _NUMBER_INPUT,
+    'fdc_id': _NUMBER_INPUT,
+    'servings_per_item': _NUMBER_INPUT,
+}
 
 
 # ─── Search foods ────────────────────────────────────────────────
@@ -78,6 +85,7 @@ def api_nutrition_food_groups():
 # ─── Inventory ↔ Nutrition Link ──────────────────────────────────
 
 @nutrition_bp.route('/api/nutrition/link', methods=['POST'])
+@validate_optional_json(_LINK_SCHEMA)
 def api_nutrition_link():
     data = request.get_json() or {}
     inv_id = data.get('inventory_id')

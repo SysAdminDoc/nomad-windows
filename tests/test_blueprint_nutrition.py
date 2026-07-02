@@ -22,9 +22,38 @@ Hand-computed assertion pins:
              days_supply = 1000 / 180 = 5.56 → status='red' (<7)
 """
 
-import pytest
-
 from db import db_session
+
+
+class TestNutritionPayloadValidation:
+    def test_link_rejects_malformed_json(self, client):
+        resp = client.post(
+            '/api/nutrition/link',
+            data='{bad',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
+    def test_link_rejects_non_object_json(self, client):
+        resp = client.post(
+            '/api/nutrition/link',
+            data='[]',
+            content_type='application/json',
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be a JSON object'
+
+    def test_link_rejects_wrong_shape_fields(self, client):
+        cases = [
+            {'inventory_id': []},
+            {'fdc_id': []},
+            {'servings_per_item': []},
+        ]
+        for payload in cases:
+            resp = client.post('/api/nutrition/link', json=payload)
+            assert resp.status_code == 400, payload
+            assert resp.get_json()['error'] == 'Validation failed'
 
 
 # ── SHARED HELPERS ────────────────────────────────────────────────────────

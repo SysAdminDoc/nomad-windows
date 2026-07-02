@@ -58,7 +58,9 @@ def validate_optional_json(schema):
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
-            if not request.content_length:
+            if request.content_length is not None and request.content_length == 0:
+                return f(*args, **kwargs)
+            if request.content_length is None and not request.data:
                 return f(*args, **kwargs)
 
             data = request.get_json(silent=True)

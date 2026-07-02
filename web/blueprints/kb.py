@@ -268,7 +268,7 @@ def api_kb_upload():
             import requests as _req
             with open(filepath, 'rb') as pdf_file:
                 ocr_resp = _req.post(
-                    f'http://localhost:8443/api/v1/misc/ocr-pdf',
+                    f'http://localhost:{stirling.STIRLING_PORT}/api/v1/misc/ocr-pdf',
                     files={'fileInput': (filename, pdf_file, 'application/pdf')},
                     data={'language': 'eng', 'sidecar': 'true'},
                     timeout=120
@@ -571,24 +571,25 @@ def _lexical_search(query, limit=10, workspace_id=None):
 
 
 def _merge_results(vector_results, lexical_results, limit=5):
-    """Merge and deduplicate vector + lexical results by (doc_id, chunk_index)."""
+    """Merge and deduplicate vector + lexical results by (doc_id, chunk_index, filename)."""
     seen = set()
     merged = []
 
     for r in vector_results:
-        key = (r.get('doc_id'), r.get('chunk_index', 0))
+        key = (r.get('doc_id'), r.get('chunk_index', 0), r.get('filename', ''))
         if key not in seen:
             seen.add(key)
             merged.append(r)
 
     for r in lexical_results:
-        key = (r.get('doc_id'), r.get('chunk_index', 0))
+        key = (r.get('doc_id'), r.get('chunk_index', 0), r.get('filename', ''))
         if key not in seen:
             seen.add(key)
             merged.append(r)
         else:
             for m in merged:
-                if (m.get('doc_id'), m.get('chunk_index', 0)) == key:
+                mkey = (m.get('doc_id'), m.get('chunk_index', 0), m.get('filename', ''))
+                if mkey == key:
                     m['source'] = 'hybrid'
                     break
 

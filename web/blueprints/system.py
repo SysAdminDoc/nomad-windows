@@ -290,6 +290,7 @@ def api_drives():
     return jsonify(drives)
 
 @system_bp.route('/api/settings/data-dir', methods=['POST'])
+@require_auth('admin')
 @validate_json({'path': {'type': str, 'required': True, 'min_length': 1, 'max_length': 1000}})
 def api_set_data_dir():
     """Set custom data directory (wizard only)."""
@@ -2012,6 +2013,7 @@ def api_auth_check():
     return jsonify({'enabled': enabled, 'authenticated': (is_local or token_valid or not enabled)})
 
 @system_bp.route('/api/auth/set-password', methods=['POST'])
+@require_auth('admin')
 @validate_json({'password': {'type': str, 'max_length': 1024}})
 def api_auth_set_password():
     data = request.get_json() or {}
@@ -2903,6 +2905,7 @@ def get_guidance_source(domain, content_key):
 # ─── Storage Relocation ──────────────────────────────────────────
 
 @system_bp.route('/api/storage/preflight', methods=['POST'])
+@require_auth('admin')
 @validate_json({
     'target_path': {'type': str, 'required': True, 'min_length': 1, 'max_length': 1000},
 })

@@ -148,6 +148,7 @@ def api_cash_update(item_id):
 
 
 @financial_bp.route('/api/financial/cash/<int:item_id>', methods=['DELETE'])
+@require_auth('admin')
 def api_cash_delete(item_id):
     with db_session() as db:
         r = db.execute('DELETE FROM financial_cash WHERE id = ?', (item_id,))
@@ -235,6 +236,7 @@ def api_metals_update(item_id):
 
 
 @financial_bp.route('/api/financial/metals/<int:item_id>', methods=['DELETE'])
+@require_auth('admin')
 def api_metals_delete(item_id):
     with db_session() as db:
         r = db.execute('DELETE FROM financial_metals WHERE id = ?', (item_id,))
@@ -324,6 +326,7 @@ def api_barter_update(item_id):
 
 
 @financial_bp.route('/api/financial/barter/<int:item_id>', methods=['DELETE'])
+@require_auth('admin')
 def api_barter_delete(item_id):
     with db_session() as db:
         r = db.execute('DELETE FROM financial_barter WHERE id = ?', (item_id,))
@@ -412,6 +415,7 @@ def api_documents_update(item_id):
 
 
 @financial_bp.route('/api/financial/documents/<int:item_id>', methods=['DELETE'])
+@require_auth('admin')
 def api_documents_delete(item_id):
     with db_session() as db:
         r = db.execute('DELETE FROM financial_documents WHERE id = ?', (item_id,))

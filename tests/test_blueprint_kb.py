@@ -260,7 +260,7 @@ class TestSearch:
 
     def test_happy_path_returns_normalized_hits(self, client, fake_kb_services):
         """qdrant.search returns raw hit dicts; the route normalizes
-        them to {text, filename, score}."""
+        them to {text, filename, score, doc_id, chunk_index, source}."""
         fake_kb_services['qdrant_search_results'] = [
             {'payload': {'text': 'first hit', 'filename': 'a.pdf'}, 'score': 0.91},
             {'payload': {'text': 'second hit', 'filename': 'b.pdf'}, 'score': 0.85},
@@ -269,8 +269,11 @@ class TestSearch:
         assert resp.status_code == 200
         hits = resp.get_json()
         assert len(hits) == 2
-        assert hits[0] == {'text': 'first hit', 'filename': 'a.pdf', 'score': 0.91}
-        # embed_text was called with the search_query prefix
+        assert hits[0]['text'] == 'first hit'
+        assert hits[0]['filename'] == 'a.pdf'
+        assert hits[0]['score'] == 0.91
+        assert hits[1]['text'] == 'second hit'
+        assert hits[1]['filename'] == 'b.pdf'
         assert any(c['prefix'] == 'search_query: ' for c in fake_kb_services['embed_calls'])
 
     def test_qdrant_search_failure_returns_empty(self, client, fake_kb_services,

@@ -29,6 +29,15 @@ class TestHybridSearchMerge:
         from web.blueprints.kb import _merge_results
         assert _merge_results([], [], limit=5) == []
 
+    def test_merge_does_not_collapse_null_doc_id_different_files(self):
+        from web.blueprints.kb import _merge_results
+        vec = [
+            {'text': 'a', 'doc_id': None, 'chunk_index': 0, 'score': 0.9, 'source': 'vector', 'filename': 'a.pdf'},
+            {'text': 'b', 'doc_id': None, 'chunk_index': 0, 'score': 0.8, 'source': 'vector', 'filename': 'b.pdf'},
+        ]
+        merged = _merge_results(vec, [], limit=5)
+        assert len(merged) == 2
+
 
 class TestLexicalSearch:
     def test_lexical_search_with_seeded_chunks(self, client):

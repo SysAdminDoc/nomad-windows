@@ -24,7 +24,7 @@ Background fetch workers with per-source cooldowns and thread safety.
 
 import re
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 from flask import Blueprint, request, jsonify
@@ -992,7 +992,7 @@ def api_sitroom_export():
     lines = []
     lines.append('=' * 60)
     lines.append('SITUATION ROOM — INTELLIGENCE REPORT')
-    lines.append(f'Generated: {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")}')
+    lines.append(f'Generated: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}')
     lines.append('=' * 60)
     lines.append('')
 
@@ -1075,29 +1075,31 @@ def api_sitroom_displacement():
 @situation_room_bp.route('/api/sitroom/country/<country>')
 def api_sitroom_country_deep_dive(country):
     """Return aggregated intelligence for a specific country."""
+    escaped = country.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+    like_pat = f'%{escaped}%'
     with db_session() as db:
         # Events mentioning this country
         events = db.execute(
-            "SELECT event_type, COUNT(*) as cnt FROM sitroom_events WHERE detail_json LIKE ? GROUP BY event_type",
-            (f'%{country}%',)).fetchall()
+            "SELECT event_type, COUNT(*) as cnt FROM sitroom_events WHERE detail_json LIKE ? ESCAPE '\\' GROUP BY event_type",
+            (like_pat,)).fetchall()
 
         # News mentioning this country
         news = db.execute(
-            "SELECT title, link, category, source_name FROM sitroom_news WHERE title LIKE ? OR description LIKE ? ORDER BY cached_at DESC LIMIT 15",
-            (f'%{country}%', f'%{country}%')).fetchall()
+            "SELECT title, link, category, source_name FROM sitroom_news WHERE title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' ORDER BY cached_at DESC LIMIT 15",
+            (like_pat, like_pat)).fetchall()
 
         # Earthquakes near this country
         quakes = db.execute(
-            "SELECT title, magnitude FROM sitroom_events WHERE event_type = 'earthquake' AND title LIKE ? ORDER BY magnitude DESC LIMIT 5",
-            (f'%{country}%',)).fetchall()
+            "SELECT title, magnitude FROM sitroom_events WHERE event_type = 'earthquake' AND title LIKE ? ESCAPE '\\' ORDER BY magnitude DESC LIMIT 5",
+            (like_pat,)).fetchall()
 
         # Market data for context
         markets = db.execute('SELECT symbol, price, change_24h FROM sitroom_markets ORDER BY market_type LIMIT 10').fetchall()
 
         # Total event count
         total_events = db.execute(
-            "SELECT COUNT(*) FROM sitroom_events WHERE detail_json LIKE ?",
-            (f'%{country}%',)).fetchone()[0]
+            "SELECT COUNT(*) FROM sitroom_events WHERE detail_json LIKE ? ESCAPE '\\'",
+            (like_pat,)).fetchone()[0]
 
     return jsonify({
         'country': country,

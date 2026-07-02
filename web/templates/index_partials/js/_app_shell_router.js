@@ -854,7 +854,7 @@ document.addEventListener('click', e => {
       case 'delete-power-device': deletePowerDevice(Number(control.dataset.powerDeviceId)); break;
       case 'delete-plot': deletePlot(Number(control.dataset.plotId)); break;
       case 'delete-seed': deleteSeed(Number(control.dataset.seedId)); break;
-      case 'log-health-event': logHealthEvent(Number(control.dataset.livestockId)); break;
+      case 'log-health-event': logHealthEvent(Number(control.dataset.livestockId), control); break;
       case 'submit-health-event': submitHealthEvent(Number(control.dataset.livestockId)); break;
       case 'view-wound-photos': viewWoundPhotos(Number(control.dataset.patientId), Number(control.dataset.woundId)); break;
       case 'prompt-wound-photo': promptWoundPhoto(Number(control.dataset.patientId), Number(control.dataset.woundId)); break;

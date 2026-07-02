@@ -2789,8 +2789,9 @@ async function deleteLivestock(id) {
   } catch(e) { toast('Failed to remove animal', 'error'); }
 }
 
-async function logHealthEvent(id) {
-  const el = event.target.parentElement.parentElement;
+async function logHealthEvent(id, triggerEl) {
+  const el = triggerEl ? triggerEl.parentElement.parentElement : document.querySelector(`[data-livestock-id="${id}"]`)?.parentElement?.parentElement;
+  if (!el) return;
   if (el.querySelector('.health-form')) return;
   const form = document.createElement('div');
   form.className = 'health-form prep-inline-form prep-garden-health-form';
@@ -4890,6 +4891,7 @@ async function dismissAllAlerts() {
 async function generateAlertSummary() {
   const btn = document.getElementById('alert-summary-btn');
   const panel = document.getElementById('alert-summary-panel');
+  if (!btn || !panel) return;
   btn.setAttribute('aria-busy', 'true');
   btn.disabled = true;
   panel.style.display = 'block';

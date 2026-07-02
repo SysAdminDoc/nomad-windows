@@ -1100,6 +1100,7 @@ async function loadZimCatalog() {
 
 function renderFullCatalog(catalog) {
   const el = document.getElementById('zim-catalog');
+  if (!el) return;
   el.innerHTML = catalog.map((cat, ci) => {
     const tiers = cat.tiers || {};
     const tierNames = Object.keys(tiers);

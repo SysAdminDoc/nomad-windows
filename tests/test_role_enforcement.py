@@ -1,7 +1,8 @@
 """Tests for workspace role policy enforcement across domains.
 
 Verifies that when NOMAD_AUTH_REQUIRED=1 is set, mutation routes in
-Medical, Services, and KB require proper authentication and role level.
+Medical, Services, KB, System, Financial, and Inventory require proper
+authentication and role level.
 Localhost requests are always exempt (desktop mode).
 """
 
@@ -93,3 +94,118 @@ class TestKBRoleEnforcement:
         monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
         resp = client.post('/api/kb/estimate', json={'file_size': 5000})
         assert resp.status_code == 200
+
+
+class TestSystemRoleEnforcement:
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_settings_update_requires_auth(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        resp = client.put('/api/settings', json={'theme': 'nightops'})
+        assert resp.status_code == 401
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_backup_create_requires_admin(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'viewer_sys', role='viewer')
+        resp = client.post('/api/backup',
+                           headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 403
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_backup_create_passes_for_admin(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'admin_sys', role='admin')
+        resp = client.post('/api/backup',
+                           headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code != 401
+        assert resp.status_code != 403
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_db_check_requires_admin(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'user_sys', role='user')
+        resp = client.post('/api/system/db-check',
+                           headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 403
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_startup_set_requires_admin(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'user_startup', role='user')
+        resp = client.put('/api/startup', json={'enabled': False},
+                          headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 403
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_ollama_host_requires_admin(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'user_ollama', role='user')
+        resp = client.put('/api/settings/ollama-host', json={'host': 'http://bad'},
+                          headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 403
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_guidance_sources_requires_admin(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'user_guide', role='user')
+        resp = client.post('/api/guidance-sources',
+                           json={'domain': 'test', 'content_key': 'k'},
+                           headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 403
+
+    def test_wizard_works_without_auth(self, client, monkeypatch):
+        """Wizard routes must work pre-auth for first-run setup."""
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        resp = client.post('/api/settings/wizard-complete', json={})
+        assert resp.status_code != 401
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_dashboard_widgets_requires_user(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        resp = client.post('/api/dashboard/widgets', json={'widgets': []})
+        assert resp.status_code == 401
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_dashboard_widgets_viewer_denied(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'viewer_widget', role='viewer')
+        resp = client.post('/api/dashboard/widgets', json={'widgets': []},
+                           headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 403
+
+
+class TestFinancialRoleEnforcement:
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_cash_create_requires_admin(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'user_fin', role='user')
+        resp = client.post('/api/financial/cash',
+                           json={'amount': 100, 'currency': 'USD', 'location': 'safe'},
+                           headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 403
+
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_cash_delete_unauthenticated(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        resp = client.delete('/api/financial/cash/1')
+        assert resp.status_code == 401
+
+
+class TestInventoryRoleEnforcement:
+    @patch('web.auth._is_localhost', _non_localhost)
+    def test_inventory_create_requires_admin(self, client, monkeypatch):
+        monkeypatch.setenv('NOMAD_AUTH_REQUIRED', '1')
+        with db_session() as db:
+            token = _make_user(db, 'user_inv', role='user')
+        resp = client.post('/api/inventory',
+                           json={'name': 'Test', 'quantity': 1, 'category': 'food'},
+                           headers={'Authorization': f'Bearer {token}'})
+        assert resp.status_code == 403

@@ -199,6 +199,7 @@ SETTINGS_WHITELIST = {
 }
 
 @system_bp.route('/api/settings', methods=['PUT'])
+@require_auth('user')
 def api_settings_update():
     data, error = _require_json_object()
     if error:
@@ -290,7 +291,6 @@ def api_drives():
     return jsonify(drives)
 
 @system_bp.route('/api/settings/data-dir', methods=['POST'])
-@require_auth('admin')
 @validate_json({'path': {'type': str, 'required': True, 'min_length': 1, 'max_length': 1000}})
 def api_set_data_dir():
     """Set custom data directory (wizard only)."""
@@ -792,6 +792,7 @@ def api_startup_get():
         return jsonify({'enabled': False, 'platform': sys.platform})
 
 @system_bp.route('/api/startup', methods=['PUT'])
+@require_auth('admin')
 @validate_json({'enabled': {'type': bool, 'required': True}})
 def api_startup_set():
     """Enable or disable start at login (cross-platform)."""
@@ -895,6 +896,7 @@ def api_export_config():
         return jsonify({'error': 'Export failed'}), 500
 
 @system_bp.route('/api/import-config', methods=['POST'])
+@require_auth('admin')
 def api_import_config():
     """Import a config backup ZIP."""
     import zipfile as zf
@@ -941,6 +943,7 @@ def api_backups_list():
     return jsonify(backups)
 
 @system_bp.route('/api/backups/restore', methods=['POST'])
+@require_auth('admin')
 @validate_json({
     'filename': {'type': str, 'required': True, 'min_length': 1, 'max_length': 255},
     'confirmed': {'type': bool},
@@ -996,6 +999,7 @@ def api_backups_restore():
 
 
 @system_bp.route('/api/backup', methods=['POST'])
+@require_auth('admin')
 def api_backup_create_simple():
     """Create an immediate database backup."""
     try:
@@ -1018,6 +1022,7 @@ def api_backup_create_simple():
 
 
 @system_bp.route('/api/backup/restore', methods=['POST'])
+@require_auth('admin')
 @validate_json({'filename': {'type': str, 'required': True, 'min_length': 1, 'max_length': 255}})
 def api_backup_restore_alt():
     """Alias for /api/backups/restore — accepts {"filename": "..."}."""
@@ -1485,6 +1490,7 @@ def api_dashboard_widgets_get():
     return jsonify({'widgets': widgets})
 
 @system_bp.route('/api/dashboard/widgets', methods=['POST'])
+@require_auth('user')
 def api_dashboard_widgets_save():
     """Save user's dashboard widget configuration."""
     data, error = _require_json_body(request)
@@ -1516,6 +1522,7 @@ def api_dashboard_widgets_save():
     return jsonify({'ok': True, 'widgets': widgets})
 
 @system_bp.route('/api/dashboard/widgets/reset', methods=['POST'])
+@require_auth('user')
 def api_dashboard_widgets_reset():
     """Reset dashboard widget configuration to defaults."""
     with db_session() as db:
@@ -1527,6 +1534,7 @@ def api_dashboard_widgets_reset():
     return jsonify({'ok': True, 'widgets': DEFAULT_WIDGETS})
 
 @system_bp.route('/api/system/backup/create', methods=['POST'])
+@require_auth('admin')
 def api_backup_create():
     """Create an immediate database backup."""
     import sqlite3 as _sqlite3
@@ -1632,6 +1640,7 @@ def api_backup_list():
     return jsonify(backups[:50])
 
 @system_bp.route('/api/system/backup/restore', methods=['POST'])
+@require_auth('admin')
 @validate_json({
     'filename': {'type': str, 'required': True, 'min_length': 1, 'max_length': 255},
     'password': {'type': str, 'max_length': 1024},
@@ -1775,6 +1784,7 @@ def api_backup_delete(filename):
         return jsonify({'error': 'Delete failed'}), 500
 
 @system_bp.route('/api/system/backup/configure', methods=['POST'])
+@require_auth('admin')
 @validate_json({
     'enabled': {'type': bool},
     'interval': {'type': str, 'choices': ['daily', 'weekly']},
@@ -1826,6 +1836,7 @@ def api_backup_config_get():
 
 
 @system_bp.route('/api/system/backup/verify', methods=['POST'])
+@require_auth('admin')
 def api_backup_verify():
     """Verify a backup's integrity without replacing the live DB.
 
@@ -2202,6 +2213,7 @@ def api_health_score():
 # ─── Database Integrity Check (moved from routes_advanced) ───────
 
 @system_bp.route('/api/system/db-check', methods=['POST'])
+@require_auth('admin')
 def api_system_db_check():
     """Run PRAGMA integrity_check and foreign_key_check."""
     with db_session() as db:
@@ -2617,6 +2629,7 @@ else:
 
 
 @system_bp.route('/api/qr/generate', methods=['POST'])
+@require_auth('user')
 @validate_json({
     'text': {'type': str, 'required': True, 'min_length': 1, 'max_length': 4096},
     'size': {'type': int, 'min': 64, 'max': 2048},
@@ -2724,6 +2737,7 @@ def api_i18n_get_language():
     return jsonify({'language': lang})
 
 @system_bp.route('/api/i18n/language', methods=['POST'])
+@require_auth('user')
 def api_i18n_set_language():
     data, error = _require_json_body(request)
     if error:
@@ -2760,6 +2774,7 @@ def api_ollama_host_get():
 
 
 @system_bp.route('/api/settings/ollama-host', methods=['PUT'])
+@require_auth('admin')
 @validate_json({'host': {'type': str, 'max_length': 500}})
 def api_ollama_host_set():
     data = request.get_json() or {}
@@ -2821,6 +2836,7 @@ def api_guidance_sources_list():
 
 
 @system_bp.route('/api/guidance-sources', methods=['POST'])
+@require_auth('admin')
 @validate_json({
     'domain': {'type': str, 'required': True, 'max_length': 100},
     'content_key': {'type': str, 'required': True, 'max_length': 200},

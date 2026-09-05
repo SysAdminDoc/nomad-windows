@@ -3,7 +3,6 @@
 import re
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -22,12 +21,14 @@ def _requirement_floor(filename, package, ceiling):
 def test_runtime_dependency_floors_stay_above_known_vulnerable_releases():
     assert _requirement_floor('requirements.txt', 'flask', '4.0') >= (3, 1, 3)
     assert _requirement_floor('requirements.txt', 'pillow', '13.0') >= (12, 2)
+    assert _requirement_floor('requirements.txt', 'pypdf', '7.0') >= (6, 17)
     assert _requirement_floor('requirements.txt', 'yt-dlp', '2027.0') >= (2026, 2, 21)
 
 
 def test_development_dependency_floors_stay_auditable():
     assert _requirement_floor('requirements-dev.txt', 'pytest', '10.0') >= (9, 0, 3)
     assert _requirement_floor('requirements-dev.txt', 'pytest-cov', '8.0') >= (7, 1)
+    assert _requirement_floor('requirements-dev.txt', 'pytest-timeout', '3.0') >= (2, 4)
     assert _requirement_floor('requirements-dev.txt', 'pip-audit', '3.0') >= (2, 10, 1)
 
 

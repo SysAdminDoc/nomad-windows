@@ -27,7 +27,11 @@ def register_root_routes(app):
 
     @app.route('/favicon.ico')
     def favicon():
-        svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><polygon points="32,4 60,32 32,60 4,32" fill="#4f9cf7"/><polygon points="32,14 50,32 32,50 14,32" fill="#0d0d0d"/><polygon points="32,22 42,32 32,42 22,32" fill="#4f9cf7"/></svg>'
+        svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+               '<path d="M32 3 61 32 32 61 3 32Z" fill="#0b131d" stroke="#d9ad67" stroke-width="3"/>'
+               '<path d="m32 16 15 28H17Z" fill="#779461" stroke="#d9ad67" stroke-width="2"/>'
+               '<path d="M32 25 40 44H24Z" fill="#0b131d"/><path d="M32 25v19" stroke="#f1d39b"/>'
+               '</svg>')
         return Response(svg, mimetype='image/svg+xml')
 
     @app.route('/api/offline/snapshot')

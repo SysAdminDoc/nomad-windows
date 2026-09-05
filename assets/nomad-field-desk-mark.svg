@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">NOMAD Field Desk</title>
+  <desc id="desc">A compass diamond framing a field tent and trail.</desc>
+  <defs>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1d39b"/>
+      <stop offset="0.52" stop-color="#d9ad67"/>
+      <stop offset="1" stop-color="#9f7742"/>
+    </linearGradient>
+    <linearGradient id="canopy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#91ad70"/>
+      <stop offset="1" stop-color="#5f7e55"/>
+    </linearGradient>
+  </defs>
+  <path d="M256 24 488 256 256 488 24 256Z" fill="#0b131d" stroke="url(#rim)" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M256 58 454 256 256 454 58 256Z" fill="none" stroke="#263546" stroke-width="3"/>
+  <path d="m256 83 10 24 24 10-24 10-10 24-10-24-24-10 24-10Z" fill="#f1d39b"/>
+  <path d="M256 148 384 366H128Z" fill="url(#canopy)" stroke="#d9ad67" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M256 148 384 366H256Z" fill="#d9ad67" opacity=".9"/>
+  <path d="M256 219 321 366H191Z" fill="#0b131d"/>
+  <path d="M256 219v147" stroke="#f1d39b" stroke-width="7" stroke-linecap="round"/>
+  <path d="M174 391h164" stroke="#263546" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="256" cy="391" r="13" fill="#f1d39b" stroke="#0b131d" stroke-width="6"/>
+</svg>

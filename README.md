@@ -1,697 +1,227 @@
-<div align="center">
-<img src="logo.png" width="140" height="140"/>
+<img src="logo.png" alt="NOMAD Field Desk compass and shelter mark" width="128">
 
-# NOMAD Field Desk v7.66.40
+# NOMAD Field Desk v7.66.41
 
-### Your Personal Intelligence & Preparedness Command Center
+**A local-first desktop workspace for preparedness, field operations, and offline reference.**
 
-**One app. Everything you need. Nothing leaves your machine.**
+[![Version](https://img.shields.io/badge/version-7.66.41-d9ad67?style=flat-square)](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-779461?style=flat-square)](LICENSE)
+[![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-263546?style=flat-square)](#install)
+[![Local first](https://img.shields.io/badge/data-local%20first-0b131d?style=flat-square)](#privacy-and-safety)
 
-[![Release](https://img.shields.io/github/v/release/SysAdminDoc/project-nomad-desktop?include_prereleases&label=Download&color=blue)](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2)](https://discord.com/invite/crosstalksolutions)
+NOMAD turns scattered spreadsheets, bookmarks, and emergency notes into one private field desk. Track supplies. Measure readiness. Stage maps and reference material before the network disappears. Your operational data stays on your machine.
 
-</div>
+[Download the latest release](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest) | [Read the safety notes](#privacy-and-safety) | [Build from source](#build-from-source)
 
----
+![NOMAD Field Desk overview](.github/social-preview.png)
 
-<details>
-<summary><b>Table of Contents</b></summary>
+## See the real app
 
-- [Why NOMAD?](#why-nomad)
-- [Capabilities Overview](#capabilities-overview)
-- [Situation Room](#-situation-room)
-- [AI Assistant](#-ai-assistant)
-- [Inventory & Supply Chain](#-inventory--supply-chain)
-- [Medical](#-medical)
-- [Maps & Navigation](#-maps--navigation)
-- [Communications](#-communications)
-- [Preparedness & Planning](#-preparedness--planning)
-- [Agriculture & Food Production](#-agriculture--food-production)
-- [Security & OPSEC](#-security--opsec)
-- [Group Operations](#-group-operations)
-- [Training & Knowledge](#-training--knowledge)
-- [Daily Living](#-daily-living)
-- [Hunting, Foraging & Wild Food](#-hunting-foraging--wild-food)
-- [Hardware & Sensors](#-hardware--sensors)
-- [Specialized Modules](#-specialized-modules)
-- [NukeMap](#-nukemap)
-- [VIPTrack](#-viptrack)
-- [Print & Export](#-print--export)
-- [Interoperability](#-interoperability)
-- [Integrated Services](#integrated-services)
-- [Data Sources](#data-sources)
-- [Themes & Dashboard Modes](#themes--dashboard-modes)
-- [Getting Started](#getting-started)
-- [Requirements](#requirements)
-- [Building from Source](#building-from-source)
-- [Architecture](#architecture)
-- [Credits](#credits)
+These captures come from the shipping interface at 1600 by 1000 pixels. The readiness and inventory views use representative data created in a disposable local profile. They aren't mockups, and no personal data is included.
 
-</details>
+| Readiness board | Field workflows |
+|:---:|:---:|
+| [![Readiness score with category breakdown](docs/media/readiness-dashboard.png)](docs/media/readiness-dashboard.png) | [![Preparedness workflow lanes](docs/media/preparedness-workflows.png)](docs/media/preparedness-workflows.png) |
+| **Inventory planning** | **Offline maps** |
+| [![Supply inventory and burn-rate planning](docs/media/inventory-planning.png)](docs/media/inventory-planning.png) | [![Regional offline map library](docs/media/offline-maps.png)](docs/media/offline-maps.png) |
 
----
+[![Offline knowledge library](docs/media/offline-library.png)](docs/media/offline-library.png)
 
-## Security Notice
+## Why people use it
 
-> NOMAD is designed for **localhost-only** use by default. If you expose it on a LAN or reverse proxy, you **must** place it behind an authenticating reverse proxy (Caddy, nginx + Authelia, Traefik + forward-auth) that enforces TLS and validates Host headers. Set `NOMAD_ALLOWED_HOSTS=your-hostname.local` to reject DNS rebinding requests. Enable `NOMAD_AUTH_REQUIRED=1` for token-based access control on LAN deployments. LAN QR codes are generated locally by the app and do not send your LAN URL to third-party QR services. Never expose NOMAD directly to the internet without authentication.
+- Keep household plans, contacts, medical notes, and supply records together.
+- Work from downloaded maps and reference libraries when connectivity is poor.
+- Run checklists, incident logs, handoffs, and printable reports from one desk.
+- Add a private local assistant with Ollama when your hardware and use case call for it.
 
----
+NOMAD is useful before an incident too. Its readiness score shows weak categories, inventory burn rates expose shortages, and the library helps turn a spare drive into a searchable reference shelf.
 
-## Why NOMAD?
+## What is inside
 
-Most people piece together their preparedness across a dozen apps, bookmarks, and spreadsheets. When you actually need it, nothing talks to each other and half of it requires internet you might not have.
-
-NOMAD puts everything in one place — live global intelligence, private AI, offline maps, supply tracking, medical references, communications tools, and more — in a single portable app that runs on your desktop. Your data never touches a cloud server. When the internet is available, you get live feeds. When it's not, everything you've cached still works.
-
-**Download it. Run it. That's it.** No accounts, no subscriptions, no setup wizards that take an hour.
-
----
-
-## Capabilities Overview
-
-| | |
+| Workspace | What it does |
 |:---|:---|
-| **Tabs** | Situation Room, Home, Readiness, Preparedness, Maps, Tools, NukeMap, VIPTrack, Water, Financial, Vehicles, Loadout, Movement, Tac Comms, Timeline, Threats, Land, Med+, Training, Group Ops, OPSEC, Agriculture, Disasters, Daily Living, Import/Export, Wild Food, Hardware, Library, Notes, Media, AI Chat, Diagnostics, Data Packs, Settings |
-| **Backend** | 1,644 API routes across 59 blueprints |
-| **Database** | 264 tables, 611 indexes (SQLite, WAL mode) |
-| **Test Suite** | 888 automated tests |
-| **Services** | Ollama (AI), Kiwix (Wikipedia), CyberChef, Kolibri, Qdrant, Stirling PDF, FlatNotes, BitTorrent |
-| **Intelligence** | 36+ data sources, 100+ RSS feeds, 45 map layers, 108+ dashboard cards |
-| **Data Packs** | 53 offline datasets across 3 tiers (auto-bundled through optional deep data) |
-| **Platform** | Windows, Linux, macOS — single portable executable per platform |
-| **Themes** | Desert, Night Ops, Cyber, Red Light, E-Ink |
-| **Privacy** | All data stored locally. No accounts. No telemetry. No cloud. |
+| **Readiness** | Scores water, food, medical, communications, security, power, and planning data. Weak categories lead to the records that need attention. |
+| **Preparedness** | Groups checklists, incidents, contacts, supplies, medical records, radio tools, and planning references into operating lanes. |
+| **Supply desk** | Tracks quantities, locations, minimums, expiration dates, and daily use. It also calculates days remaining and shopping gaps. |
+| **Maps** | Downloads regional map packages, imports PMTiles, stores waypoints and routes, and exports GPX. A print-ready atlas works without a live map service. |
+| **Library** | Manages Kiwix ZIM files, local PDFs, EPUB books, and text notes. Content tiers make storage needs visible before download. |
+| **Local assistant** | Connects to Ollama and optional Qdrant collections. Conversations and indexed documents remain on the local system. |
+| **Situation Room** | Collects public weather, hazard, market, and news feeds when a connection is available. Recent data is cached for later review. |
+| **Field output** | Produces contact sheets, status reports, checklists, GPX data, CSV exports, and other portable formats. |
 
----
+The navigation is organized by task so the supporting modules don't have to compete for attention at once.
 
-## Module Reference
-
-Each section below maps to a dedicated tab (or set of tabs) in the application. Every feature works offline.
-
----
-
-### 🌐 Situation Room
-
-A global intelligence dashboard that aggregates 36+ live data sources into a unified command view. All fetched data is cached locally so you always have a recent snapshot, even without internet.
-
-<table>
-<tr><td width="50%">
-
-**Intelligence Feeds**
-- USGS earthquakes (M2.5+, real-time GeoJSON)
-- NWS severe weather alerts
-- GDACS global crisis events
-- NASA FIRMS satellite fire detection
-- Smithsonian volcanic eruption database
-- WHO disease outbreak notifications
-- NOAA space weather (Kp index, solar flares, CME)
-- Polymarket prediction markets
-- 100+ curated RSS news feeds across 20 categories
-
-</td><td width="50%">
-
-**Financial & Market Tracking**
-- CoinGecko crypto prices (BTC, ETH, SOL)
-- Yahoo Finance stock indices (S&P 500, Nasdaq, Dow)
-- Gold and silver spot prices (metals.dev)
-- EIA Brent oil commodity pricing
-- Fear & Greed Index (market sentiment)
-
-**Live Video**
-- 12 rotating YouTube news channels (Al Jazeera, France 24, DW, Sky News, Reuters, NBC, ABC)
-
-</td></tr>
-</table>
-
-**Dashboard Features:** Configurable desk presets (Executive, Crisis, Markets, Cyber, Regional) | Breaking news banner | Color-coded composite threat level (1–5) | Ticker strip with real-time count badges | AM Brief / Crisis Handoff / Market Note snapshot templates | Proximity-based alerts for your location
-
----
-
-### 🤖 AI Assistant
-
-A local AI that runs entirely on your hardware. It knows your actual inventory levels, contacts, weather, medical data, and incidents — so it gives answers relevant to *your* situation, not generic advice.
-
-| Feature | Detail |
+| Supporting area | Included tools |
 |:---|:---|
-| **Engine** | Ollama (local LLM inference), GPU-accelerated (CUDA/Metal/ROCm) |
-| **Default Model** | llama3.2:3b — 41+ recommended models available |
-| **RAG** | Retrieval-augmented generation over all NOMAD data via Qdrant vector DB |
-| **Embeddings** | nomic-embed-text:v1.5 (768-dim vectors) |
-| **Document Pipeline** | Upload PDFs, images, text — auto-OCR, chunk, embed, index |
-| **Knowledge Base** | Named workspaces ("Medical KB", "Water KB"), source citations with page numbers |
-| **Conversations** | Branching, forking, context windows, streaming responses |
-| **Capabilities** | SITREP generation, scenario analysis, inventory gap assessment, meal planning from stock |
+| **Coordination** | Briefings, alert rules, exercises, federation, group ops, and interoperability |
+| **People and supplies** | Comms, kit builder, loadout planning, meal planning, nutrition, and daily living |
+| **Property and awareness** | Water planning, vehicles, agriculture, power, threat intel, OPSEC, hardware sensors, and specialized modules |
+| **Reference work** | Training, notes, media, calculators, and import or export tools |
 
----
+## Offline means something specific
 
-### 📦 Inventory & Supply Chain
+NOMAD keeps its application database and settings locally. Core records remain available without an account or internet connection.
 
-Track everything you own with barcode scanning, receipt OCR, burn rate projections, and expiration alerts. The system tells you what you're burning through and what to restock before you run out.
-
-<table>
-<tr><td width="50%">
-
-**Core Inventory**
-- Multi-category tracking (food, supplies, medical, fuel, ammo)
-- Barcode/QR scanning with UPC database (76 pre-seeded items)
-- Receipt OCR for quick data entry
-- Photo attachments per item
-- Check-in/check-out tracking ("who has the generator?")
-- Lot/batch tracking for medical supplies and ammo
-- Location tracking (cache, building, vehicle, container)
-- Expiration alerts with timeline aggregation
-
-</td><td width="50%">
-
-**Intelligence Layer**
-- USDA FoodData nutritional linking (7,793 foods, 150+ nutrients)
-- Person-days of food calculator
-- Micronutrient gap analysis with deficiency timeline
-- Per-person consumption profiles (14 activity levels)
-- Burn rate modeling from actual consumption data
-- Auto-reorder point calculation
-- Substitute item mapping
-- Physical audit mode with discrepancy tracking
-
-</td></tr>
-</table>
-
-**Additional Modules:** Shopping list generation | Container/bin management with nesting | Kit builder wizard with 5 pre-built templates (72-hour, bug-out, vehicle, medical, 30-day) | Recipes linked to inventory with "meals remaining" and expiration-priority cooking | Water storage, filter life, source tracking, quality testing, daily budget calculator | Financial tracker (cash reserves, precious metals, barter goods, insurance documents)
-
----
-
-### 🏥 Medical
-
-Patient tracking with vital signs trending, wound documentation, drug interaction checking, TCCC protocols, triage boards, and a printable pocket-sized medical flipbook. No cell signal required.
-
-<table>
-<tr><td width="50%">
-
-**Clinical**
-- Patient records linked to contacts
-- Vital signs trending (BP, HR, temp, SpO2, GCS)
-- Wound documentation with photo comparison
-- Medication administration log
-- 26-pair drug interaction checker
-- TCCC/MARCH 5-step flowchart
-- START triage system
-- SBAR handoff reports
-- Burns BSA calculator, IV fluid calculator
-
-</td><td width="50%">
-
-**Extended (Phase 2)**
-- Pregnancy & childbirth tracking (prenatal, EDD, APGAR)
-- Dental emergency records and protocols
-- Veterinary medicine with animal dosage calculator
-- Chronic condition management (diabetes, hypertension, asthma)
-- Medication weaning protocols
-- Herbal/alternative medicine reference database
-- Vaccination schedule tracker with renewal
-- Mental health check-in log
-- 15-category offline medical reference with full-text search
-
-</td></tr>
-</table>
-
----
-
-### 🗺️ Maps & Navigation
-
-Download regional map tiles once and they're yours forever. Waypoints, routes, elevation profiles, perimeter zones, GPX import/export — all powered by MapLibre with 50+ tile sources.
-
-| Feature | Detail |
+| Available offline | Needs a connection at least once |
 |:---|:---|
-| **Tile Support** | PMTiles, MBTiles — download once, use forever |
-| **Styles** | Dark tactical, terrain/topo, satellite — cycle with one click |
-| **Waypoints** | Categories, custom icons, elevation, notes |
-| **Routes** | Multi-waypoint with GPX data, turn-by-turn distances |
-| **Measurement** | Haversine distance and area calculation |
-| **Elevation** | Profile graphs along routes and between waypoints |
-| **Overlays** | GeoJSON annotations, perimeter zones, infrastructure points (1,275+) |
-| **Layers** | 45 data layers including earthquakes, fires, aircraft, volcanic activity |
-| **Export** | GPX, GeoJSON, KML, print to PDF at specified scale |
-| **Geocoding** | Local geocoding — no external API required |
+| Inventory, contacts, checklists, notes, and local reports | Downloading optional services and content packs |
+| Previously downloaded maps, routes, and waypoints | Fetching a new regional map package |
+| Installed Kiwix libraries and local documents | Downloading an Ollama model or Kiwix ZIM file |
+| Calculators and stored operational history | Refreshing live alerts, news, markets, or weather |
 
----
+Download what you need before travel or a planned outage. Live sources cannot update while the network is down, and cached information can become stale.
 
-### 📡 Communications
-
-Stay connected when infrastructure fails. LAN chat with encryption, DTMF tones, NATO phonetic trainer, antenna calculators, HF propagation charts, and a Meshtastic mesh radio bridge.
-
-<table>
-<tr><td width="50%">
-
-**Radio & Comms**
-- Frequency database (~340 allocations: US, EU, international)
-- Radio equipment inventory (model, serial, firmware, freq range)
-- CHIRP-compatible CSV export for radio programming
-- Antenna calculator with SVG diagrams (4 types)
-- HF propagation prediction (MUF, 7-band table)
-- DTMF tone generator (WebAudio 16-key pad)
-- NATO phonetic alphabet trainer (quiz + reference)
-
-</td><td width="50%">
-
-**Tactical**
-- PACE communications plan builder
-- Authentication code system (challenge/response, rotating daily)
-- Net schedule tracker with comms check logging
-- Message format templates (SITREP, MEDEVAC 9-line, SALUTE, SPOT, ACE, LACE)
-- Brevity code dictionary
-- LAN chat with AES-GCM encryption
-- LAN file transfer (drag-and-drop)
-- Meshtastic mesh node management with map overlay
-
-</td></tr>
-</table>
-
----
-
-### 🎯 Preparedness & Planning
-
-Goal-based readiness scoring, alert rules engine, evacuation planning, and a unified timeline that aggregates every date across every module.
-
-<table>
-<tr><td width="50%">
-
-**Readiness System**
-- Goal-based scoring (% complete per category)
-- Regional threat weighting (FEMA NRI county hazard data)
-- Daily operations brief (weather, inventory, tasks, family status)
-- Custom alert rules engine (IF/THEN conditions with actions)
-- Threat intelligence feeds (10 severity categories)
-- Emergency Mode orchestrator (broadcasts SSE, auto-creates incident log)
-
-</td><td width="50%">
-
-**Evacuation & Movement**
-- Tiered evacuation plans (shelter-in-place → local → bug-out → INCH)
-- Go/no-go decision matrix with trigger conditions
-- Movement plans (foot march rate, convoy SOP, fuel planning)
-- Alternative vehicles (bicycle, horse, boat, ATV) with range calculators
-- Route hazard markers (bridges, tunnels, chokepoints, flood zones)
-- Route reconnaissance logging
-- Rally point cascade and family assembly protocol
-- Bug-out bag loadouts (72hr, GHB, INCH, EDC, medical, vehicle)
-- Vehicle fleet management with maintenance scheduling
-
-</td></tr>
-</table>
-
-**More:** Evacuation drills with live timing and performance tracking | Unified calendar/timeline aggregating all dated events across all modules | Checklists with templates and progress tracking | Countdown timers | Watch/shift rotation planner
-
----
-
-### 🌾 Agriculture & Food Production
-
-Long-term food independence through garden planning, permaculture design, livestock management, and resource recycling systems.
-
-| Category | Features |
-|:---|:---|
-| **Garden** | Plot management, USDA hardiness zone lookup, frost date tracking, companion planting (20 pairs), pest/disease guide (10 entries), seed inventory with viability tracking |
-| **Permaculture** | Food forest guild designer, 7-layer planting plans, canopy calculator, yield timeline |
-| **Soil** | Hugelkultur, swales, biochar, sheet mulching, cover crop projects |
-| **Livestock** | Animal records, breeding records with lineage, feed tracking, production logging, pasture rotation |
-| **Infrastructure** | Solar tracking, battery health, well monitoring, wood inventory, heating BTU calculator |
-| **Aquaponics** | System tracking, water chemistry, fish health, nutrient calculator |
-| **Recycling** | Composting, greywater, biogas, material reuse — closed-loop system tracking |
-| **Planning** | 1–20 year agricultural development timeline, land carrying capacity, climate adaptation |
-
----
-
-### 🔒 Security & OPSEC
-
-Tactical-grade security operations, signature management, night operations planning, and CBRN preparedness.
-
-<table>
-<tr><td width="50%">
-
-**Physical Security**
-- Surveillance camera management (URL, stream type)
-- Access log (entry/exit tracking)
-- Perimeter zones (geofenced)
-- Motion detection events
-- Incident reporting (severity, category)
-- Encrypted vault for credentials and secrets
-
-</td><td width="50%">
-
-**OPSEC & Tactical**
-- Information compartment manager
-- OPSEC audit checklists (digital + physical)
-- Threat matrix with CARVER assessment
-- Observation post logging with range cards
-- Signature assessment (visual, audio, electronic, thermal)
-- Night operations planner (moonrise/set, ambient light, dark adaptation)
-- CBRN equipment inventory and decon procedures
-- EMP hardening inventory and grid dependency scanner
-
-</td></tr>
-</table>
-
----
-
-### 👥 Group Operations
-
-Multi-household coordination, leadership structures, ICS/NIMS compliance, and community defense.
-
-| Category | Features |
-|:---|:---|
-| **Pods** | Multi-household pod management with member roles and skills |
-| **Governance** | Chain of command, SOPs, duty roster, onboarding procedures |
-| **ICS Forms** | ICS-201, 202, 204, 205, 206, 213, 214, 215 — IAP generator |
-| **CERT** | Team management, damage assessment forms, volunteer tracking |
-| **Civil Defense** | Shelter management, community warning broadcasts, resource allocation |
-| **Disputes** | Mediation tracking, voting/polling system, rationing fairness audit |
-| **Federation** | Multi-node peer sync (CRDT-like), dead drop messaging, mutual aid agreements, group exercises |
-
----
-
-### 📚 Training & Knowledge
-
-Structured skill development with spaced repetition, drill systems, and institutional memory preservation.
-
-| Feature | Detail |
-|:---|:---|
-| **Skill Trees** | Prerequisite chains per person, cross-training matrix |
-| **Courses** | Training course builder with lessons, assessments, instructor assignments |
-| **Certifications** | Tracker with renewal reminders and expiry alerts |
-| **Drills** | Template library (fire, lockdown, medical, comms failure), no-notice launcher, grading rubric, AAR |
-| **Flashcards** | Spaced repetition system (SM-2 algorithm) for critical knowledge |
-| **Knowledge Packages** | "If I'm gone" packages per key person — institutional memory preservation |
-| **Reference** | Offline field guides, military field manual reference, searchable reference cards |
-
----
-
-### 🏠 Daily Living
-
-Actually surviving day-to-day under grid-down conditions — schedules, chores, morale, sleep, and recipes that don't need a microwave.
-
-| Module | Features |
-|:---|:---|
-| **Schedules** | Daily routine builder with templates, work/rest cycle management |
-| **Chores** | Assignment rotation with fair distribution tracking |
-| **Clothing** | Per-person inventory with cold weather assessment and protective gear tracking |
-| **Sanitation** | Supply tracking with consumption projections, waste management, disease prevention |
-| **Morale** | Mood tracking with trend analysis, recreational supply inventory, morale events |
-| **Sleep** | Sleep log with debt tracking, watch schedule optimizer, fatigue risk assessment |
-| **Performance** | Human performance checks with auto risk scoring, work-rest reference (6 profiles) |
-| **Recipes** | Grid-down cooking database (campfire, rocket stove, solar oven, dutch oven, preserved foods) |
-
----
-
-### 🦌 Hunting, Foraging & Wild Food
-
-| Module | Features |
-|:---|:---|
-| **Hunting** | Game harvest log (species, method, weight, GPS), hunting zones with season management |
-| **Fishing** | Catch records (species, bait, conditions, GPS) |
-| **Foraging** | Find log with GPS locations, confidence rating, seasonal notes |
-| **Traps & Snares** | Placement tracking with check scheduling and catch logging |
-| **Wild Edibles** | Reference database (10 seeded species) with photos, season, habitat, look-alikes |
-| **Trade Skills** | 13 categories (blacksmithing, woodworking, leatherwork, sewing, soap, candles, etc.) |
-| **Preservation** | 8 methods seeded (tanning, distillation, vinegar, cheese, herbal tinctures), batch tracking |
-
----
-
-### 🔧 Hardware & Sensors
-
-| Module | Features |
-|:---|:---|
-| **IoT Sensors** | 12 sensor types (temp, humidity, soil moisture, water level, AQI, radiation, pressure, wind, precipitation) with time-series dashboard |
-| **Network** | Device inventory with topology tree visualization |
-| **Mesh** | Meshtastic node management with map overlay and signal stats |
-| **Weather Stations** | Direct integration (Davis, Ecowitt, Ambient Weather) |
-| **GPS** | Device management with fix recording and track history |
-| **Wearables** | Health data import from wearable devices |
-| **Integrations** | MQTT broker, Home Assistant, Node-RED, webhook, CalDAV, Meshtastic — all with test endpoints |
-
----
-
-### 🧩 Specialized Modules
-
-| Module | Features |
-|:---|:---|
-| **Supply Caches** | Hidden cache locations with GPS, concealment method, inventory linking |
-| **Pets** | Companion animal records with food supply projections and vet records |
-| **Youth Programs** | Children and family program management |
-| **End-of-Life** | Estate planning, document storage, directive management |
-| **Procurement** | Shopping/procurement lists with budget tracking and priority |
-| **Intel Collection** | Priority Information Requirements (PIR), classification levels, source tracking |
-| **Fabrication** | 3D printing and CNC project tracker with material inventory |
-| **Gamification** | 10 achievement badges with awards, leaderboard, and progress tracking |
-| **Seasonal Events** | Calendar integration with upcoming event views |
-| **Legal Vault** | Legal document storage with expiry alerts and renewal tracking |
-| **Drones** | Drone inventory with flight logging, GPS tracks, and maintenance |
-| **Fitness** | Exercise logging with weekly stats and trend analysis |
-| **Content Packs** | Community content pack sharing and import |
-
----
-
-### ☢️ NukeMap
-
-Model nuclear detonation effects for 32 real warheads — blast radius, thermal burns, fallout patterns, shelter survival odds, and full WW3 exchange simulations.
-
-| Feature | Detail |
-|:---|:---|
-| **Warheads** | 32 real-world warhead profiles with accurate yield data |
-| **Effects** | Blast overpressure rings, thermal radiation, ionizing radiation, fallout plume |
-| **Shelter** | Survival probability by shelter type and distance |
-| **Scenarios** | Full WW3 exchange simulation with 418 verified target locations |
-| **Physics** | Based on published nuclear effects data (Glasstone & Dolan) |
-| **Offline** | Shared basemap with VIPTrack — works without internet |
-
----
-
-### ✈️ VIPTrack
-
-Real-time military and VIP aircraft monitoring using live ADS-B data feeds.
-
-| Feature | Detail |
-|:---|:---|
-| **Military Aircraft** | 11,000+ military aircraft database |
-| **Government/VIP** | 12,000+ government and VIP aircraft |
-| **Visualization** | Altitude-colored trails, photos, aircraft details |
-| **Watchlists** | Custom watchlists with alert notifications |
-| **Data** | OpenSky Network ADS-B feed (no API key required) |
-
----
-
-### 🖨️ Print & Export
-
-Generate field-ready documents from your data, formatted for print or lamination.
-
-- **Operations Binder** — complete field reference from all modules
-- **Emergency Sheets** — quick-reference cards for grab-and-go
-- **Laminated Wallet Cards** — vehicle cards, medication cards, contact cards
-- **Signal Operating Instructions** — frequency reference, auth codes, net schedules
-- **Medical Flipbook** — pocket-sized TCCC/triage reference
-- **FEMA Household Plan** — standard family emergency plan format
-- **Skills Gap Report** — cross-training needs analysis
-- **Seasonal Calendar** — planting, maintenance, and preparedness schedule
-
----
-
-### 🔄 Interoperability
-
-No data lock-in. Import and export in standard formats.
-
-| Direction | Formats |
-|:---|:---|
-| **Import** | CSV, vCard, GPX, GeoJSON, KML, iCalendar (ICS), CHIRP radio CSV |
-| **Export** | CSV, vCard, GPX, GeoJSON, KML, ICS, CHIRP, ADIF (ham radio), FHIR R4 (medical), Markdown |
-| **Batch** | Bulk import/export operations with format auto-detection |
-| **History** | Full export/import history tracking |
-| **Print** | PDF generation for all major modules |
-
----
-
-## Integrated Services
-
-NOMAD manages 8 external services automatically. Each is optional — install what you need, skip what you don't.
-
-| Service | Port | Purpose |
-|:---|:---:|:---|
-| **Ollama** | 11434 | Local LLM inference — GPU-accelerated (CUDA, Metal, ROCm) |
-| **Qdrant** | 6333 | Vector database for RAG knowledge base |
-| **Kiwix** | 8888 | Offline Wikipedia and reference libraries (13 ZIM categories, 3 tiers) |
-| **CyberChef** | 8889 | Data encoding, decoding, encryption, and analysis |
-| **Kolibri** | 8300 | Offline Khan Academy and educational content |
-| **Stirling PDF** | 8443 | PDF merge, split, compress, OCR, and convert |
-| **FlatNotes** | 8890 | Markdown note-taking |
-| **BitTorrent** | dynamic | Media content downloading (via libtorrent) |
-
-All services feature auto-start, health monitoring (crash detection + auto-restart), download resume, SHA256 verification when upstream release metadata or sidecars publish checksums, and ordered shutdown.
-
----
-
-## Data Sources
-
-NOMAD bundles or connects to 53 offline-compatible datasets across 3 tiers. No API keys required.
-
-### Tier 1 — Bundled (~75 MB, auto-included)
-
-USDA FoodData SR Legacy (7,793 foods) | FEMA National Risk Index (all US counties) | NOAA frost dates & weather stations | USDA hardiness zones by ZIP | USDA FoodKeeper shelf life | World Magnetic Model (compass correction) | EPA fuel economy | Firewood BTU ratings | FRS/GMRS/MURS frequencies | NRC nuclear facility locations | ICS resource typing | HYG star database (celestial navigation) | MIL-STD-2525 symbology
-
-### Tier 2 — Downloadable (100 MB–1 GB each)
-
-Open Food Facts (barcode lookup) | RepeaterBook (amateur radio) | USGS earthquake catalog & faults | SRTM elevation tiles | NOAA storm events | National Hydrography Dataset | NREL solar irradiance | HIFLD critical infrastructure | USDA PLANTS database | SIDER drug side effects | iNaturalist/GBIF species data | FishBase | Global Wind Atlas | US Census population density | PFAF edible perennials | Mushroom Observer
-
-### Tier 3 — Deep Data (1 GB+ each)
-
-OpenStreetMap state extracts | FEMA National Flood Hazard Layer | SSURGO soil survey | DrugBank interactions (2.5M pairs) | ESA WorldCover (10m land cover) | USGS 3DEP LiDAR DEM | Full NHD hydrography
-
----
-
-## Themes & Dashboard Modes
-
-### Themes
-
-| Theme | Style |
-|:---|:---|
-| **Atlas** | Clean desert sand — default light theme |
-| **Midnight** | Deep dark — night operations friendly |
-| **Cobalt** | Blue steel — tactical display aesthetic |
-| **Ember** | Warm dark — reduced eye strain |
-| **Paper** | High contrast — E-Ink and print optimized |
-
-### Dashboard Modes
-
-| Mode | Focus |
-|:---|:---|
-| **Command Center** | Full operational dashboard — all modules visible |
-| **Homestead** | Farm and self-reliance focus — agriculture, livestock, garden, weather |
-| **Essentials** | Streamlined basics — inventory, medical, maps, contacts, weather |
-
----
-
-## Getting Started
+## Install
 
 ### Windows
 
-Download **NOMADFieldDesk-Windows.exe** (portable) or **NOMAD-Setup.exe** (installer) from [Releases](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest) and double-click. No install needed — runs from USB, desktop, anywhere.
+The current release is built and checked on Windows 11.
 
-### Linux
+1. Open the [latest release](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest).
+2. Choose `NOMAD-Setup.exe` for a normal install, or `NOMADFieldDesk-Windows.exe` for the portable build.
+3. Compare the file against `SHA256SUMS.txt` when it is provided.
+4. Start NOMAD, choose a data location, then add only the optional content you want.
 
-Download **NOMADFieldDesk-Linux** from [Releases](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest), `chmod +x`, and run. AppImage also available. Requires GTK WebKit:
+The current Windows artifacts are not code signed. Windows may show a SmartScreen warning, so verify the SHA-256 checksum before running either file.
+
+The portable executable can live on a removable drive. Keep a separate backup of the data directory if that drive contains records you cannot replace.
+
+### Linux and macOS
+
+The source supports Linux and macOS through Python and pywebview. Release binaries must be built on their target operating system, so the newest GitHub release may not include both platforms. See [Build from source](#build-from-source) for the current code.
+
+On Ubuntu and related distributions, install the WebKit bindings first:
+
 ```bash
 sudo apt install python3-gi gir1.2-webkit2-4.1
 ```
 
-### macOS
+## First run
 
-Download **NOMADFieldDesk-macOS** from [Releases](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest). Uses native WebKit — no extra dependencies.
+NOMAD opens a setup guide instead of downloading a large stack automatically. Pick a storage location, then choose the services and reference tiers that fit the machine.
 
-#### Running alongside the upstream Crosstalk admin (macOS)
+Good first steps:
 
-If you're already running the upstream Crosstalk admin stack (e.g. via `project-nomad-macos-arm64`) on the same machine, Field Desk and Crosstalk both default to port `8080`. Override Field Desk's port and they coexist cleanly:
+1. Add household contacts and blood types you are comfortable storing locally.
+2. Record water, food, and medical supplies with minimum quantities.
+3. Complete one readiness checklist and review the score.
+4. Download the map regions and reference packs you expect to need offline.
 
-```bash
-curl -L -o /Applications/NOMADFieldDesk-macOS \
-  https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest/download/NOMADFieldDesk-macOS
-chmod +x /Applications/NOMADFieldDesk-macOS
+Optional downloads range from a small starter shelf to hundreds of gigabytes. The setup screen shows estimated size before anything starts.
 
-NOMAD_PORT=8081 /Applications/NOMADFieldDesk-macOS
+## Optional local services
+
+NOMAD can install and manage these services when the current platform supports them. None is required for basic records or planning.
+
+| Service | Adds |
+|:---|:---|
+| [Ollama](https://ollama.com/) | Local language models |
+| [Qdrant](https://qdrant.tech/) | Vector search for document collections |
+| [Kiwix](https://www.kiwix.org/) | Offline Wikipedia and ZIM libraries |
+| [CyberChef](https://gchq.github.io/CyberChef/) | Data conversion and analysis tools |
+| [Kolibri](https://learningequality.org/kolibri/) | Offline learning content |
+| [Stirling PDF](https://www.stirlingpdf.com/) | Local PDF operations |
+| [FlatNotes](https://github.com/dullage/flatnotes) | A focused Markdown notebook |
+| BitTorrent support | Resumable distribution for large public data packs |
+
+Service state, storage, and logs are visible in the app. When upstream publishers provide checksums, NOMAD verifies downloads before use.
+
+## Privacy and safety
+
+NOMAD binds to localhost by default. It has no required cloud account and does not add telemetry to your records.
+
+If you make it available on a LAN:
+
+- Set `NOMAD_AUTH_REQUIRED=1`.
+- Set `NOMAD_ALLOWED_HOSTS` to the host names you will use.
+- Put remote access behind TLS and an authenticating reverse proxy.
+- Never expose the built-in server directly to the public internet.
+
+Preparedness records can be sensitive. Protect the Windows account, encrypt removable storage where appropriate, and test backups before relying on them.
+
+NOMAD is an organizational aid, not an emergency dispatch system. Hazard feeds may be delayed. Medical, radio, navigation, and safety references do not replace current instructions from qualified professionals or public authorities. Confirm critical decisions through an authoritative source whenever one is available.
+
+## Data and portability
+
+The main database is SQLite in WAL mode. Uploaded documents, map packages, backups, and managed service files live under the selected data directory.
+
+Common exchanges include CSV, vCard, GPX, GeoJSON, KML, iCalendar, CHIRP radio CSV, ADIF, FHIR R4, JSON, and Markdown. Exact fields vary by workspace. Export a small sample before moving a large collection into another tool.
+
+## Build from source
+
+You need Python 3.10 or newer and a current Node.js LTS release. Python 3.12 is used for release verification.
+
+### Windows PowerShell
+
+```powershell
+git clone https://github.com/SysAdminDoc/project-nomad-desktop.git
+cd project-nomad-desktop
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt -r requirements-dev.txt
+npm ci
+npm run build
+.venv\Scripts\python nomad.py
 ```
 
-After that:
-- `:8080` → Crosstalk admin (Wikipedia / RAG / original NOMAD UX)
-- `:8081` → Field Desk (Situation Room / Loadout / NukeMap / broader preparedness suite)
-- `:11434` → one Ollama daemon, Metal-accelerated, serving both (Field Desk auto-discovers an existing Ollama)
-
-Other managed subprocesses (Kiwix / Kolibri / FlatNotes) don't collide in practice — Crosstalk runs them as Docker containers on dynamic published ports while Field Desk manages them as subprocesses on its defaults.
-
----
-
-## Requirements
-
-| Platform | Dependencies |
-|:---|:---|
-| **Windows 10/11** | WebView2 Runtime (included in Windows 11) |
-| **Linux** | Python 3.10+, GTK WebKit (`python3-gi gir1.2-webkit2-4.1`) |
-| **macOS** | Python 3.10+ (uses native WebKit) |
-
-Python runtime dependencies are installed from `requirements.txt`; Flask is intentionally
-pinned at `>=3.1.3,<4.0` as the supported security floor.
-
-System diagnostics report the linked Python SQLite runtime and flag versions below
-SQLite `3.50.2`, the current minimum security floor for bundled database runtimes.
-CI and release builds run `pip-audit` against Python requirement files before tests or
-packaging so vulnerable dependency ranges fail early. Frontend test/build tooling targets
-Node.js 24 LTS, and CI/release jobs run `npm audit --audit-level=moderate` after
-`npm ci` before JavaScript tests or bundles.
-
----
-
-## Building from Source
+### Linux or macOS
 
 ```bash
 git clone https://github.com/SysAdminDoc/project-nomad-desktop.git
 cd project-nomad-desktop
-pip install -r requirements.txt
-python nomad.py
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
+npm ci
+npm run build
+.venv/bin/python nomad.py
 ```
 
-### Build portable executable
+### Local verification
 
-```bash
-pip install pyinstaller
-pyinstaller build.spec
+```powershell
+npx playwright install chromium
+npm test
+.venv\Scripts\python -m pytest tests -q --timeout=120 --timeout-method=thread
+npm run visual:test
+npm run marketing:capture
+powershell -ExecutionPolicy Bypass -File tools\build_brand_assets.ps1
+powershell -ExecutionPolicy Bypass -File tools\build_marketing_assets.ps1
+.venv\Scripts\python tools\release.py
 ```
 
-### Release packaging
+`npm run marketing:capture` starts a loopback-only server with a temporary data directory, adds representative sample records, captures the five README images in headless Chromium, then removes the temporary profile. It never opens the desktop window or reads a user's NOMAD database.
 
-Releases are built locally via the release pipeline script:
+Set `NOMAD_CAPTURE_BASE_URL` and `NOMAD_CAPTURE_ISOLATED=1` to capture a running packaged build. Use that mode only with a disposable profile because the script adds representative records before taking screenshots.
 
-```bash
-py -3.12 tools/release.py
+The two image-building scripts require ImageMagick 7 and its `magick` command. They are only needed when regenerating brand or marketing artwork.
+
+## Project layout
+
+```text
+nomad.py                 Desktop entry point and pywebview host
+web/                     Flask routes, templates, browser assets, and PWA files
+services/                Optional local service managers
+db.py                    Connection pool and database access
+db_schema.py             Schema and migration definitions
+db_seeds.py              Built-in reference data
+tests/                   Python, browser, and JavaScript checks
+tools/release.py         Local PyInstaller release pipeline
+installer.iss            Windows installer definition
 ```
 
-This verifies version consistency across all 4 version files, runs the full test suite, builds the JS/CSS bundle, produces the PyInstaller executable, and generates `SHA256SUMS.txt` + `build-manifest.json`. Use `--skip-tests` or `--skip-build` for iterative development.
+The browser interface is served only by the local Flask process. pywebview hosts that interface as a desktop window. Frontend assets are bundled with esbuild, while PyInstaller produces the portable executable.
 
-- Windows: `NOMADFieldDesk.exe` (portable) + Inno Setup installer via `installer.iss`
-- Linux: Binary + AppImage via `tools/build_appimage.sh`
+## Contributing
 
----
+Bug reports should include the operating system, NOMAD version, failing workspace, and the smallest safe log excerpt that reproduces the problem. Remove personal records, paths, tokens, and local network details before attaching a log.
 
-## Architecture
-
-```
-nomad.py                          Entry point — pywebview + pystray + Flask
-config.py                         Configuration (env-overridable, portable mode)
-db.py                             SQLite layer — 264 tables, WAL mode, FK enforcement
-
-web/
-├── app.py                        Flask app factory — 59 blueprint registrations
-├── blueprints/                   59 REST API modules (~1,644 routes)
-├── templates/
-│   ├── index.html                SPA shell
-│   └── index_partials/           30+ tab partials (Jinja2)
-├── static/                       CSS/JS bundles (esbuild)
-├── nukemap/                      Nuclear effects simulator
-└── viptrack/                     Aircraft tracking UI
-
-services/
-├── manager.py                    Process manager (GPU detection, health monitor)
-├── ollama.py                     LLM inference service
-├── kiwix.py                      Offline reference library
-├── cyberchef.py                  Data encoding/analysis
-├── kolibri.py                    Educational content
-├── qdrant.py                     Vector database
-├── stirling.py                   PDF tools
-├── flatnotes.py                  Markdown notes
-└── torrent.py                    BitTorrent client
-
-db_migrations/                    Numbered SQL migration scripts
-tests/                            888 pytest tests
-.github/workflows/build.yml       Multi-platform CI/CD
-```
-
-**Design Principles:** Offline-first | Data sovereignty | Print-friendly | Modular | Low-resource compatible | Fail graceful | AI-optional (enhances, never gates) | Federation-aware | Import/export everything (no lock-in) | Regionally adapted | Multi-scale (solo → family → pod → federation)
-
----
+Keep changes focused. Run the Python and JavaScript checks locally, exercise the affected screen, and include a new product capture whenever the interface changes.
 
 ## Credits
 
-Based on [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) by Crosstalk Solutions. Desktop edition by [SysAdminDoc](https://github.com/SysAdminDoc).
+NOMAD Field Desk builds on ideas and components from [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) by Crosstalk Solutions. The desktop field-desk edition is maintained by [SysAdminDoc](https://github.com/SysAdminDoc).
+
+Third-party services remain the work of their respective maintainers and keep their own licenses. Review those terms before redistributing a bundle that includes optional service binaries or data.
+
+## License
+
+This repository is available under the [MIT License](LICENSE).

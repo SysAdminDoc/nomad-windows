@@ -16,7 +16,7 @@ _hiddenimports = [
     'pystray',
     'PIL',
     'psutil',
-    'PyPDF2',
+    'pypdf',
     'sqlite3',
     'http.server',
     'services',
@@ -185,4 +185,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=_icon,
+    version='build/version_info.txt' if _is_windows else None,
 )

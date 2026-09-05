@@ -1149,8 +1149,8 @@ def api_ai_upload_context():
     content = ''
     if ext == 'pdf':
         try:
-            import PyPDF2
-            reader = PyPDF2.PdfReader(file)
+            import pypdf
+            reader = pypdf.PdfReader(file)
             content = '\n'.join(page.extract_text() or '' for page in reader.pages)
         except Exception as e:
             log.warning('PDF read failed: %s', e)

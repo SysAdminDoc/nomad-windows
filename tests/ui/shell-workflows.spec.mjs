@@ -334,7 +334,7 @@ test('escape closes visible shell surfaces without leaving stale utility state b
 
   await page.evaluate(() => toggleShortcutsHelp(true));
   await expect(page.locator('#shortcuts-overlay')).toBeVisible();
-  await expect(page.locator('.shortcuts-copy')).toContainText('Keep your hands on the keyboard');
+  await expect(page.locator('.shortcuts-copy')).toContainText('Use visible controls');
   await page.keyboard.press('Escape');
   await expect(page.locator('#shortcuts-overlay')).toBeHidden();
 

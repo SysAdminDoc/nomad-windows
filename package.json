@@ -1,7 +1,7 @@
 {
   "name": "nomad-field-desk",
   "private": true,
-  "description": "Desktop-first offline preparedness and field operations workspace",
+  "description": "Local-first preparedness, field operations, and offline reference workspace",
   "scripts": {
     "build": "node esbuild.config.mjs",
     "dev": "echo 'Dev mode: using raw ES modules'",
@@ -9,7 +9,8 @@
     "test:watch": "vitest",
     "visual:install": "playwright install chromium",
     "visual:test": "playwright test --config=playwright.config.mjs",
-    "visual:test:list": "playwright test --config=playwright.config.mjs --list"
+    "visual:test:list": "playwright test --config=playwright.config.mjs --list",
+    "marketing:capture": "node tools/capture_marketing.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

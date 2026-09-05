@@ -1,11 +1,11 @@
 {
   "name": "NOMAD Field Desk",
   "short_name": "NOMAD",
-  "description": "Desktop-first offline preparedness and field operations workspace",
+  "description": "Local-first preparedness, field operations, and offline reference workspace",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d0d0d",
-  "theme_color": "#4f9cf7",
+  "background_color": "#070b10",
+  "theme_color": "#d9ad67",
   "icons": [
     {
       "src": "/static/logo-192.png",
@@ -16,7 +16,13 @@
       "src": "/static/logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/static/logo-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

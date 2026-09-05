@@ -3654,7 +3654,7 @@ async function loadSitroomTimeline() {
 
   // Sort by cached_at descending, take latest 20
   const events = d.events.slice(0, 20);
-  const html = '<div class="sr-timeline-track">' + events.map(ev => {
+  const html = '<div class="sr-timeline-track" tabindex="0" aria-label="Event timeline">' + events.map(ev => {
     const severity = ev.magnitude > 5 ? 'high' : ev.magnitude > 3 ? 'med' : 'low';
     const typeLabel = (ev.event_type || '').replace(/_/g, ' ');
     let timeStr = '';

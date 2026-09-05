@@ -152,10 +152,10 @@ def extract_text_from_file(filepath, content_type):
     """Extract text from uploaded file."""
     if content_type == 'pdf':
         try:
-            import PyPDF2
+            import pypdf
             text = ''
             with open(filepath, 'rb') as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = pypdf.PdfReader(f)
                 for page in reader.pages:
                     text += page.extract_text() or ''
             return text

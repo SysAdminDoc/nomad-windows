@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify, Response
+from config import Config
 from db import db_session, log_activity
 from web.blueprints import get_pagination, error_response
 from web.validation import validate_json, validate_optional_json
@@ -1677,8 +1678,8 @@ def api_openapi_spec():
         'openapi': '3.0.3',
         'info': {
             'title': 'NOMAD Field Desk API',
-            'version': '7.50.0',
-            'description': 'Offline-first preparedness command center API',
+            'version': Config.VERSION,
+            'description': 'Local-first preparedness and field operations API',
         },
         'paths': paths,
     }

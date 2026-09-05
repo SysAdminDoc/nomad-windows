@@ -233,7 +233,7 @@
 .need-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
 .need-badge {
   font-size: var(--text-2xs, 9px); font-weight: 700; font-family: var(--font-data, monospace);
-  background: var(--surface2); color: var(--text-muted); padding: 2px 6px; border-radius: var(--radius-2xs, 3px);
+  background: var(--surface2); color: var(--text-dim); padding: 2px 6px; border-radius: var(--radius-2xs, 3px);
   letter-spacing: 0.3px;
 }
 .need-card-head {

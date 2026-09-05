@@ -14,14 +14,12 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-const BASE = process.env.NOMAD_TEST_URL || 'http://localhost:8080';
-
 const WORKSPACES = [
   ['app-shell', '/'],
   ['settings', '/settings'],
-  ['services', '/services'],
-  ['inventory', '/inventory'],
-  ['medical', '/medical'],
+  ['services', '/'],
+  ['inventory', '/preparedness'],
+  ['medical', '/medical-plus'],
   ['maps', '/maps'],
   ['situation-room', '/situation-room'],
 ];
@@ -43,7 +41,8 @@ function filterResults(results) {
 
 for (const [name, path] of WORKSPACES) {
   test(`accessibility: ${name} has no critical/serious violations`, async ({ page }) => {
-    await page.goto(BASE + path, { waitUntil: 'networkidle', timeout: 15000 });
+    await page.goto(path, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('#main-content', { state: 'visible', timeout: 15000 });
     await page.waitForTimeout(1000);
 
     const raw = await new AxeBuilder({ page })

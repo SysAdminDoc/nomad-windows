@@ -13,7 +13,7 @@ Files load in this exact order. Later files intentionally override earlier ones.
 | 4 | `30_secondary_workspaces.css` | Notes, maps, toast, alerts, guides, service errors, branches | ~460 |
 | 5 | `40_preparedness_media.css` | 25 prep sub-tabs, media player, inventory table, calculators | ~1,230 |
 | 6 | `45_situation_room.css` | Situation Room dashboard (largest CSS file) | ~2,600 |
-| 7 | `50_home_customize.css` | Home bento grid, customize panel, status pills, copilot dock, sidebar groups | ~1,010 |
+| 7 | `50_home_customize.css` | Home bento grid, customize panel, status pills, assistant dock, sidebar groups | ~1,010 |
 | 8 | `60_accessibility_platform.css` | Focus-visible, reduced-motion, battery-saver, RTL, print, touch targets | ~360 |
 | 9 | `70_cleanup_utilities.css` | Utility classes, overrides, edge-case fixes | ~800 |
 
@@ -34,7 +34,7 @@ Visual polish overlay on top of the app layer.
 | 10 | `80_dark_theme_overrides.css` | Dark theme specific overrides |
 | 11 | `90_theme_consistency.css` | Cross-theme consistency |
 | 12 | `95_premium_polish.css` | Tactical typography, button transitions, focus rings |
-| 13 | `99_final_polish.css` | **Additive-only** — motion tokens, UI primitives, component polish |
+| 13 | `99_final_polish.css` | **Additive-only.** Motion tokens, UI primitives, component polish |
 | 14 | `100_extreme_polish.css` | Final detail pass |
 
 ## Design Token System (`00_theme_tokens.css`)
@@ -62,8 +62,8 @@ Visual polish overlay on top of the app layer.
 
 ## Rules
 
-1. **Never add inline `style=` attributes** — use CSS classes
-2. **Never define new keyframes outside `05_motion.css`** — it's the single source of truth
-3. **`99_final_polish.css` is additive-only** — never edit earlier files to integrate polish
-4. **Use tokens for all values** — `var(--text-sm, 11px)`, `var(--radius-sm, 6px)`, `var(--duration-fast)`
-5. **`!important` is justified** in override layers (80, 90, 95, 99, 100) — that's their purpose
+1. **Never add inline `style=` attributes.** Use CSS classes.
+2. **Never define new keyframes outside `05_motion.css`.** It's the single source of truth.
+3. **`99_final_polish.css` is additive-only.** Never edit earlier files to integrate polish.
+4. **Use tokens for all values.** For example, `var(--text-sm, 11px)`, `var(--radius-sm, 6px)`, and `var(--duration-fast)`.
+5. **`!important` is justified** in override layers (80, 90, 95, 99, 100). That's their purpose.

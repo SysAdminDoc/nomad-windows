@@ -858,7 +858,7 @@ def api_startup_set():
                     f.write(f'''[Desktop Entry]
 Type=Application
 Name={APP_DISPLAY_NAME}
-Comment=Desktop-first offline preparedness and field operations workspace
+Comment=Local-first preparedness, field operations, and offline reference workspace
 Exec={exec_line}
 Terminal=false
 X-GNOME-Autostart-enabled=true

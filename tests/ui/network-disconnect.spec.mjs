@@ -13,28 +13,29 @@
 import { test, expect } from '@playwright/test';
 
 const ENABLED = process.env.NOMAD_OFFLINE_DRILL === '1';
-const BASE = process.env.NOMAD_TEST_URL || 'http://localhost:8080';
 
 const WORKSPACES = [
   ['home', '/'],
   ['situation-room', '/situation-room'],
-  ['inventory', '/inventory'],
-  ['medical', '/medical'],
+  ['inventory', '/preparedness'],
+  ['medical', '/medical-plus'],
   ['maps', '/maps'],
   ['library', '/library'],
-  ['services', '/services'],
+  ['services', '/'],
   ['settings', '/settings'],
   ['copilot', '/copilot'],
-  ['backup', '/backup'],
+  ['notes', '/notes'],
 ];
 
 for (const [name, path] of WORKSPACES) {
-  test(`offline drill: ${name} loads without console errors`, async ({ page, context }) => {
+  test(`offline drill: ${name} loads without console errors`, async ({ page, context, baseURL }) => {
     test.skip(!ENABLED, 'Set NOMAD_OFFLINE_DRILL=1 to run offline drill tests');
+
+    const localOrigin = new URL(baseURL).origin;
 
     await context.route('**/*', (route) => {
       const url = route.request().url();
-      if (url.startsWith(BASE) || url.startsWith('data:') || url.startsWith('blob:')) {
+      if (url.startsWith(localOrigin) || url.startsWith('data:') || url.startsWith('blob:')) {
         return route.continue();
       }
       return route.abort('connectionrefused');
@@ -47,7 +48,8 @@ for (const [name, path] of WORKSPACES) {
       }
     });
 
-    await page.goto(BASE + path, { waitUntil: 'networkidle', timeout: 15000 });
+    await page.goto(path, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('#main-content', { state: 'visible', timeout: 15000 });
     await page.waitForTimeout(2000);
 
     const unhandled = consoleErrors.filter(e =>

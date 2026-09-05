@@ -48,7 +48,7 @@
   #tab-medical-phase2 .mp-callout-success { color:var(--mp-green); font-size:.85rem; padding:8px; }
   #tab-medical-phase2 .mp-hidden { display:none; }
   #tab-medical-phase2 .mp-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-medical-phase2 .mp-btn-primary { background:var(--mp-accent); color:#fff; }
+  #tab-medical-phase2 .mp-btn-primary { background:#b51d5b; color:#fff; }
   #tab-medical-phase2 .mp-btn-danger { background:var(--mp-red); color:#fff; }
   #tab-medical-phase2 .mp-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
   #tab-medical-phase2 .mp-btn-danger-quiet { background:color-mix(in srgb, var(--mp-red) 10%, transparent); border:1px solid color-mix(in srgb, var(--mp-red) 28%, transparent); color:color-mix(in srgb, var(--mp-red) 72%, var(--text-primary,#eee)); }
@@ -141,9 +141,9 @@
   <div class="mp-card">
     <div class="mp-card-title">Add Pregnancy Record</div>
     <div class="mp-form-row">
-      <div class="field"><label>Patient Name</label><input name="mp-preg-patient" id="mp-preg-patient" placeholder="Patient name"></div>
-      <div class="field"><label>Due Date</label><input name="mp-preg-due" id="mp-preg-due" type="date"></div>
-      <div class="field"><label>Blood Type</label>
+      <div class="field"><label for="mp-preg-patient">Patient Name</label><input name="mp-preg-patient" id="mp-preg-patient" placeholder="Patient name"></div>
+      <div class="field"><label for="mp-preg-due">Due Date</label><input name="mp-preg-due" id="mp-preg-due" type="date"></div>
+      <div class="field"><label for="mp-preg-blood">Blood Type</label>
         <select name="mp-preg-blood" id="mp-preg-blood">
           <option value="">--</option>
           <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
@@ -152,9 +152,9 @@
       </div>
     </div>
     <div class="mp-form-row">
-      <div class="field"><label>Gravida</label><input name="mp-preg-gravida" id="mp-preg-gravida" type="number" min="0" value="1"></div>
-      <div class="field"><label>Para</label><input name="mp-preg-para" id="mp-preg-para" type="number" min="0" value="0"></div>
-      <div class="field"><label>Status</label>
+      <div class="field"><label for="mp-preg-gravida">Gravida</label><input name="mp-preg-gravida" id="mp-preg-gravida" type="number" min="0" value="1"></div>
+      <div class="field"><label for="mp-preg-para">Para</label><input name="mp-preg-para" id="mp-preg-para" type="number" min="0" value="0"></div>
+      <div class="field"><label for="mp-preg-status">Status</label>
         <select name="mp-preg-status" id="mp-preg-status">
           <option value="active">Active</option><option value="delivered">Delivered</option><option value="loss">Loss</option>
         </select>

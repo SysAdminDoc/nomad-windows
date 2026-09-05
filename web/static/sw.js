@@ -9,6 +9,7 @@ const STATIC_ASSETS = [
   '/static/logo.png',
   '/static/logo-192.png',
   '/static/logo-512.png',
+  '/static/logo-maskable-512.png',
   // App CSS
   '/static/css/app.css',
   '/static/css/app/00_theme_tokens.css',

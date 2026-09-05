@@ -71,6 +71,7 @@ def run_tests():
         capture_output=True,
         text=True,
         timeout=900,
+        check=False,
     )
     if result.returncode != 0:
         print('  TESTS FAILED:')
@@ -92,6 +93,7 @@ def run_npm_build():
         text=True,
         timeout=120,
         shell=True,
+        check=False,
     )
     if result.returncode != 0:
         print('  npm build FAILED')
@@ -101,7 +103,47 @@ def run_npm_build():
     return True
 
 
-def run_pyinstaller():
+def write_windows_version_info(build_dir, version):
+    """Write the Windows version resource consumed by PyInstaller."""
+    numeric = [int(part) for part in version.split('.')]
+    if len(numeric) > 4:
+        raise ValueError(f'Windows version has too many components: {version}')
+    numeric.extend([0] * (4 - len(numeric)))
+    version_tuple = ', '.join(str(part) for part in numeric)
+    version_info = f"""VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=({version_tuple}),
+    prodvers=({version_tuple}),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0),
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable('040904B0', [
+        StringStruct('CompanyName', 'SysAdminDoc'),
+        StringStruct('FileDescription', 'NOMAD Field Desk'),
+        StringStruct('FileVersion', '{version}'),
+        StringStruct('InternalName', 'NOMADFieldDesk'),
+        StringStruct('LegalCopyright', 'Copyright SysAdminDoc'),
+        StringStruct('OriginalFilename', 'NOMADFieldDesk.exe'),
+        StringStruct('ProductName', 'NOMAD Field Desk'),
+        StringStruct('ProductVersion', '{version}'),
+      ]),
+    ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])]),
+  ],
+)
+"""
+    version_path = build_dir / 'version_info.txt'
+    version_path.write_text(version_info, encoding='utf-8')
+    return version_path
+
+
+def run_pyinstaller(version):
     print('Building PyInstaller executable...')
     dist_dir = REPO_ROOT / 'dist'
     if dist_dir.exists():
@@ -109,6 +151,10 @@ def run_pyinstaller():
     build_dir = REPO_ROOT / 'build'
     if build_dir.exists():
         shutil.rmtree(build_dir)
+    build_dir.mkdir(parents=True)
+    if sys.platform == 'win32':
+        version_info = write_windows_version_info(build_dir, version)
+        print(f'  Version resource: {version_info.relative_to(REPO_ROOT)}')
 
     result = subprocess.run(
         [sys.executable, '-m', 'PyInstaller', 'build.spec', '--noconfirm'],
@@ -116,6 +162,7 @@ def run_pyinstaller():
         capture_output=True,
         text=True,
         timeout=600,
+        check=False,
     )
     if result.returncode != 0:
         print('  PyInstaller FAILED')
@@ -129,6 +176,61 @@ def run_pyinstaller():
         return False
     size_mb = exe_path.stat().st_size / (1024 * 1024)
     print(f'  Built: {exe_name} ({size_mb:.1f} MB)')
+    return True
+
+
+def find_inno_compiler():
+    """Return the installed Inno Setup compiler on Windows."""
+    if sys.platform != 'win32':
+        return None
+    candidates = [
+        Path(os.environ.get('LOCALAPPDATA', '')) / 'Programs' / 'Inno Setup 6' / 'ISCC.exe',
+        Path(os.environ.get('ProgramFiles(x86)', '')) / 'Inno Setup 6' / 'ISCC.exe',
+        Path(os.environ.get('ProgramFiles', '')) / 'Inno Setup 6' / 'ISCC.exe',
+    ]
+    return next((candidate for candidate in candidates if candidate.is_file()), None)
+
+
+def run_inno_setup():
+    """Build the Windows installer and place it beside the portable executable."""
+    if sys.platform != 'win32':
+        return True
+    compiler = find_inno_compiler()
+    if not compiler:
+        print('  ERROR: Inno Setup 6 was not found')
+        return False
+
+    root_installer = REPO_ROOT / 'NOMAD-Setup.exe'
+    dist_installer = REPO_ROOT / 'dist' / 'NOMAD-Setup.exe'
+    root_installer.unlink(missing_ok=True)
+    dist_installer.unlink(missing_ok=True)
+
+    print('Building Inno Setup installer...')
+    result = subprocess.run(
+        [str(compiler), '/Qp', 'installer.iss'],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=300,
+        check=False,
+    )
+    if result.returncode != 0 or not root_installer.exists():
+        print('  Inno Setup FAILED')
+        print((result.stdout or result.stderr)[-1000:])
+        return False
+
+    shutil.move(str(root_installer), str(dist_installer))
+    size_mb = dist_installer.stat().st_size / (1024 * 1024)
+    print(f'  Built: {dist_installer.name} ({size_mb:.1f} MB)')
+
+    portable_path = REPO_ROOT / 'dist' / 'NOMADFieldDesk.exe'
+    release_portable_path = REPO_ROOT / 'dist' / 'NOMADFieldDesk-Windows.exe'
+    if not portable_path.is_file():
+        print(f'  ERROR: {portable_path} is missing before release naming')
+        return False
+    release_portable_path.unlink(missing_ok=True)
+    portable_path.replace(release_portable_path)
+    print(f'  Release portable: {release_portable_path.name}')
     return True
 
 
@@ -205,8 +307,11 @@ def main():
         sys.exit(1)
 
     if not args.skip_build:
-        if not run_pyinstaller():
+        if not run_pyinstaller(version):
             print('\nABORTED: fix PyInstaller build before release.')
+            sys.exit(1)
+        if not run_inno_setup():
+            print('\nABORTED: fix the Windows installer build before release.')
             sys.exit(1)
     else:
         print('Skipping PyInstaller build (--skip-build)')

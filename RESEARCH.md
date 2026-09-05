@@ -1,4 +1,4 @@
-# Research - NOMAD Field Desk
+# Research: NOMAD Field Desk
 
 ## Executive Summary
 

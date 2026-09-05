@@ -1,13 +1,13 @@
 ; NOMAD Field Desk Inno Setup Script
-; AppVersion: 7.66.40
+; AppVersion: 7.66.41
 
 #define MyAppName "NOMAD Field Desk"
-#define MyAppVersion "7.66.40"
+#define MyAppVersion "7.66.41"
 #define MyAppPublisher "SysAdminDoc"
 #define MyAppURL "https://github.com/SysAdminDoc/project-nomad-desktop"
 #define MyAppSupportURL "https://github.com/SysAdminDoc/project-nomad-desktop/issues"
 #define MyAppExeName "NOMADFieldDesk.exe"
-#define MyAppDescription "Desktop-first offline preparedness and field operations workspace."
+#define MyAppDescription "Local-first preparedness, field operations, and offline reference workspace."
 
 [Setup]
 AppId={{A7ABF8AE-546E-49E7-BF64-6AF70FA552D3}

@@ -1,7 +1,9 @@
 import { defineConfig } from '@playwright/test';
+import path from 'node:path';
 
 const PLAYWRIGHT_PORT = process.env.NOMAD_PLAYWRIGHT_PORT || '4317';
 const PLAYWRIGHT_BASE_URL = process.env.NOMAD_PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${PLAYWRIGHT_PORT}`;
+const PLAYWRIGHT_RUNTIME = path.resolve('test_runtime', 'playwright');
 
 export default defineConfig({
   testDir: './tests/ui',
@@ -26,5 +28,11 @@ export default defineConfig({
     stdout: 'pipe',
     stderr: 'pipe',
     timeout: 120_000,
+    env: {
+      ...process.env,
+      APPDATA: path.join(PLAYWRIGHT_RUNTIME, 'appdata'),
+      LOCALAPPDATA: path.join(PLAYWRIGHT_RUNTIME, 'localappdata'),
+      NOMAD_AUTH_REQUIRED: '0',
+    },
   },
 });
